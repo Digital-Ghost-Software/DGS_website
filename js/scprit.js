@@ -1,196 +1,136 @@
-/* =========================================================
- Este arquivo controla as interações do site.
-========================================================= */
+/*
+====================================================
+    YOKAI TAILS - JAVASCRIPT
 
+    Este arquivo controla:
+    - Cadastro de usuarios
+    - Login
+    - Verificacao de senha
+    - Redirecionamento
 
-/* =========================================================
-   FORMULÁRIO DE CADASTRO
-========================================================= */
+    Os usuarios sao armazenados na tabela "senha"
+    do Supabase.
+====================================================
+*/
+
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const SUPABASE_URL = "https://thmtriwgvsgxdinsuxph.supabase.co";
+const SUPABASE_KEY = "COLOQUE_AQUI_A_CHAVE_ANON_PUBLIC_DO_SUPABASE";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function mostrarMensagem(elemento, texto, cor) {
+    elemento.innerText = texto;
+    elemento.style.color = cor;
+}
 
 /*
-    Procuramos pelo formulário através do ID:
-    "formCadastro"
+====================================================
+                CADASTRO
+====================================================
 */
 
 const formCadastro = document.getElementById("formCadastro");
 
-
-/*
-    Verificamos se o formulário existe.
-
-    Isso é importante porque o script é carregado
-    em todas as páginas.
-*/
-
 if (formCadastro) {
-
-
-    /*
-        Detecta quando o usuário clica
-        no botão "Criar conta".
-    */
-
-    formCadastro.addEventListener("submit", function(event) {
-
-
-        /*
-            Impede o formulário de recarregar
-            a página.
-        */
-
+    formCadastro.addEventListener("submit", async function(event) {
         event.preventDefault();
 
+        const usuario = document.getElementById("novoUsuario").value.trim();
+        const email = document.getElementById("novoEmail").value.trim();
+        const senha = document.getElementById("novaSenha").value;
+        const confirmaSenha = document.getElementById("confirmaSenha").value;
+        const mensagem = document.getElementById("mensagemCadastro");
 
-        /*
-            Mostra uma mensagem.
+        if (senha !== confirmaSenha) {
+            mostrarMensagem(mensagem, "As senhas nao sao iguais.", "#ff5c6c");
+            return;
+        }
 
-            IMPORTANTE:
-            O site não possui banco de dados.
-            Portanto, o cadastro é apenas visual.
-        */
+        mostrarMensagem(mensagem, "Criando conta...", "#ffffff");
 
-        alert(
-            "Cadastro demonstrativo!\n\n" +
-            "Esta página ainda não possui um sistema " +
-            "real de cadastro ou banco de dados."
-        );
+        const { data: usuarioExistente, error: erroBusca } = await supabase
+            .from("Usuario")
+            .select("nome_usuario")
+            .eq("nome_usuario", usuario)
+            .maybeSingle();
 
+        if (erroBusca) {
+            console.error(erroBusca);
+            mostrarMensagem(mensagem, "Erro ao verificar usuario.", "#ff5c6c");
+            return;
+        }
+
+        if (usuarioExistente) {
+            mostrarMensagem(mensagem, "Esse usuario ja existe.", "#ff5c6c");
+            return;
+        }
+
+        const { error: erroCadastro } = await supabase
+            .from("Usuario")
+            .insert({
+                nome_usuario: usuario,
+                email_usuario: email,
+                senha_usuario: senha
+            });
+
+        if (erroCadastro) {
+            console.error(erroCadastro);
+            mostrarMensagem(mensagem, "Erro ao criar conta.", "#ff5c6c");
+            return;
+        }
+
+        mostrarMensagem(mensagem, "Cadastro realizado com sucesso!", "#72e6a5");
+
+        setTimeout(function() {
+            window.location.href = "login.html";
+        }, 1000);
     });
-
 }
 
-
-/* =========================================================
-   FORMULÁRIO DE LOGIN
-========================================================= */
-
-
 /*
-    Procura o formulário de login.
+====================================================
+                LOGIN
+====================================================
 */
 
 const formLogin = document.getElementById("formLogin");
 
-
-/*
-    Verifica se o formulário existe.
-*/
-
 if (formLogin) {
-
-
-    /*
-        Detecta o envio do formulário.
-    */
-
-    formLogin.addEventListener("submit", function(event) {
-
-
-        /*
-            Impede o recarregamento da página.
-        */
-
+    formLogin.addEventListener("submit", async function(event) {
         event.preventDefault();
 
+        const usuario = document.getElementById("usuario").value.trim();
+        const senha = document.getElementById("senha").value;
+        const mensagem = document.getElementById("mensagemLogin");
 
-        /*
-            Mostra uma mensagem informando
-            que o login é apenas demonstrativo.
-        */
+        mostrarMensagem(mensagem, "Entrando...", "#ffffff");
 
-        alert(
-            "Login demonstrativo!\n\n" +
-            "O sistema de autenticação ainda não " +
-            "está conectado a um banco de dados."
-        );
+        const { data: usuarioEncontrado, error: erroLogin } = await supabase
+            .from("senha")
+            .select("usuario")
+            .eq("usuario", usuario)
+            .eq("senha", senha)
+            .maybeSingle();
 
+        if (erroLogin) {
+            console.error(erroLogin);
+            mostrarMensagem(mensagem, "Erro ao fazer login.", "#ff5c6c");
+            return;
+        }
+
+        if (!usuarioEncontrado) {
+            mostrarMensagem(mensagem, "Usuario ou senha incorretos.", "#ff5c6c");
+            return;
+        }
+
+        mostrarMensagem(mensagem, "Login realizado com sucesso!", "#72e6a5");
+
+        localStorage.setItem("usuarioLogado", usuarioEncontrado.usuario);
+
+        setTimeout(function() {
+            window.location.href = "download.html";
+        }, 1000);
     });
-
 }
-
-
-/* =========================================================
-   ANIMAÇÃO DOS CARDS
-========================================================= */
-
-
-/*
-    Seleciona todos os elementos
-    que possuem a classe feature-card.
-*/
-
-const cards = document.querySelectorAll(".feature-card");
-
-
-/*
-    Percorre todos os cards encontrados.
-*/
-
-cards.forEach(function(card, index) {
-
-
-    /*
-        Começa deixando o card transparente.
-    */
-
-    card.style.opacity = "0";
-
-
-    /*
-        Coloca o card um pouco para baixo.
-    */
-
-    card.style.transform = "translateY(30px)";
-
-
-    /*
-        Pequeno atraso para cada card.
-
-        O index faz cada card aparecer
-        um pouco depois do anterior.
-    */
-
-    setTimeout(function() {
-
-
-        /*
-            Define a velocidade da animação.
-        */
-
-        card.style.transition = "0.7s";
-
-
-        /*
-            Torna o card visível.
-        */
-
-        card.style.opacity = "1";
-
-
-        /*
-            Retorna o card para sua posição original.
-        */
-
-        card.style.transform = "translateY(0)";
-
-
-    }, 200 + (index * 150));
-
-});
-
-
-/* =========================================================
-   MENSAGEM NO CONSOLE
-========================================================= */
-
-
-/*
-    Esta mensagem aparece no console do navegador.
-
-    Serve apenas para demonstrar que o JavaScript
-    foi carregado corretamente.
-*/
-
-console.log(
-    "Digital Ghost Software - JavaScript carregado com sucesso!"
-);
