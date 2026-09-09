@@ -1,16 +1,16 @@
 🚀 Projeto
 
-Digital Gosht Software
+Digital Ghost Software
 
 Projeto acadêmico de desenvolvimento web e jogos.
 
-Jogo: Yokai Tails 🦊
+Jogo: Yokai Tales 🦊
 
 Tecnologias: HTML5, CSS3 e JavaScript.
 
 
 
-digital-gosht/
+digital-ghost/
 │
 ├── index.html
 ├── README.md
@@ -30,18 +30,18 @@ digital-gosht/
     ├── login.html
     ├── cadastro.html
     ├── perfil.html
-    └── tails.html
+    └── tales.html
 
 
-    # 🎮 Digital Gosht Software
+    # 🎮 Digital Ghost Software
 
 ## 🕹️ Sobre o projeto
 
-A **Digital Gosht Software** é uma empresa fictícia de desenvolvimento
+A **Digital Ghost Software** é uma empresa fictícia de desenvolvimento
 de jogos criada como parte de um projeto acadêmico.
 
 O site foi desenvolvido com o objetivo de apresentar a empresa, seus
-conceitos e o projeto de jogo **Yokai Tails**.
+conceitos e o projeto de jogo **Yokai Tales**.
 
 O projeto também tem como finalidade aplicar conhecimentos de
 desenvolvimento web, organização de arquivos, criação de interfaces,
@@ -49,9 +49,9 @@ navegação entre páginas e utilização de JavaScript.
 
 ---
 
-## 🏢 Sobre a Digital Gosht Software
+## 🏢 Sobre a Digital Ghost Software
 
-A Digital Gosht Software representa um estúdio independente de
+A Digital Ghost Software representa um estúdio independente de
 desenvolvimento de jogos.
 
 A proposta da empresa é unir:
@@ -67,9 +67,9 @@ branco e laranja**.
 
 ---
 
-## 🦊 Yokai Tails
+## 🦊 Yokai Tales
 
-**Yokai Tails** é um projeto de jogo desenvolvido para fins acadêmicos.
+**Yokai Tales** é um projeto de jogo desenvolvido para fins acadêmicos.
 
 O jogo apresenta uma aventura inspirada na cultura e no folclore
 japonês, utilizando criaturas conhecidas como **Yokai**.
@@ -91,13 +91,13 @@ a:
 
 ## 🌐 O site
 
-O site da Digital Gosht Software possui as seguintes páginas:
+O site da Digital Ghost Software possui as seguintes páginas:
 
 ### 🏠 Início
 
-Apresentação rápida da Digital Gosht Software e seus objetivos.
+Apresentação rápida da Digital Ghost Software e seus objetivos.
 
-### 🦊 Yokai Tails
+### 🦊 Yokai Tales
 
 Página dedicada à apresentação do jogo, sua proposta, personagem
 principal e características.
@@ -159,7 +159,7 @@ tecnológica e relacionada ao desenvolvimento de jogos.
 ## 📁 Estrutura do projeto
 
 ```text
-digital-gosht/
+digital-ghost/
 │
 ├── index.html
 │
@@ -178,7 +178,7 @@ digital-gosht/
 │   ├── login.html
 │   ├── cadastro.html
 │   ├── perfil.html
-│   └── tails.html
+│   └── tales.html
 │
 └── README.md
 

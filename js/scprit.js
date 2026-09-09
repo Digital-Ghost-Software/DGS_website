@@ -192,5 +192,5 @@ cards.forEach(function(card, index) {
 */
 
 console.log(
-    "Digital Gosht Software - JavaScript carregado com sucesso!"
+    "Digital Ghost Software - JavaScript carregado com sucesso!"
 );
