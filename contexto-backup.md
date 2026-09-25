@@ -63,8 +63,8 @@ Não solicitar credenciais ou chaves secretas. A chave publicável e URL REST fo
 
 Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação após cada etapa:
 
-1. **Preparar testes reais de banco/RLS**: usar duas contas de teste, validar preço/status/titular definidos pelo banco, leitura isolada por usuário e download vinculado a pedido próprio. Os testes devem receber credenciais por configuração local segura; não solicitar senhas/tokens no chat. A execução dos casos que criam linhas precisa ser autorizada e identificada como dado de teste.
-2. **Executar os testes reais de banco/RLS**: depois de preparar e aprovar o harness, usar somente contas de teste e registrar resultados sem segredos/dados pessoais.
+1. **Configurar e executar testes reais de banco/RLS**: harness aprovado e disponível em `tests/integration/supabase-live.test.js`, com comando `npm run test:integration:supabase`. Configurar duas contas descartáveis por variáveis locais em `.env`, nunca enviar senhas/tokens no chat. A execução cria dois pedidos simulados e uma solicitação de download permanentes nessas contas; não há limpeza por falta de permissão DELETE.
+2. **Registrar resultados reais**: após o teste, atualizar evidências e estado de RF-004, sem incluir segredos/dados pessoais.
 3. **Revalidar configuração de Auth**: confirmação de e-mail, URLs de retorno e mensagens para usuário, após domínio de deploy ser conhecido. Antes disso, não inventar domínio.
 4. **Preparar/publicar API e site na Vercel**: revisar guia e configuração, obter aprovação específica para publicação; seguir as instruções de deploy. Secret de service role, se necessária para exclusão, deve ser configurada pelo administrador diretamente no ambiente Vercel.
 5. **Executar testes funcionais reais**: cadastro, login, logout, perfil, alteração de nome/senha, exclusão própria quando configurada, pedidos Standard/Plus e histórico.
@@ -75,6 +75,7 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 ## Pendências conhecidas / limites
 
 - Execução da migração RF-004 foi confirmada pelo usuário sem erro reportado; capturas validaram tabelas, RLS, policies, triggers e grants. Testes reais de comportamento/RLS entre contas ainda pendentes.
+- Harness opt-in para teste real entre duas contas foi aprovado; aguarda configuração local de contas descartáveis para executar.
 - Integração real do banco e RLS ainda não foi demonstrada; testes atuais são locais/mockados.
 - Deploy Vercel ainda não foi feito e não há URL atribuída.
 - A chave service-role não está disponível ao usuário; a exclusão de conta fica indisponível até configuração server-side por administrador.
@@ -88,5 +89,6 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 | 24/09/2026 | Auditoria de idioma da interface | Textos pt-BR; exceções “Download” e “Lorem ipsum” em `index.html`; 23 testes passaram; `git diff --check` passou. | Aprovada com exceção de idioma pelo usuário. |
 | 25/09/2026 | Backup de contexto e política de commits | Atualizado conforme pedido do usuário para registrar commits em português por etapa e recuperar commits anteriores quando seguro. | Autorizado pelo pedido explícito do usuário. |
 | 25/09/2026 | Registro dos passos anteriores no Git | `b596814` (`Conclui refinamento RF-004 com testes automatizados`) agrupa as alterações aprovadas de refinamento, localização, documentação e testes; `f4069dd` (`Registra contexto e regra de commits por etapa`) registra este backup e a política solicitada. Suíte: 23 testes aprovados; build estático e `git diff --check` aprovados. | Commits autorizados explicitamente pelo usuário. |
-| 25/09/2026 | Aplicação da migração RF-004 | Usuário executou `database/ddl/rf-004-simulated-payments.sql`; retorno informado: `Success. No rows returned.` Ainda aguardando consultas de catálogo/RLS/triggers/grants e testes de comportamento. | Execução autorizada e confirmada pelo usuário; validação permanece pendente. |
+| 25/09/2026 | Aplicação da migração RF-004 | Usuário executou `database/ddl/rf-004-simulated-payments.sql`; retorno informado: `Success. No rows returned.` Consultas seguintes confirmaram tabelas, RLS, policies, triggers e grants. | Execução e verificação estrutural confirmadas; testes de comportamento ainda pendentes. |
 | 25/09/2026 | Verificação de estrutura e permissões RF-004 | Capturas confirmam tabelas/RLS, quatro policies, dois triggers e grants `SELECT`/`INSERT`; quatro testes locais verificam os requisitos declarados no SQL. | Resultados enviados pelo usuário; estrutura validada. Comportamento real ainda pendente. |
+| 25/09/2026 | Harness para integração Supabase real | Criado teste opt-in para preços/titularidade, RLS entre duas contas e download próprio/alheio; credenciais apenas locais; dados simulados criados pelo teste permanecem no banco. `npm test`: 27 aprovados e 1 ignorado; 17 unitários e 10 integrações mockadas aprovados; build passou. | Alterações aprovadas pelo usuário; execução remota aguarda contas descartáveis configuradas localmente. |
