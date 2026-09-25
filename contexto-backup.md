@@ -55,7 +55,7 @@ Continuar no fork local `Digital-Web-Site` o refinamento geral do projeto estuda
 
 ## Ponto atual
 
-O usuário informou que executou `database/ddl/rf-004-simulated-payments.sql` no Supabase e recebeu `Success. No rows returned.` Isso confirma a execução sem erro reportado; ainda falta conferir as tabelas, RLS, policies, triggers e grants pelas consultas somente leitura solicitadas. Os testes locais usam servidor Supabase simulado e **não comprovam** integração funcional real com o projeto remoto.
+O usuário informou que executou `database/ddl/rf-004-simulated-payments.sql` no Supabase e recebeu `Success. No rows returned.` As quatro capturas confirmam: `simulated_payments` e `game_downloads` com RLS ativo; as tabelas legadas `Usuario`, `Cartao` e `Administrador` também com RLS ativo; quatro policies de leitura/inserção para `authenticated`; dois triggers `BEFORE INSERT`; e somente `SELECT`/`INSERT` concedidos ao papel `authenticated`, sem grants listados para papéis web nas tabelas legadas. `FORCE ROW LEVEL SECURITY` aparece false, mas o RLS está ativo e a migração não exige FORCE. Ainda faltam testes reais de inserção, preço calculado e isolamento entre contas. Os testes locais usam servidor Supabase simulado e **não comprovam** esse comportamento remoto.
 
 Não solicitar credenciais ou chaves secretas. A chave publicável e URL REST foram recebidas na conversa; a URL base é sem `/rest/v1/`. A chave publicável não autoriza execução DDL pela API.
 
@@ -63,8 +63,8 @@ Não solicitar credenciais ou chaves secretas. A chave publicável e URL REST fo
 
 Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação após cada etapa:
 
-1. **Validar o resultado da migração**: receber outputs das consultas somente leitura para conferir tabelas, RLS, policies, triggers e grants. A execução pelo usuário foi confirmada como `Success. No rows returned.` Não repetir o DDL sem necessidade.
-2. **Testar banco/RLS**: após validar catálogo, fazer testes reais de inserção/leitura e isolamento entre duas contas de teste, se houver um meio seguro. Não solicitar senhas/tokens no chat.
+1. **Preparar testes reais de banco/RLS**: usar duas contas de teste, validar preço/status/titular definidos pelo banco, leitura isolada por usuário e download vinculado a pedido próprio. Os testes devem receber credenciais por configuração local segura; não solicitar senhas/tokens no chat. A execução dos casos que criam linhas precisa ser autorizada e identificada como dado de teste.
+2. **Executar os testes reais de banco/RLS**: depois de preparar e aprovar o harness, usar somente contas de teste e registrar resultados sem segredos/dados pessoais.
 3. **Revalidar configuração de Auth**: confirmação de e-mail, URLs de retorno e mensagens para usuário, após domínio de deploy ser conhecido. Antes disso, não inventar domínio.
 4. **Preparar/publicar API e site na Vercel**: revisar guia e configuração, obter aprovação específica para publicação; seguir as instruções de deploy. Secret de service role, se necessária para exclusão, deve ser configurada pelo administrador diretamente no ambiente Vercel.
 5. **Executar testes funcionais reais**: cadastro, login, logout, perfil, alteração de nome/senha, exclusão própria quando configurada, pedidos Standard/Plus e histórico.
@@ -74,7 +74,7 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 
 ## Pendências conhecidas / limites
 
-- Execução da migração RF-004 foi confirmada pelo usuário sem erro reportado; validação de catálogo e comportamento ainda pendente.
+- Execução da migração RF-004 foi confirmada pelo usuário sem erro reportado; capturas validaram tabelas, RLS, policies, triggers e grants. Testes reais de comportamento/RLS entre contas ainda pendentes.
 - Integração real do banco e RLS ainda não foi demonstrada; testes atuais são locais/mockados.
 - Deploy Vercel ainda não foi feito e não há URL atribuída.
 - A chave service-role não está disponível ao usuário; a exclusão de conta fica indisponível até configuração server-side por administrador.
@@ -89,3 +89,4 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 | 25/09/2026 | Backup de contexto e política de commits | Atualizado conforme pedido do usuário para registrar commits em português por etapa e recuperar commits anteriores quando seguro. | Autorizado pelo pedido explícito do usuário. |
 | 25/09/2026 | Registro dos passos anteriores no Git | `b596814` (`Conclui refinamento RF-004 com testes automatizados`) agrupa as alterações aprovadas de refinamento, localização, documentação e testes; `f4069dd` (`Registra contexto e regra de commits por etapa`) registra este backup e a política solicitada. Suíte: 23 testes aprovados; build estático e `git diff --check` aprovados. | Commits autorizados explicitamente pelo usuário. |
 | 25/09/2026 | Aplicação da migração RF-004 | Usuário executou `database/ddl/rf-004-simulated-payments.sql`; retorno informado: `Success. No rows returned.` Ainda aguardando consultas de catálogo/RLS/triggers/grants e testes de comportamento. | Execução autorizada e confirmada pelo usuário; validação permanece pendente. |
+| 25/09/2026 | Verificação de estrutura e permissões RF-004 | Capturas confirmam tabelas/RLS, quatro policies, dois triggers e grants `SELECT`/`INSERT`; quatro testes locais verificam os requisitos declarados no SQL. | Resultados enviados pelo usuário; estrutura validada. Comportamento real ainda pendente. |
