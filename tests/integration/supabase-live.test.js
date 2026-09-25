@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
 import test from "node:test";
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "../../js/supabase-config.js";
+import { handler } from "../../server/index.js";
 
 const liveRunEnabled = process.env.RUN_SUPABASE_LIVE_TESTS === "true";
 const supabaseUrl = process.env.SUPABASE_URL || SUPABASE_URL;
@@ -32,6 +34,26 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         `A conta de teste B não autenticou. Confira a configuração local e confirmação de e-mail (HTTP ${loginB.error?.status ?? "indisponível"}; código ${loginB.error?.code ?? "indisponível"}).`
     );
     assert.notEqual(loginA.data.user.id, loginB.data.user.id, "As duas contas de teste precisam ser identidades diferentes.");
+
+    const apiServer = createServer(handler);
+    await new Promise((resolve) => apiServer.listen(0, "127.0.0.1", resolve));
+    const apiAddress = apiServer.address();
+    const apiBaseUrl = `http://127.0.0.1:${apiAddress.port}`;
+    try {
+        const profileResponse = await fetch(`${apiBaseUrl}/api/profile`, {
+            headers: { Authorization: `Bearer ${loginA.data.session.access_token}` }
+        });
+        assert.equal(profileResponse.status, 200, "A API deve aceitar a sessão Auth válida.");
+        const profile = await profileResponse.json();
+        assert.equal(profile.id, loginA.data.user.id);
+        assert.equal(profile.email, loginA.data.user.email);
+        assert.equal(typeof profile.full_name, "string");
+
+        const anonymousProfileResponse = await fetch(`${apiBaseUrl}/api/profile`);
+        assert.equal(anonymousProfileResponse.status, 401, "A API não deve expor perfil sem sessão.");
+    } finally {
+        await new Promise((resolve, reject) => apiServer.close((error) => error ? reject(error) : resolve()));
+    }
 
     const fakeTimestamp = "2000-01-01T00:00:00.000Z";
     const { data: orderA, error: orderAError } = await accountA
@@ -91,4 +113,16 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         .select("payment_id")
         .single();
     assert.ok(foreignDownloadError && !foreignDownload, "A conta B não deve solicitar download do pedido da conta A.");
+
+    const [signOutA, signOutB] = await Promise.all([
+        accountA.auth.signOut(),
+        accountB.auth.signOut()
+    ]);
+    assert.ok(!signOutA.error && !signOutB.error, "O logout deve encerrar as sessões das duas contas.");
+    const [sessionA, sessionB] = await Promise.all([
+        accountA.auth.getSession(),
+        accountB.auth.getSession()
+    ]);
+    assert.equal(sessionA.data.session, null);
+    assert.equal(sessionB.data.session, null);
 });
