@@ -1,0 +1,305 @@
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import test, { after, before } from "node:test";
+
+const capturedRequests = [];
+let apiServer;
+let supabaseServer;
+let apiBaseUrl;
+
+const userIds = {
+    "valid-test-token": "00000000-0000-4000-8000-000000000001",
+    "second-test-token": "00000000-0000-4000-8000-000000000003"
+};
+const mockPayments = [
+    {
+        id: "00000000-0000-4000-8000-000000000002",
+        user_id: userIds["valid-test-token"],
+        edition: "plus",
+        amount_brl: 40,
+        status: "simulated_approved",
+        created_at: "2026-09-24T12:00:00.000Z"
+    },
+    {
+        id: "00000000-0000-4000-8000-000000000004",
+        user_id: userIds["second-test-token"],
+        edition: "standard",
+        amount_brl: 20,
+        status: "simulated_approved",
+        created_at: "2026-09-24T12:01:00.000Z"
+    }
+];
+const mockDownloads = [
+    {
+        payment_id: mockPayments[0].id,
+        user_id: userIds["valid-test-token"],
+        release_version: "1.0",
+        requested_at: "2026-09-24T12:10:00.000Z"
+    }
+];
+
+function listen(server) {
+    return new Promise((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(0, "127.0.0.1", () => {
+            server.removeListener("error", reject);
+            resolve(server.address().port);
+        });
+    });
+}
+
+function sendJson(response, status, value, headers = {}) {
+    response.writeHead(status, { "Content-Type": "application/json", ...headers });
+    response.end(JSON.stringify(value));
+}
+
+async function readBody(request) {
+    let body = "";
+    for await (const chunk of request) body += chunk.toString("utf8");
+    return body ? JSON.parse(body) : {};
+}
+
+before(async () => {
+    supabaseServer = createServer(async (request, response) => {
+        const requestUrl = new URL(request.url, "http://localhost");
+        const authorization = request.headers.authorization;
+        capturedRequests.push({ method: request.method, path: requestUrl.pathname, authorization });
+
+        if (requestUrl.pathname === "/auth/v1/user") {
+            const token = authorization?.replace(/^Bearer\s+/i, "");
+            const userId = userIds[token];
+            if (!userId) {
+                return sendJson(response, 401, { message: "Invalid token", code: "bad_jwt" });
+            }
+            return sendJson(response, 200, {
+                id: userId,
+                email: token === "valid-test-token" ? "tester@example.invalid" : "second@example.invalid",
+                user_metadata: { full_name: token === "valid-test-token" ? "Test User" : "Second User" }
+            });
+        }
+
+        if (requestUrl.pathname.startsWith("/auth/v1/admin/users/") && request.method === "DELETE") {
+            if (request.headers.apikey !== "test-service-role") {
+                return sendJson(response, 401, { message: "Invalid admin key" });
+            }
+            return sendJson(response, 200, { id: requestUrl.pathname.split("/").at(-1), deleted: true });
+        }
+
+        if (requestUrl.pathname === "/rest/v1/simulated_payments" && request.method === "POST") {
+            const payload = await readBody(request);
+            const row = {
+                id: "00000000-0000-4000-8000-000000000002",
+                user_id: userIds[authorization?.replace(/^Bearer\s+/i, "")],
+                edition: payload.edition,
+                amount_brl: payload.edition === "plus" ? 40 : 20,
+                status: "simulated_approved",
+                created_at: "2026-09-24T12:00:00.000Z"
+            };
+            capturedRequests.at(-1).body = payload;
+            return sendJson(response, 201, row);
+        }
+
+        if (requestUrl.pathname === "/rest/v1/simulated_payments" && request.method === "GET") {
+            const userId = userIds[authorization?.replace(/^Bearer\s+/i, "")];
+            return sendJson(response, 200, mockPayments.filter((payment) => payment.user_id === userId));
+        }
+
+        if (requestUrl.pathname === "/rest/v1/game_downloads" && request.method === "GET") {
+            const userId = userIds[authorization?.replace(/^Bearer\s+/i, "")];
+            const paymentIds = new Set(mockPayments.filter((payment) => payment.user_id === userId).map((payment) => payment.id));
+            return sendJson(response, 200, mockDownloads.filter((item) => paymentIds.has(item.payment_id)));
+        }
+
+        if (requestUrl.pathname === "/rest/v1/game_downloads" && request.method === "POST") {
+            const payload = await readBody(request);
+            const userId = userIds[authorization?.replace(/^Bearer\s+/i, "")];
+            const ownedPayment = mockPayments.find((payment) => payment.id === payload.payment_id && payment.user_id === userId);
+            capturedRequests.at(-1).body = payload;
+            if (!ownedPayment) return sendJson(response, 403, { message: "Order does not belong to user", code: "42501" });
+            return sendJson(response, 201, {
+                payment_id: payload.payment_id,
+                release_version: payload.release_version,
+                requested_at: "2026-09-24T12:20:00.000Z"
+            });
+        }
+
+        return sendJson(response, 404, { message: "Mock endpoint not found" });
+    });
+
+    const supabasePort = await listen(supabaseServer);
+    process.env.SUPABASE_URL = `http://127.0.0.1:${supabasePort}`;
+    process.env.SUPABASE_PUBLISHABLE_KEY = "test-publishable-key";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "";
+    process.env.ALLOWED_ORIGINS = "";
+
+    const { handler } = await import(`../../server/index.js?test=${Date.now()}`);
+    apiServer = createServer(handler);
+    const apiPort = await listen(apiServer);
+    apiBaseUrl = `http://127.0.0.1:${apiPort}`;
+});
+
+after(async () => {
+    await Promise.all([apiServer, supabaseServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
+    for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "ALLOWED_ORIGINS"]) {
+        delete process.env[key];
+    }
+});
+
+test("health endpoint is public and returns the expected status", async () => {
+    const response = await fetch(`${apiBaseUrl}/api/health`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "ok" });
+});
+
+test("profile rejects missing and invalid bearer tokens", async () => {
+    const missing = await fetch(`${apiBaseUrl}/api/profile`);
+    assert.equal(missing.status, 401);
+
+    const invalid = await fetch(`${apiBaseUrl}/api/profile`, {
+        headers: { Authorization: "Bearer invalid-test-token" }
+    });
+    assert.equal(invalid.status, 401);
+});
+
+test("profile returns only the authenticated Supabase identity", async () => {
+    const response = await fetch(`${apiBaseUrl}/api/profile`, {
+        headers: { Authorization: "Bearer valid-test-token" }
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+        id: "00000000-0000-4000-8000-000000000001",
+        email: "tester@example.invalid",
+        full_name: "Test User"
+    });
+});
+
+test("order history and download history stay scoped to the authenticated token", async () => {
+    const firstResponse = await fetch(`${apiBaseUrl}/api/payments`, {
+        headers: { Authorization: "Bearer valid-test-token" }
+    });
+    assert.equal(firstResponse.status, 200);
+    const firstHistory = await firstResponse.json();
+    assert.deepEqual(firstHistory.payments.map((payment) => payment.id), [mockPayments[0].id]);
+    assert.deepEqual(firstHistory.downloads.map((download) => download.payment_id), [mockPayments[0].id]);
+
+    const secondResponse = await fetch(`${apiBaseUrl}/api/payments`, {
+        headers: { Authorization: "Bearer second-test-token" }
+    });
+    assert.equal(secondResponse.status, 200);
+    const secondHistory = await secondResponse.json();
+    assert.deepEqual(secondHistory.payments.map((payment) => payment.id), [mockPayments[1].id]);
+    assert.deepEqual(secondHistory.downloads, []);
+
+    const databaseReads = capturedRequests.filter((entry) => entry.path === "/rest/v1/simulated_payments" && entry.method === "GET");
+    assert.equal(databaseReads.at(-2).authorization, "Bearer valid-test-token");
+    assert.equal(databaseReads.at(-1).authorization, "Bearer second-test-token");
+});
+
+test("payment creation validates the edition and forwards only that choice", async () => {
+    const invalid = await fetch(`${apiBaseUrl}/api/payments`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ edition: "premium" })
+    });
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).error, "Edição inválida. Escolha Standard ou Plus.");
+
+    const response = await fetch(`${apiBaseUrl}/api/payments`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({
+            edition: "plus",
+            amount_brl: 0,
+            user_id: "attacker-controlled-user",
+            status: "paid"
+        })
+    });
+
+    assert.equal(response.status, 201);
+    const order = await response.json();
+    assert.equal(order.amount_brl, 40);
+    assert.equal(order.status, "simulated_approved");
+    const insertRequest = capturedRequests.findLast((entry) => entry.path === "/rest/v1/simulated_payments" && entry.method === "POST");
+    assert.deepEqual(insertRequest.body, { edition: "plus" });
+});
+
+test("the API rejects requests from a foreign origin", async () => {
+    const response = await fetch(`${apiBaseUrl}/api/health`, {
+        headers: { Origin: "https://untrusted.example" }
+    });
+    assert.equal(response.status, 403);
+});
+
+test("the API accepts a matching same-origin request", async () => {
+    const apiHost = new URL(apiBaseUrl).host;
+    const response = await fetch(`${apiBaseUrl}/api/health`, {
+        headers: {
+            Origin: `http://${apiHost}`,
+            "X-Forwarded-Host": apiHost,
+            "X-Forwarded-Proto": "http"
+        }
+    });
+    assert.equal(response.status, 200);
+});
+
+test("download requests require an order ID and can only use an owned order", async () => {
+    const invalid = await fetch(`${apiBaseUrl}/api/downloads`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_id: "not-a-uuid" })
+    });
+    assert.equal(invalid.status, 400);
+
+    const denied = await fetch(`${apiBaseUrl}/api/downloads`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_id: mockPayments[1].id, release_version: "forged" })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${apiBaseUrl}/api/downloads`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_id: mockPayments[0].id, release_version: "forged" })
+    });
+    assert.equal(accepted.status, 201);
+    const download = await accepted.json();
+    assert.equal(download.payment_id, mockPayments[0].id);
+    assert.equal(download.release_version, "1.0");
+    const downloadInsert = capturedRequests.findLast((entry) => entry.path === "/rest/v1/game_downloads" && entry.method === "POST");
+    assert.deepEqual(downloadInsert.body, { payment_id: mockPayments[0].id, release_version: "1.0" });
+});
+
+test("account deletion remains unavailable when no service role is configured", async () => {
+    const response = await fetch(`${apiBaseUrl}/api/account/delete`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token" }
+    });
+    assert.equal(response.status, 503);
+    const result = await response.json();
+    assert.equal(result.error, "A exclusão da conta não está configurada no servidor.");
+    assert.equal(result.code, "ACCOUNT_DELETION_UNAVAILABLE");
+});
+
+test("account deletion uses the service role only on the server and deletes the authenticated identity", async () => {
+    const originalServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role";
+    const { handler } = await import(`../../server/index.js?admin-test=${Date.now()}`);
+    const adminServer = createServer(handler);
+    const adminPort = await listen(adminServer);
+    try {
+        const response = await fetch(`http://127.0.0.1:${adminPort}/api/account/delete`, {
+            method: "POST",
+            headers: { Authorization: "Bearer valid-test-token" }
+        });
+        assert.equal(response.status, 200);
+        assert.deepEqual(await response.json(), { deleted: true });
+        const adminRequest = capturedRequests.findLast((entry) => entry.path.startsWith("/auth/v1/admin/users/") && entry.method === "DELETE");
+        assert.equal(adminRequest.path, `/auth/v1/admin/users/${userIds["valid-test-token"]}`);
+        assert.equal(adminRequest.authorization, "Bearer test-service-role");
+    } finally {
+        await new Promise((resolve) => adminServer.close(resolve));
+        if (originalServiceRole === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+        else process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRole;
+    }
+});

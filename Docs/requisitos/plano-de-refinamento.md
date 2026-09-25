@@ -44,4 +44,4 @@ Este plano cruza o feedback semanal do professor, as documentações anteriormen
 
 ## Status de conclusão
 
-O refinamento local de documentação e código foi preparado nesta revisão. O site tem URL pública, mas o projeto ainda não pode ser declarado inteiramente conforme: depende da execução da migração, validação do Supabase remoto, publicação/configuração da API Node.js, arquivo real do jogo, evidências de demonstração e resolução segura dos dados legados.
+O refinamento local de documentação e código foi preparado nesta revisão. O deploy ainda não foi realizado e o projeto não pode ser declarado inteiramente conforme: depende da execução da migração, validação do Supabase remoto, publicação/configuração da API Node.js, arquivo real do jogo, evidências de demonstração e resolução segura dos dados legados.

@@ -16,7 +16,7 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 
 ## Deploy
 
-Esta branch está configurada para publicar site estático e API Node.js no mesmo projeto Vercel. Consulte [`Docs/deploy-vercel.md`](Docs/deploy-vercel.md) para importar a branch, definir build/variáveis e validar o deploy. `API_BASE_URL` fica vazio para as chamadas `/api/...` permanecerem na mesma origem. A chave `SUPABASE_SERVICE_ROLE_KEY` é opcional para iniciar a API e necessária para exclusão de conta.
+`main` está configurada para publicar site estático e API Node.js no mesmo projeto Vercel. Consulte [`Docs/deploy-vercel.md`](Docs/deploy-vercel.md) para importar a branch, definir build/variáveis e validar o deploy. `API_BASE_URL` fica vazio para as chamadas `/api/...` permanecerem na mesma origem. A chave `SUPABASE_SERVICE_ROLE_KEY` é opcional para iniciar a API e necessária para exclusão de conta. O deploy ainda não foi realizado.
 
 ## Configuração
 
@@ -59,4 +59,4 @@ Esta branch está configurada para publicar site estático e API Node.js no mesm
 
 ## Limites desta versão
 
-O banco Supabase precisa receber a migração SQL e ser configurado no painel. A migração bloqueia acesso web às tabelas legadas `Usuario`, `Cartao` e `Administrador`, caso existam, mas preserva os registros atuais sem os apagar. Embora o site tenha URL pública, ainda falta a URL pública da API Node.js e o arquivo do jogo; portanto, a integração no deploy e o download real não estão confirmados. A simulação não representa uma transação financeira.
+O banco Supabase precisa receber a migração SQL e ser configurado no painel. A migração bloqueia acesso web às tabelas legadas `Usuario`, `Cartao` e `Administrador`, caso existam, mas preserva os registros atuais sem os apagar. O deploy da aplicação não foi realizado e o arquivo do jogo ainda não está publicado; portanto, a integração remota e o download real seguem pendentes. A simulação não representa uma transação financeira.

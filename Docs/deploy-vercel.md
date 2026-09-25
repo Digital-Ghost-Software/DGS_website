@@ -6,7 +6,7 @@ A integração Vercel publica o site estático e a API Node.js no mesmo projeto 
 
 ## Antes de publicar
 
-- A branch `codex/rf004-refinement` precisa estar enviada ao GitHub para poder ser selecionada na importação.
+- A branch `main` precisa estar enviada ao GitHub para poder ser selecionada na importação. O repositório remoto ainda precisa receber os commits locais desta preparação.
 - A URL base Supabase é `https://thmtriwgvsgxdinsuxph.supabase.co`. O valor fornecido com `/rest/v1/` é uma rota REST; não use o sufixo em `SUPABASE_URL`. URL e chave publishable/anon já estão em `js/supabase-config.js`; a API Node.js usa esses valores como padrão. As variáveis `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` na Vercel são opcionais, para sobrescrever esses defaults.
 - A publishable key não é senha, mas a chave secreta/`service_role` nunca deve entrar no navegador, Git ou mensagens.
 - O checkout, o histórico e a leitura de perfil usam a chave pública com o JWT do usuário e RLS. A API inicia sem `SUPABASE_SERVICE_ROLE_KEY`; sem ela, apenas a exclusão de conta retorna indisponível. Para habilitar exclusão, um administrador do projeto pode copiar a chave secreta em Supabase → Project Settings → API Keys e cadastrá-la diretamente nas variáveis da Vercel. Ele não precisa enviá-la para você nem para este repositório.
@@ -14,8 +14,8 @@ A integração Vercel publica o site estático e a API Node.js no mesmo projeto 
 
 ## Criar o projeto Vercel
 
-1. No terminal, na raiz do repositório, envie a branch: `git push -u origin codex/rf004-refinement`.
-2. Entre no painel da Vercel, escolha **Add New → Project**, conecte o GitHub se necessário e importe o repositório do projeto. Selecione `codex/rf004-refinement` como Production Branch deste novo projeto. Isso publica esta branch na Vercel; não altera `master`/`main` nem o deploy GitHub Pages.
+1. No terminal, na raiz do repositório, envie a branch: `git push -u origin main`.
+2. Entre no painel da Vercel, escolha **Add New → Project**, conecte o GitHub se necessário e importe o repositório do projeto. Selecione `main` como Production Branch deste novo projeto. O deploy Vercel ainda não foi realizado.
 3. Nas opções do projeto, use a raiz do repositório como Root Directory e o preset **Other**. Defina Build Command como `npm run build` e Output Directory como `dist`; mantenha o comando de instalação padrão (`npm install`). O projeto usa Node.js `22.x` conforme `package.json`.
 4. Em **Settings → Environment Variables**, configure para Production e Preview somente `SUPABASE_SERVICE_ROLE_KEY` caso queira habilitar exclusão de conta. Cadastre como variável sensível; nunca no repositório. Sem acesso a ela, o site e as demais rotas ainda podem usar os valores públicos já presentes em `js/supabase-config.js`, mas a exclusão de conta permanecerá indisponível.
 5. Não configure `ALLOWED_ORIGINS` nem `API_BASE_URL` no deploy integrado. A UI chama `/api/...` na própria origem.

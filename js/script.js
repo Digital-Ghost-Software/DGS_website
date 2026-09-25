@@ -1,5 +1,15 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, API_BASE_URL } from "./supabase-config.js";
+import { formatBRL, getPurchasePlan, purchasePlans } from "./purchase-rules.js";
+import {
+    getEmailConfirmationRedirect,
+    getLoginDestination,
+    validateLogin,
+    validatePasswordChange,
+    validateProfileName,
+    validateRegistration
+} from "./auth-rules.js";
+import { getDownloadLinkState } from "./download-rules.js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const GAME_DOWNLOAD_URL = ""; // Configure when a release file is available.
@@ -7,7 +17,7 @@ const $ = (selector) => document.querySelector(selector);
 
 async function apiRequest(path, { method = "GET", body } = {}) {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.access_token) throw new Error("Authentication required");
+    if (sessionError || !session?.access_token) throw new Error("Entre na sua conta para continuar.");
     const response = await fetch(`${API_BASE_URL.replace(/\/+$/, "")}${path}`, {
         method,
         headers: {
@@ -17,7 +27,11 @@ async function apiRequest(path, { method = "GET", body } = {}) {
         ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || "API request failed");
+    if (!response.ok) {
+        const error = new Error(result.error || "Não foi possível concluir a solicitação.");
+        error.code = result.code;
+        throw error;
+    }
     return result;
 }
 
@@ -82,16 +96,14 @@ signupForm?.addEventListener("submit", async (event) => {
     const confirmation = $("#confirmar").value;
     const message = $("#mensagemCadastro");
 
-    if (!name || !email || !password || !confirmation) {
-        showMessage(message, "Preencha todos os campos.", "error");
-        return;
-    }
-    if (password !== confirmation) {
-        showMessage(message, "As senhas não coincidem.", "error");
-        return;
-    }
-    if (password.length < 8) {
-        showMessage(message, "A senha deve ter pelo menos 8 caracteres.", "error");
+    const registrationError = validateRegistration({ name, email, password, confirmation });
+    if (registrationError) {
+        const messages = {
+            required: "Preencha todos os campos.",
+            "password-mismatch": "As senhas não coincidem.",
+            "password-too-short": "A senha deve ter pelo menos 8 caracteres."
+        };
+        showMessage(message, messages[registrationError], "error");
         return;
     }
 
@@ -102,13 +114,13 @@ signupForm?.addEventListener("submit", async (event) => {
         password,
         options: {
             data: { full_name: name },
-            emailRedirectTo: new URL("login.html", window.location.href).href
+            emailRedirectTo: getEmailConfirmationRedirect(window.location.href)
         }
     });
     setBusy(signupForm, false);
 
     if (error) {
-        showMessage(message, error.message, "error");
+        showMessage(message, "Não foi possível criar a conta. Confira os dados e tente novamente.", "error");
         return;
     }
     const confirmationRequired = !data.session;
@@ -130,7 +142,7 @@ loginForm?.addEventListener("submit", async (event) => {
     const email = $("#loginEmail").value.trim();
     const password = $("#loginSenha").value;
     const message = $("#mensagemLogin");
-    if (!email || !password) {
+    if (validateLogin({ email, password })) {
         showMessage(message, "Digite e-mail e senha para entrar.", "error");
         return;
     }
@@ -147,9 +159,7 @@ loginForm?.addEventListener("submit", async (event) => {
     const query = new URLSearchParams(window.location.search);
     const returnToPurchase = query.get("return") === "purchase";
     const edition = query.get("edition");
-    const destination = returnToPurchase && purchasePlans[edition]
-        ? `download.html?edition=${encodeURIComponent(edition)}`
-        : "perfil.html";
+    const destination = getLoginDestination(returnToPurchase ? "purchase" : null, edition);
     window.setTimeout(() => { window.location.href = destination; }, 500);
 });
 
@@ -192,7 +202,7 @@ nameForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const name = $("#novoNome").value.trim();
     const message = $("#mensagemNome");
-    if (name.length < 2) {
+    if (validateProfileName(name)) {
         showMessage(message, "Informe pelo menos dois caracteres.", "error");
         return;
     }
@@ -202,7 +212,7 @@ nameForm?.addEventListener("submit", async (event) => {
         result = await supabase.auth.updateUser({ data: { full_name: name } });
     } catch (error) {
         setBusy(nameForm, false);
-        showMessage(message, error.message, "error");
+        showMessage(message, "Não foi possível atualizar o nome. Tente novamente.", "error");
         return;
     }
     setBusy(nameForm, false);
@@ -262,7 +272,7 @@ deleteForm?.addEventListener("submit", async (event) => {
         console.error("Falha na exclusão da conta.", deleteError);
         showMessage(
             message,
-            deleteError.message.includes("not configured")
+            deleteError.code === "ACCOUNT_DELETION_UNAVAILABLE"
                 ? "A exclusão de conta ainda não foi habilitada pelo responsável do Supabase."
                 : "Não foi possível excluir. Confira se a API Node.js está publicada e configurada.",
             "error"
@@ -289,12 +299,13 @@ passwordForm?.addEventListener("submit", async (event) => {
     const password = $("#novaSenha").value;
     const confirmation = $("#confirmarNovaSenha").value;
     const message = $("#mensagemSenha");
-    if (password.length < 8) {
-        showMessage(message, "A senha deve ter pelo menos 8 caracteres.", "error");
-        return;
-    }
-    if (password !== confirmation) {
-        showMessage(message, "As senhas não coincidem.", "error");
+    const passwordError = validatePasswordChange(password, confirmation);
+    if (passwordError) {
+        const messages = {
+            "password-too-short": "A senha deve ter pelo menos 8 caracteres.",
+            "password-mismatch": "As senhas não coincidem."
+        };
+        showMessage(message, messages[passwordError], "error");
         return;
     }
     setBusy(passwordForm, true, "Atualizando…");
@@ -306,15 +317,6 @@ passwordForm?.addEventListener("submit", async (event) => {
 
 const purchaseList = $("#purchaseList");
 const purchaseMessage = $("#purchaseMessage");
-const purchasePlans = {
-    standard: { label: "Standard", value: 20 },
-    plus: { label: "Plus", value: 40 }
-};
-
-function formatBRL(value) {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
 function renderOrder(order, target, downloadHistory = []) {
     const article = document.createElement("article");
     article.className = "purchase-receipt";
@@ -335,10 +337,11 @@ function renderOrder(order, target, downloadHistory = []) {
 
     const download = document.createElement("a");
     download.className = "btn-primary";
-    if (GAME_DOWNLOAD_URL) {
-        download.href = GAME_DOWNLOAD_URL;
+    const linkState = getDownloadLinkState(GAME_DOWNLOAD_URL);
+    if (linkState.available) {
+        download.href = linkState.href;
         download.setAttribute("download", "");
-        download.textContent = "BAIXAR JOGO";
+        download.textContent = linkState.label;
         download.addEventListener("click", async (event) => {
             event.preventDefault();
             download.setAttribute("aria-disabled", "true");
@@ -350,11 +353,11 @@ function renderOrder(order, target, downloadHistory = []) {
                 download.removeAttribute("aria-disabled");
                 return;
             }
-            window.location.assign(GAME_DOWNLOAD_URL);
+            window.location.assign(linkState.href);
         });
     } else {
-        download.href = "#download-not-ready";
-        download.textContent = "ARQUIVO DO JOGO PENDENTE";
+        download.href = linkState.href;
+        download.textContent = linkState.label;
         download.setAttribute("aria-disabled", "true");
         download.addEventListener("click", (event) => {
             event.preventDefault();
@@ -372,7 +375,7 @@ async function loadPurchaseHistory() {
     try {
         result = await apiRequest("/api/payments");
     } catch (error) {
-        showMessage(purchaseMessage, `${error.message}. Confira a API Node.js e a migração Supabase.`, "error");
+        showMessage(purchaseMessage, `${error.message} Confira a API Node.js e a migração do Supabase.`, "error");
         return;
     }
     if (!result.payments.length) {
@@ -387,11 +390,11 @@ if ($("#purchaseForm")) {
     const editionInput = $("#edition");
     const priceOutput = $("#editionPrice");
     const updatePrice = () => {
-        const plan = purchasePlans[editionInput.value];
+        const plan = getPurchasePlan(editionInput.value);
         priceOutput.textContent = plan ? formatBRL(plan.value) : "Selecione uma versão";
     };
     const requestedEdition = new URLSearchParams(window.location.search).get("edition");
-    if (purchasePlans[requestedEdition]) editionInput.value = requestedEdition;
+    if (getPurchasePlan(requestedEdition)) editionInput.value = requestedEdition;
     editionInput.addEventListener("change", updatePrice);
     updatePrice();
 
@@ -426,7 +429,7 @@ if ($("#purchaseForm")) {
 
         if (orderError) {
             console.error("Falha ao registrar o pedido simulado.", orderError);
-            showMessage(purchaseMessage, `${orderError.message}. Confira a API Node.js e a migração Supabase.`, "error");
+            showMessage(purchaseMessage, `${orderError.message} Confira a API Node.js e a migração do Supabase.`, "error");
             return;
         }
         showMessage(purchaseMessage, `Pedido confirmado: ${formatBRL(Number(order.amount_brl))}.`, "success");

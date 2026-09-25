@@ -3,7 +3,10 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build-static.js",
-    "start": "node server/local.js"
+    "start": "node server/local.js",
+    "test": "node --test",
+    "test:unit": "node --test tests/unit/purchase-rules.test.js tests/unit/auth-rules.test.js tests/unit/download-rules.test.js",
+    "test:integration": "node --test tests/integration/api.test.js"
   },
   "engines": {
     "node": "22.x"
