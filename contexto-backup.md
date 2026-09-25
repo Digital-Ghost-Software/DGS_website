@@ -55,16 +55,16 @@ Continuar no fork local `Digital-Web-Site` o refinamento geral do projeto estuda
 
 ## Ponto atual
 
-O próximo passo depende da situação da migração no Supabase real. A migração local está em `database/ddl/rf-004-simulated-payments.sql`. Os testes existentes usam servidor Supabase simulado e **não comprovam** execução ou integração com o projeto remoto.
+O usuário informou que executou `database/ddl/rf-004-simulated-payments.sql` no Supabase e recebeu `Success. No rows returned.` Isso confirma a execução sem erro reportado; ainda falta conferir as tabelas, RLS, policies, triggers e grants pelas consultas somente leitura solicitadas. Os testes locais usam servidor Supabase simulado e **não comprovam** integração funcional real com o projeto remoto.
 
-Foi perguntado ao usuário se a migração já foi executada e, em caso afirmativo, solicitado o resultado e confirmação das tabelas `simulated_payments` e `game_downloads`. **Aguardar resposta antes de qualquer passo dependente do banco.** Não solicitar credenciais ou chaves secretas.
+Não solicitar credenciais ou chaves secretas. A chave publicável e URL REST foram recebidas na conversa; a URL base é sem `/rest/v1/`. A chave publicável não autoriza execução DDL pela API.
 
 ## Plano de ação restante
 
 Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação após cada etapa:
 
-1. **Resolver o estado da migração**: receber confirmação do usuário sobre execução, resultado e tabelas. Se não foi aplicada, revisar/testar a migração localmente, apresentar a versão e instruções para aplicação manual pelo usuário no SQL Editor. Não aplicar remotamente.
-2. **Validar banco/RLS após confirmação de execução**: com resultados não sensíveis, confirmar tabelas, policies, triggers, grants e comportamento de inserção/leitura; fazer testes em contas de teste se o usuário disponibilizar um meio seguro. Não solicitar senhas/tokens no chat.
+1. **Validar o resultado da migração**: receber outputs das consultas somente leitura para conferir tabelas, RLS, policies, triggers e grants. A execução pelo usuário foi confirmada como `Success. No rows returned.` Não repetir o DDL sem necessidade.
+2. **Testar banco/RLS**: após validar catálogo, fazer testes reais de inserção/leitura e isolamento entre duas contas de teste, se houver um meio seguro. Não solicitar senhas/tokens no chat.
 3. **Revalidar configuração de Auth**: confirmação de e-mail, URLs de retorno e mensagens para usuário, após domínio de deploy ser conhecido. Antes disso, não inventar domínio.
 4. **Preparar/publicar API e site na Vercel**: revisar guia e configuração, obter aprovação específica para publicação; seguir as instruções de deploy. Secret de service role, se necessária para exclusão, deve ser configurada pelo administrador diretamente no ambiente Vercel.
 5. **Executar testes funcionais reais**: cadastro, login, logout, perfil, alteração de nome/senha, exclusão própria quando configurada, pedidos Standard/Plus e histórico.
@@ -74,7 +74,7 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 
 ## Pendências conhecidas / limites
 
-- Migração RF-004 não tem confirmação de execução no Supabase.
+- Execução da migração RF-004 foi confirmada pelo usuário sem erro reportado; validação de catálogo e comportamento ainda pendente.
 - Integração real do banco e RLS ainda não foi demonstrada; testes atuais são locais/mockados.
 - Deploy Vercel ainda não foi feito e não há URL atribuída.
 - A chave service-role não está disponível ao usuário; a exclusão de conta fica indisponível até configuração server-side por administrador.
@@ -88,3 +88,4 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 | 24/09/2026 | Auditoria de idioma da interface | Textos pt-BR; exceções “Download” e “Lorem ipsum” em `index.html`; 23 testes passaram; `git diff --check` passou. | Aprovada com exceção de idioma pelo usuário. |
 | 25/09/2026 | Backup de contexto e política de commits | Atualizado conforme pedido do usuário para registrar commits em português por etapa e recuperar commits anteriores quando seguro. | Autorizado pelo pedido explícito do usuário. |
 | 25/09/2026 | Registro dos passos anteriores no Git | `b596814` (`Conclui refinamento RF-004 com testes automatizados`) agrupa as alterações aprovadas de refinamento, localização, documentação e testes; `f4069dd` (`Registra contexto e regra de commits por etapa`) registra este backup e a política solicitada. Suíte: 23 testes aprovados; build estático e `git diff --check` aprovados. | Commits autorizados explicitamente pelo usuário. |
+| 25/09/2026 | Aplicação da migração RF-004 | Usuário executou `database/ddl/rf-004-simulated-payments.sql`; retorno informado: `Success. No rows returned.` Ainda aguardando consultas de catálogo/RLS/triggers/grants e testes de comportamento. | Execução autorizada e confirmada pelo usuário; validação permanece pendente. |
