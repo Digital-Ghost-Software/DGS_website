@@ -18,13 +18,19 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         email: process.env.SUPABASE_TEST_USER_A_EMAIL,
         password: process.env.SUPABASE_TEST_USER_A_PASSWORD
     });
-    assert.ok(!loginA.error && loginA.data.user?.id, "A conta de teste A não autenticou; confira confirmação de e-mail e configuração local.");
+    assert.ok(
+        !loginA.error && loginA.data.user?.id,
+        `A conta de teste A não autenticou. Confira a configuração local e confirmação de e-mail (HTTP ${loginA.error?.status ?? "indisponível"}; código ${loginA.error?.code ?? "indisponível"}).`
+    );
 
     const loginB = await accountB.auth.signInWithPassword({
         email: process.env.SUPABASE_TEST_USER_B_EMAIL,
         password: process.env.SUPABASE_TEST_USER_B_PASSWORD
     });
-    assert.ok(!loginB.error && loginB.data.user?.id, "A conta de teste B não autenticou; confira confirmação de e-mail e configuração local.");
+    assert.ok(
+        !loginB.error && loginB.data.user?.id,
+        `A conta de teste B não autenticou. Confira a configuração local e confirmação de e-mail (HTTP ${loginB.error?.status ?? "indisponível"}; código ${loginB.error?.code ?? "indisponível"}).`
+    );
     assert.notEqual(loginA.data.user.id, loginB.data.user.id, "As duas contas de teste precisam ser identidades diferentes.");
 
     const fakeTimestamp = "2000-01-01T00:00:00.000Z";
