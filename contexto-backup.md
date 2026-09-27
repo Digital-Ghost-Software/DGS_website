@@ -116,13 +116,13 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - O perfil e o checkout foram adaptados no código ao schema novo e aprovados pelo usuário em 26/09/2026. A configuração ainda aponta para o projeto antigo no cliente (`js/supabase-config.js`); não executar o fluxo do site contra o banco novo antes da etapa de configuração.
 - O schema e o guia foram aprovados em 26/09/2026 e commitados como `Cria schema inicial do novo Supabase`. O projeto foi criado pelo usuário e a migração foi executada e estruturalmente verificada em 26/09/2026.
 - Na ocasião anterior, o usuário pediu excepcionalmente que apenas o registro de progresso fosse salvo sem commit. As etapas aprovadas seguintes seguem a regra normal de commit em português.
-- Preservar alterações preexistentes do usuário: `.env.example` consta como removido (o usuário renomeou para `.env`) e `Docs/requisitos/RF - 01 - Login.md` consta como arquivo não rastreado/desconhecido. Não incluí-los em commits sem autorização.
+- `.env.example` foi removido e a exclusão foi autorizada pelo usuário; o arquivo `.env` local contém configuração privada e nunca deve ser commitado. Preservar `Docs/requisitos/RF - 01 - Login.md`, que continua não rastreado/desconhecido e fora do escopo.
 
 ### Próximo ponto ao retomar
 
 1. Código de configuração aprovado e commitado: frontend carrega URL e chave publicável pelo `/api/config`; servidor local serve site+API na origem única e bloqueia arquivos privados. Ainda não alterar `js/supabase-config.js` com valores e não editar `.env` por conta própria sem o usuário fornecer/configurar os dados do projeto novo.
-2. Próxima ação: o usuário configura `.env` local com URL/chave publicável de `DGS_Web_Site` e duas contas descartáveis confirmadas no Auth, com credenciais somente no `.env`. Não solicitar os valores pelo chat.
-3. Executar o teste real contra o projeto novo depois da confirmação. Ele cria permanentemente 3 pedidos simulados e 1 registro de download nas contas de teste e verifica perfil, preços, formas, nível Plus prevalente, RLS e downloads.
+2. O usuário informou que concluiu a configuração local e abriu o site em `http://localhost:3000/`. Não ler nem revelar os valores do `.env`.
+3. Próxima ação: executar o teste real contra o projeto novo. Ele cria permanentemente 3 pedidos simulados e 1 registro de download nas contas de teste e verifica perfil, preços, formas, nível Plus prevalente, RLS e downloads.
 
 ### Registro da etapa aprovada
 
@@ -133,3 +133,4 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 | 26/09/2026 | Conta Auth e primeiro administrador | Usuário criou a conta no Supabase Auth, inseriu o próprio usuário em `public.admin` e confirmou consulta com total igual a 1. Nenhuma credencial ou dado pessoal registrado. | Resultado confirmado pelo usuário. |
 | 26/09/2026 | Adaptação do perfil e checkout ao schema novo | API consulta/atualiza `profiles`, exibe nível de usuário e aceita forma simulada boleto/crédito/débito/Pix em pedidos e histórico. Teste de integração local cobre validação e isolamento; teste live atualizado. `npm test`: 31 aprovados, 0 falhas, 1 teste remoto ignorado; build e `git diff --check` aprovados. Configuração não foi trocada e integração live no banco novo continua pendente. | Aprovada pelo usuário; commit `Adapta perfil e checkout ao novo schema`. |
 | 26/09/2026 | Configuração pública por ambiente e servidor local integrado | Removida URL/chave hardcoded do frontend; `/api/config` expõe somente URL e chave publicável. `npm start` passa a servir páginas e API na mesma origem e nega `.env`/fontes privados. Testes cobrem configuração, ausência de chave secreta na resposta e arquivos estáticos; `npm test`: 35 aprovados, 0 falhas, 1 teste remoto ignorado; build e `git diff --check` aprovados. Credenciais do novo projeto ainda não configuradas; nenhuma integração live executada. | Aprovada pelo usuário; commit `Configura Supabase por ambiente e serve site local`. |
+| 26/09/2026 | Remoção do exemplo local de ambiente | `.env.example` removido do controle de versão conforme autorização explícita do usuário. O arquivo real `.env` permanece local e não deve ser commitado; o arquivo de requisitos RF-001 preexistente permaneceu fora do commit. | Exclusão autorizada pelo usuário. |
