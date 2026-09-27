@@ -193,6 +193,18 @@ test("local server serves the site and blocks private project files", async () =
     assert.match(page.headers.get("content-type"), /text\/html/);
     assert.match(await page.text(), /Forma de pagamento simulada/);
 
+    const loginPage = await fetch(`${apiBaseUrl}/paginas/login.html`);
+    assert.equal(loginPage.status, 200);
+    const loginHtml = await loginPage.text();
+    assert.match(loginHtml, /class="btn-login active"/);
+    assert.match(loginHtml, /id="logoutButton"[^>]*hidden/);
+
+    const homePage = await fetch(`${apiBaseUrl}/`);
+    assert.equal(homePage.status, 200);
+    const homeHtml = await homePage.text();
+    assert.match(homeHtml, /class="btn-login"/);
+    assert.match(homeHtml, /id="logoutButton"[^>]*hidden/);
+
     const clientScript = await fetch(`${apiBaseUrl}/js/supabase-config.js`);
     assert.equal(clientScript.status, 200);
 

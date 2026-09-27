@@ -29,6 +29,11 @@ export function getPasswordRecoveryRedirect(currentUrl) {
     return new URL("recuperar-senha.html", currentUrl).href;
 }
 
+export function getNavigationState(isAuthenticated) {
+    const authenticated = Boolean(isAuthenticated);
+    return { loginHidden: authenticated, logoutHidden: !authenticated };
+}
+
 export function validateProfileName(name) {
     return name?.trim().length >= 2 ? null : "name-too-short";
 }

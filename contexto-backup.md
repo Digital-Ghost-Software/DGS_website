@@ -159,3 +159,11 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 | Data | Etapa | Alterações/verificações | Aprovação |
 |---|---|---|---|
 | 27/09/2026 | Recuperação de senha em página de dois estados | Implementados solicitação e redefinição na mesma página, retorno explícito do Supabase, link no login, documentação de Redirect URLs e testes unitários/de integração. `npm.cmd test`: 42 aprovados, 0 falhas, 1 teste live ignorado. | Aprovada pelo usuário; commit pendente. |
+
+## Etapa aprovada — navegação conforme sessão autenticada (27/09/2026)
+
+- A navegação agora oculta “Entrar” e mostra “Sair” quando o Supabase retorna uma sessão autenticada. Sem sessão, ou se a verificação falhar, deixa “Entrar” visível e mantém “Sair” oculto.
+- A regra foi extraída para `getNavigationState` e coberta por teste unitário em ambos os estados. Teste de integração confirma que as páginas inicial e de login servem os controles usados pela lógica.
+- Verificação: `npm.cmd test` — 43 aprovados, 0 falhas e 1 teste live do Supabase ignorado; `npm.cmd run build` e `git diff --check` aprovados.
+- Usuário aprovou as alterações. Commit desta etapa: `Oculta entrada quando a sessão está autenticada`.
+- Próximo passo funcional ainda deve ser proposto e aprovado separadamente; não foi iniciado nesta etapa.

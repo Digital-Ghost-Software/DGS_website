@@ -4,6 +4,7 @@ import { formatBRL, getPaymentMethodLabel, getPurchasePlan, paymentMethods, purc
 import {
     getEmailConfirmationRedirect,
     getLoginDestination,
+    getNavigationState,
     getPasswordRecoveryRedirect,
     getProfileLoadAction,
     validateLogin,
@@ -73,12 +74,16 @@ async function getCurrentUser() {
 }
 
 async function updateNavigation() {
+    const loginButton = $(".btn-login");
     const logoutButton = $("#logoutButton");
-    if (!logoutButton) return;
+    if (!loginButton || !logoutButton) return;
     try {
-        logoutButton.hidden = !(await getCurrentUser());
+        const state = getNavigationState(Boolean(await getCurrentUser()));
+        loginButton.hidden = state.loginHidden;
+        logoutButton.hidden = state.logoutHidden;
     } catch (error) {
         console.error("Não foi possível carregar a sessão.", error);
+        loginButton.hidden = false;
         logoutButton.hidden = true;
     }
 }

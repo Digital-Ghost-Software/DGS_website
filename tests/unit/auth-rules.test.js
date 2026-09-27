@@ -3,6 +3,7 @@ import test from "node:test";
 import {
     getEmailConfirmationRedirect,
     getLoginDestination,
+    getNavigationState,
     getPasswordRecoveryRedirect,
     getProfileLoadAction,
     validateLogin,
@@ -50,6 +51,11 @@ test("password recovery returns to the shared two-state recovery page", () => {
         getPasswordRecoveryRedirect("http://localhost:3000/paginas/recuperar-senha.html"),
         "http://localhost:3000/paginas/recuperar-senha.html"
     );
+});
+
+test("navigation shows only the action matching the authentication state", () => {
+    assert.deepEqual(getNavigationState(false), { loginHidden: false, logoutHidden: true });
+    assert.deepEqual(getNavigationState(true), { loginHidden: true, logoutHidden: false });
 });
 
 test("profile name and password updates enforce the documented minimums", () => {
