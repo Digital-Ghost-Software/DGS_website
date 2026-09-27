@@ -11,8 +11,8 @@
 | Tipo | Requisito funcional |
 | Prioridade | Alta — o feedback do professor identifica Gestão de Pagamentos como o próximo requisito. |
 | Complexidade | Média, estimativa inicial de 5 story points; confirmar com a equipe. |
-| Status | Em refinamento; código da simulação e configuração Vercel preparados. A migração Supabase, publicação Vercel e validação de ponta a ponta ainda precisam ser concluídas. |
-| Criação / atualização | 23/09/2026 |
+| Status | Schema e migrações aplicados no Supabase pessoal; testes live de duas contas e histórico de compras passaram. Deploy Vercel, responsividade e evidências formais permanecem pendentes. |
+| Criação / atualização | 23/09/2026 / 27/09/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
 
 ### Metadados do projeto/equipe
@@ -113,10 +113,10 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 
 | ID | Atributo | Requisito | Critério de verificação |
 |---|---|---|---|
-| RNF-01 | Segurança | RLS separa pedidos por `auth.uid()` e o banco calcula valor/estado. | Teste com duas contas e tentativa de forjar preço/usuário/estado. Pendente de execução após aplicar SQL. |
-| RNF-02 | Usabilidade | Estados vazio, seleção, processamento, erro e confirmação são claros e acessíveis. | Conferir mensagens e navegação por teclado; revisão visual ainda pendente. |
+| RNF-01 | Segurança | RLS separa pedidos por `auth.uid()` e o banco calcula valor/estado. | Teste live com duas contas e tentativa de forjar preço/usuário/estado passou após aplicação SQL. |
+| RNF-02 | Usabilidade | Estados vazio, seleção, processamento, erro e confirmação são claros e acessíveis. | Confirmação e histórico foram vistos na interface; navegação por teclado e evidência visual formal ainda pendentes. |
 | RNF-03 | Responsividade | Checkout utilizável em 320 px e desktop 1024 px. | Verificação nessas larguras ainda pendente. |
-| RNF-04 | Integridade | Cada confirmação bem-sucedida gera registro consultável com preço correto. | Conferir recibo e linha persistida no Supabase após aplicar a migração. |
+| RNF-04 | Integridade | Cada confirmação bem-sucedida gera registro consultável com preço correto. | Teste live confirmou valores e recibos; usuário confirmou a lista de últimas compras no site. |
 
 ## 4. Protótipo funcional (50%)
 
@@ -138,7 +138,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 5. **Sucesso:** pedido simulado persistido e recibo exibido.
 6. **Download pendente:** estado de sucesso sem link do jogo ainda publicado.
 
-O código local implementa a interface e o fluxo para estados acima. A integração real depende da execução da migração e de uma sessão Supabase configurada; não há evidência de deploy ou de teste ponta a ponta nesta entrega.
+O schema do projeto Supabase pessoal foi aplicado e a integração foi testada com duas contas. A suíte live validou preço, titularidade, estado, isolamento, forma de pagamento e download autorizado; o usuário validou login, consulta de pedidos e histórico pela interface. Não há evidência de deploy Vercel.
 
 ### Dado persistido
 
@@ -172,14 +172,14 @@ flowchart LR
 
 ### ADR-004-02 — Preço calculado no PostgreSQL
 
-- **Status:** Proposto no script SQL; pendente de execução no projeto Supabase.
+- **Status:** Trigger aplicado e validado pelo teste live, inclusive quando a requisição tenta forjar titular, preço, estado e horário.
 - **Contexto:** valores informados pelo navegador podem ser adulterados.
 - **Decisão:** trigger escolhe R$ 20 ou R$ 40 conforme edição e define o estado simulado.
 - **Alternativas:** confiar no preço enviado pela tela; endpoint próprio de backend.
 
 ### ADR-004-03 — RLS por usuário autenticado
 
-- **Status:** Proposto no script SQL; pendente de validação.
+- **Status:** Políticas aplicadas e teste live de duas contas passou para leitura isolada e download do próprio pedido; tentativa cruzada foi rejeitada.
 - **Contexto:** histórico precisa ser isolado entre contas.
 - **Decisão:** permitir insert/select autenticado e restringir linhas por `auth.uid()`; cliente não recebe update/delete.
 - **Alternativas:** tabela aberta anonimamente; controle só na interface. Ambas insuficientes para isolamento.
@@ -205,12 +205,12 @@ flowchart LR
 
 | Risco | Implementação no protótipo | Teste/evidência necessário |
 |---|---|---|
-| A01 — Broken Access Control: leitura de pedido/download alheio | Políticas RLS limitam pedidos e solicitações de download a `auth.uid()`; trigger exige pedido aprovado do próprio usuário. | Criar duas contas e tentar ler/gravar pedido/download usando ID da outra. Aguardar aplicação da migração; teste não executado. |
-| A04 — Insecure Design / exposição de dados de cartão | Checkout simulado não pede nem persiste PAN, CVV ou nome de titular. | Inspecionar formulário, chamadas de rede e tabela; não inserir cartões reais. Evidência visual ainda pendente. |
-| A05 — Authentication Failures / preço adulterado | Supabase Auth; trigger sobrescreve titular, preço, estado e horário. | Tentar enviar preço/estado/usuário adulterados e confirmar que o banco aplica valores definidos; pendente de execução. |
-| A03 — Injection | Edição limitada por constraint; acesso à tabela via API estruturada do Supabase, sem SQL concatenado no cliente. | Enviar valor de edição fora do conjunto permitido e confirmar rejeição. Teste não executado. |
+| A01 — Broken Access Control: leitura de pedido/download alheio | Políticas RLS limitam pedidos e solicitações a `auth.uid()`; trigger exige pedido aprovado do próprio usuário. | Teste live com duas contas passou: isolamento de histórico e rejeição de download cruzado. |
+| A04 — Insecure Design / exposição de dados de cartão | Checkout simulado não solicita nem persiste PAN, CVV ou nome de titular. | Inspeção do formulário/schema e suíte de testes; não inserir cartões reais. Screenshot formal não anexado. |
+| A05 — Authentication Failures / preço adulterado | Supabase Auth; trigger sobrescreve titular, preço, estado e horário. | Teste live enviou valores adulterados e confirmou os valores calculados no banco. |
+| A03 — Injection | Edição e forma de pagamento são validadas na API e no banco; acesso usa cliente Supabase estruturado. | Teste live rejeitou forma de pagamento inválida; teste unitário/API cobre edição inválida. |
 
-Os controles estão descritos em código/migração, mas a validação em ambiente Supabase, screenshots/logs e demonstração ainda são necessários para alegar aprovação OWASP.
+Os controles acima têm evidência de testes automatizados e integração real. Isso não equivale a auditoria externa ou teste de penetração. Screenshots formais e demonstração responsiva ainda são necessários para a entrega acadêmica completa.
 
 ## 7. Checklist de atendimento e pendências
 
@@ -219,18 +219,18 @@ Os controles estão descritos em código/migração, mas a validação em ambien
 | T1 — Identificação (2%) | Preenchido; estimativa de complexidade deve ser validada pela equipe. |
 | T2 — Descrição e atores (6%) | Objetivo, três atores e CRUD definidos. |
 | T3 — Casos de uso/RNF (15%) | Pré/pós-condições, 12 passos, quatro alternativos, sete regras e quatro RNF. |
-| T4 — Protótipo (50%) | HTML/JS/SQL e configuração Vercel incluídos; SQL ainda precisa ser executado; deploy, integração e arquivo do jogo ainda não foram confirmados. |
+| T4 — Protótipo (50%) | HTML/JS e schema aplicados; integração Supabase e histórico foram testados. Deploy Vercel e arquivo do jogo não foram confirmados. |
 | T5 — Arquitetura/ADR (15%) | Diagrama, fluxo e quatro ADRs descritos. |
-| T6 — OWASP (12%) | Quatro controles e planos de teste descritos; falta executar e anexar evidência. |
+| T6 — OWASP (12%) | RLS, tentativa de forjar preço/titular, método inválido e solicitação cruzada de download foram testados. Anexar evidências formais; revisão não é auditoria externa. |
 
 **Nota:** não foi atribuída pontuação. O critério de protótipo exige execução funcional, deploy e evidência; documentação isolada não prova esses itens.
 
 ## 8. Critérios de aceite
 
-- [ ] A migração SQL é executada no Supabase sem erro.
-- [ ] Duas contas conseguem criar pedido e cada uma só vê seu próprio histórico de pedidos/downloads.
-- [ ] Standard sempre persiste R$ 20,00 e Plus R$ 40,00, mesmo se a requisição adulterar valor.
-- [ ] Nenhum formulário/tabela solicita ou guarda dados de cartão.
+- [x] O schema do projeto Supabase pessoal foi executado; a migração incremental da foto padrão também foi aplicada.
+- [x] Duas contas criaram pedidos e cada conta consultou apenas seu histórico; download cruzado foi rejeitado.
+- [x] Standard persiste R$ 20,00 e Plus R$ 40,00, inclusive com tentativa de adulteração.
+- [x] Formulário e tabela não solicitam nem guardam dados reais de cartão.
 - [ ] Os estados de interface são demonstrados em tela pequena e desktop.
 - [ ] Publicar e validar site/API integrados na Vercel.
 - [ ] Release do jogo é publicada e `GAME_DOWNLOAD_URL` recebe o endereço real antes de prometer download.

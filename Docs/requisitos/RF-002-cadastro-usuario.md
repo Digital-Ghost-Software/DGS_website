@@ -7,11 +7,11 @@
 | ID / título | RF-002 — Cadastrar usuário |
 | Tipo / prioridade | Funcional / Alta |
 | Complexidade | Média, estimativa inicial de 5 story points (confirmar pela equipe). |
-| Status | Código atualizado para Supabase Auth; execução integrada ainda precisa ser validada. |
+| Status | Cadastro e confirmação de e-mail testados no Supabase Auth; perfil e edição de nome também foram validados. Exclusão real, responsividade e deploy permanecem pendentes. |
 | Projeto | Digital Ghost Software — Yokai Tales |
-| Atualização | 23/09/2026 |
+| Atualização | 27/09/2026 |
 
-**Projeto/equipe:** Digital Ghost Software — Yokai Tales; integrantes conforme a relação do documento RF-004. Repositório informado: [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`. Supabase: projeto `thmtriwgvsgxdinsuxph`. Deploy e Swagger não informados.
+**Projeto/equipe:** Digital Ghost Software — Yokai Tales; integrantes conforme a relação do documento RF-004. Repositório informado: [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`. A conexão Supabase é configurada no ambiente local; não registrar chaves nem URLs de ambiente neste relatório. Deploy e Swagger não informados.
 
 **Descrição breve:** permitir criar uma conta com nome, e-mail e senha para usar as áreas autenticadas do site e registrar pedidos do Yokai Tales.
 
@@ -61,11 +61,11 @@ O cadastro identifica usuários que desejam manter uma conta e acompanhar seus p
 
 - Tela: `paginas/cadastro.html`.
 - Código cliente: `js/script.js`; API Node.js: `server/index.js` (leitura de perfil e exclusão autenticada; exclusão requer chave administrativa no servidor).
-- Perfil permite consultar e atualizar nome e senha da própria identidade pelo Supabase Auth.
+- O perfil consulta dados próprios pela API; o nome é atualizado em `profiles` pela API Node.js e a senha pelo Supabase Auth.
 - Exclusão da identidade pede confirmação explícita e senha atual; `server/index.js` valida o token e apaga somente a identidade autenticada. A API precisa ser publicada e configurada com `SUPABASE_SERVICE_ROLE_KEY` como segredo exclusivamente server-side.
 - Estados: vazio, preenchimento, campos inválidos, criação/processamento e sucesso/confirmação pendente.
 - O cadastro usa Supabase Auth e armazena o nome em `user_metadata.full_name`.
-- Esta branch prepara site e API integrados na Vercel; a URL final ainda não foi atribuída. A integração depende das variáveis Supabase, aplicação da migração SQL e screenshots de demonstração.
+- Cadastro pela interface e confirmação de e-mail foram concluídos com conta de teste; o perfil criado e a edição do nome foram validados. O projeto Supabase `DGS_Web_Site` usa o schema novo. Deploy Vercel, demonstração responsiva e evidências formais ainda não foram concluídos.
 
 ## 5. Arquitetura e ADR (15%)
 
@@ -81,7 +81,7 @@ flowchart LR
 ```
 
 #### ADR-001 — Supabase Auth para identidades
-- **Status:** Implementado no código; configuração externa a validar.
+- **Status:** Implementado e testado com cadastro/confirmação de e-mail e login de conta de teste no projeto configurado.
 - **Contexto:** feedback anterior apontou autenticação sem funcionalidade e dados em Local Storage.
 - **Decisão:** criar conta por `supabase.auth.signUp`.
 - **Alternativas:** tabela `Usuario` com senha em texto (fluxo legado, não usado no código atualizado); backend próprio.
@@ -99,13 +99,13 @@ flowchart LR
 - **Alternativas:** confiar apenas em validação cliente; implementar serviço próprio.
 
 #### ADR-004 — Confirmação de e-mail controlada pela configuração Auth
-- **Status:** Dependente da configuração do projeto.
+- **Status:** Foi mantido o padrão de confirmação do Supabase; o usuário confirmou o e-mail da conta de teste e validou o retorno ao login.
 - **Contexto:** o comportamento muda conforme a confirmação de e-mail esteja habilitada.
 - **Decisão:** tratar `data.session` ausente como confirmação pendente e orientar o usuário.
 - **Alternativas:** desativar confirmação globalmente; afirmar cadastro ativo sem conferir sessão.
 
 #### ADR-005 — API Node.js para exclusão de conta
-- **Status:** Código preparado em `server/index.js`; deploy e secrets pendentes.
+- **Status:** Endpoint e testes automatizados estão preparados, mas a exclusão real está indisponível até configurar `SUPABASE_SERVICE_ROLE_KEY` como segredo server-side e publicar a API.
 - **Contexto:** feedback do professor exige Node.js; exclusão administrativa de `auth.users` não pode usar chave service role no navegador.
 - **Decisão:** API Node.js valida o token Supabase do solicitante e exclui somente o `user.id` associado.
 - **Alternativas:** colocar service role no cliente (inseguro); Supabase Edge Function (não atende ao requisito explícito de Node.js); remover apenas dados do frontend.
@@ -114,19 +114,19 @@ flowchart LR
 
 | Risco | Controle | Teste requerido |
 |---|---|---|
-| A07 — Authentication Failures | Serviço de Auth gerencia credenciais e e-mail único. | Tentar duplicidade, senha inválida, confirmação e login; pendente. |
-| A02 — Cryptographic Failures | Código não persiste a senha na tabela própria. | Inspecionar tabelas legadas e requisições; verificar Auth no painel. |
-| A04 — Insecure Design | Verificações de campos, confirmação e tamanho reduzem cadastros malformados. | Testar campos vazios, senha divergente/curta e serviço offline. |
-| A01 — Broken Access Control | API Node.js valida token e limita exclusão ao `user.id` autenticado. | Testar sem token, token inválido e exclusão própria após publicar a API; pendente. |
+| A07 — Authentication Failures | Supabase Auth gerencia credenciais; cadastro, confirmação e recuperação foram validados em conta de teste. | Validações unitárias cobrem campos, divergência e tamanho de senha; duplicidade e senha incorreta não foram demonstradas manualmente. |
+| A02 — Cryptographic Failures | Senha não é gravada na tabela de perfil nem no armazenamento próprio do cliente. | Schema e cliente revisados; Auth confirmado no painel. Tabelas legadas não são usadas para login no site. |
+| A04 — Insecure Design | Formulário valida campos e senhas; Auth controla unicidade e confirmação. | Testes unitários de campos vazios/senhas e cadastro real confirmado. Teste de rede offline pendente. |
+| A01 — Broken Access Control | API Node.js valida token para rotas de perfil; exclusão usa somente a identidade autenticada. | Testes de token ausente/inválido e identidade estão na suíte de integração local. Exclusão real pendente da chave server-side e deploy. |
 
-Screenshots e resultados de testes não foram anexados.
+Cadastro, confirmação, redefinição de senha, login e edição do nome foram confirmados pelo usuário; as evidências estão resumidas em `contexto-backup.md`. Screenshots formais e teste responsivo/teclado não foram anexados.
 
 ## Checklist
 
 - [x] Código usa fluxo `signUp` e valida campos/senhas.
 - [x] Fluxo de confirmação de e-mail é tratado conforme a resposta do Auth.
 - [ ] Publicar a API Node.js com secrets server-side e testar exclusão controlada.
-- [ ] Testar integração com o projeto Supabase da equipe.
+- [x] Testar integração Auth/perfil com o projeto Supabase pessoal e contas descartáveis.
 - [ ] Revisar migração de contas legadas que estavam na tabela `Usuario`; senhas antigas não são migradas automaticamente.
 - [ ] Anexar evidência visual e testes de segurança.
 - [ ] Publicar site e API Node.js integrados na Vercel e disponibilizar conta de demonstração segura.

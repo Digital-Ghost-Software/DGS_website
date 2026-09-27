@@ -226,3 +226,15 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Permanecem pendentes: evidências manuais a 320 px/1024 px e acessibilidade/teclado; deploy Vercel e URLs de retorno de produção; configuração server-side da chave service-role para exclusão de conta; publicação de artefatos reais Standard/Plus e URL/checksum do download. O teste Supabase live é ignorado na suíte padrão e deve ser executado separadamente quando se desejar nova validação remota.
 - A alteração preexistente em `paginas/download.html` foi deixada intacta e fora do commit desta auditoria.
 - Próximo passo sugerido: atualizar a documentação RF com as evidências desta auditoria, mantendo explícitas as pendências externas.
+
+## Documentação RF-001 a RF-004 — 27/09/2026 (aprovada)
+
+- Sincronizados os relatórios específicos `RF-001-login.md`, `RF-002-cadastro-usuario.md`, `RF-003-gerenciar-download-do-jogo.md` e `RF-004-gestao-pagamentos.md` com os testes e validações já confirmados pelo usuário.
+- Os relatórios distinguem comportamentos testados de pendências reais: deploy Vercel, revisão responsiva/acessibilidade, segredo server-side para exclusão de conta e publicação do jogo permanecem abertos conforme o requisito.
+- Corrigida a descrição do perfil no RF-002: nome é atualizado pela API Node.js em `profiles`; a senha é gerenciada pelo Supabase Auth.
+- Criado teste unitário para impedir que os relatórios voltem a indicar como pendentes verificações já concluídas ou afirmem deploy/release inexistentes.
+- Modelo genérico `Docs/requisitos/RF - 01 - Login.md` foi deixado intacto. A alteração preexistente do usuário em `paginas/download.html` permanece preservada e fora do escopo.
+- Testes executados: `npm.cmd run test:unit` (34 aprovados), `npm.cmd run test:integration` (18 aprovados), `npm.cmd test` (52 aprovados e 1 teste live do Supabase ignorado por padrão), `npm.cmd run build` e `git diff --check` aprovados.
+- O usuário aprovou o conjunto e autorizou incluir no commit sua alteração em `paginas/download.html`, que remove o termo “SIMULADO” do rótulo do botão de confirmação.
+- Commit desta etapa: `Atualiza evidencias dos requisitos RF-001 a RF-004` (inclui relatórios, teste, backup e a alteração de interface aprovada pelo usuário).
+- Próximo passo sugerido: demonstrar responsividade e acessibilidade dos fluxos RF-001 a RF-004 em 320 px e desktop 1024 px, documentando cada observação e corrigindo falhas encontradas. Apresentar o resultado e aguardar aprovação antes de iniciar preparação/publicação na Vercel.

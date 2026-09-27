@@ -7,10 +7,10 @@
 | ID / título | RF-003 — Gerenciar download do jogo |
 | Tipo / prioridade | Funcional / Alta |
 | Complexidade | Média, estimativa inicial de 5 story points (confirmar com a equipe). |
-| Status | Página de compra e histórico preparados; esta branch configura site/API integrados na Vercel; URL final e artefato/release ainda não foram informados. |
-| Atualização | 23/09/2026 |
+| Status | Histórico e isolamento de pedidos/downloads foram testados; a interface foi verificada com pedido de teste. Deploy Vercel e arquivo/URL de release ainda não existem. |
+| Atualização | 27/09/2026 |
 
-**Projeto/equipe:** Digital Ghost Software — Yokai Tales; integrantes conforme a relação do documento RF-004. Repositório informado: [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`. Supabase: projeto `thmtriwgvsgxdinsuxph`. Deploy e release do jogo não informados.
+**Projeto/equipe:** Digital Ghost Software — Yokai Tales; integrantes conforme a relação do documento RF-004. Repositório informado: [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`. A conexão Supabase é configurada no ambiente local; não registrar chaves nem URLs de ambiente neste relatório. Deploy e release do jogo não informados.
 
 **Descrição breve:** após identificar o usuário e confirmar o direito de acesso previsto pelo projeto, apresentar o arquivo de Yokai Tales para download e manter estado/histórico de pedidos relacionado.
 
@@ -53,7 +53,7 @@ O download permite que o jogador obtenha a versão publicada do jogo. O feedback
 |---|---|---|
 | RNF-01 | Download acessível por HTTPS e com nome/tamanho/versão conhecidos. | Ainda não verificável: release não publicada. |
 | RNF-02 | Interface responsiva e estado pendente compreensível. | Revisão visual em 320/1024 px pendente. |
-| RNF-03 | Acesso a pedidos isolado pelo Supabase RLS. | Teste com duas contas pendente. |
+| RNF-03 | Acesso a pedidos isolado pelo Supabase RLS. | Teste live com duas contas confirmou a leitura somente de pedidos próprios e rejeição de download de pedido alheio. |
 
 ## 4. Protótipo funcional (50%)
 
@@ -61,7 +61,7 @@ O download permite que o jogador obtenha a versão publicada do jogo. O feedback
 - Código: `js/script.js`.
 - API Node.js: `GET /api/payments`, `POST /api/payments`, `POST /api/downloads` em `server/index.js`.
 - Dados: pedidos em `simulated_payments` e histórico de solicitações em `game_downloads`, ambos descritos em `database/ddl/rf-004-simulated-payments.sql`.
-- O histórico aparece após executar a migração Supabase. O código informa claramente que o arquivo de download está pendente até ser publicada uma URL real.
+- A migração do projeto Supabase foi executada. Teste live com duas contas validou a API/RLS; o usuário confirmou no site a lista de compras e o indicador `Solicitações de download: 1` em um pedido. Sem release configurada, a interface informa que o arquivo ainda não foi publicado e não cria nova solicitação.
 - Feedback: protótipo de RF-003 recebeu 90% segundo o registro semanal, com sugestão de histórico/controle. A documentação não havia sido entregue. O estado atual do protótipo precisa de nova demonstração; o número histórico não certifica esta revisão.
 
 ## 5. Arquitetura e ADR (15%)
@@ -76,7 +76,7 @@ flowchart LR
 ```
 
 #### ADR-001 — Histórico de pedidos no Supabase
-- **Status:** Preparado por migração; execução pendente.
+- **Status:** Migração executada e histórico de compras/download validado no Supabase e na interface.
 - **Contexto:** professor sugeriu histórico/controle de downloads.
 - **Decisão:** usar registro de pedido como histórico inicial, consultado por titular.
 - **Alternativas:** não registrar downloads; manter apenas dados locais.
@@ -88,7 +88,7 @@ flowchart LR
 - **Alternativas:** hospedar binário no GitHub Releases ou storage controlado; equipe ainda não decidiu.
 
 #### ADR-003 — Autorização via sessão e RLS
-- **Status:** Código/migração preparados; validar depois da aplicação.
+- **Status:** Teste live de duas contas validou isolamento de pedidos e rejeição de solicitação cruzada de download.
 - **Contexto:** histórico não pode vazar entre usuários.
 - **Decisão:** sessão Supabase e políticas por `auth.uid()`.
 - **Alternativas:** e-mail fornecido livremente pelo navegador; leitura aberta.
@@ -103,11 +103,11 @@ flowchart LR
 
 | Risco | Controle | Teste requerido |
 |---|---|---|
-| A01 — Broken Access Control | Consulta de pedidos com `auth.uid()` e RLS. | Tentar obter pedido de outra conta; pendente. |
+| A01 — Broken Access Control | Consulta de pedidos com token Supabase e RLS por `auth.uid()`; trigger valida pedido de download do titular. | Teste live com duas contas passou: cada conta viu seus pedidos; download cruzado foi rejeitado. |
 | A05 — Security Misconfiguration | Não há link externo genérico codificado para o arquivo; URL permanece vazia até configurar release. | Inspecionar build e testar CTA sem configuração. |
 | A08 — Software/Data Integrity | A release deve vir de endereço controlado e versionado pela equipe. | Verificar checksum/versão da release quando houver; pendente. |
 
-Não há arquivo, checksum ou evidência de teste de release ainda.
+Não há arquivo, checksum ou evidência de release publicada. A mensagem de indisponibilidade foi confirmada na interface; o download real depende de artefato e URL controlada.
 
 ## Checklist
 
@@ -115,7 +115,7 @@ Não há arquivo, checksum ou evidência de teste de release ainda.
 - [x] Requisito de histórico previsto via pedidos Supabase.
 - [ ] Publicar arquivo Standard e Plus ou explicar empacotamento dos conteúdos.
 - [ ] Publicar e validar a aplicação integrada na Vercel; definir release permanente e política de versão.
-- [ ] Executar teste da migração/RLS e registrar evidências.
+- [x] Executar testes de integração Supabase para isolamento RLS e solicitações de download; o teste live passou.
 - [ ] Fazer demonstração pública com usuário de teste.
 
 **Fontes:** feedback semanal do professor, decisões informadas pelo usuário, requisitos v15 e arquivos locais. O feedback menciona download funcional na apresentação anterior, mas o arquivo/URL atual não foi fornecido.

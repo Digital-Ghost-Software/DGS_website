@@ -7,11 +7,11 @@
 | ID / título | RF-001 — Autenticar usuário |
 | Tipo / prioridade | Funcional / Alta |
 | Complexidade | Média, estimativa inicial de 5 story points (confirmar pela equipe). |
-| Status | Fluxo migrado para Supabase Auth no código; teste com projeto configurado ainda pendente. |
+| Status | Supabase Auth validado com contas de teste; login, logout, perfil e recuperação de senha foram confirmados. Deploy de produção e evidências visuais responsivas continuam pendentes. |
 | Projeto | Digital Ghost Software — Yokai Tales |
-| Atualização | 23/09/2026 |
+| Atualização | 27/09/2026 |
 
-**Projeto/equipe:** Digital Ghost Software — Yokai Tales; integrantes conforme a relação do documento RF-004. Repositório informado: [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`. Supabase: projeto `thmtriwgvsgxdinsuxph`. Deploy e Swagger não informados.
+**Projeto/equipe:** Digital Ghost Software — Yokai Tales; integrantes conforme a relação do documento RF-004. Repositório informado: [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`. A conexão Supabase é configurada no ambiente local; não registrar chaves nem URLs de ambiente neste relatório. Deploy e Swagger não informados.
 
 **Descrição breve:** permitir que um usuário com conta confirmada autentique-se por e-mail e senha e acesse o próprio perfil e as funções vinculadas à conta.
 
@@ -54,7 +54,7 @@ A autenticação identifica o usuário antes de apresentar dados pessoais, hist�
 |---|---|---|
 | RNF-01 | Senha nunca deve ser persistida no `localStorage` ou tabela de perfil. | Inspecionar chamadas/tabelas e armazenamento do navegador. |
 | RNF-02 | Formulário responsivo e mensagens acessíveis por leitor de tela. | Validar em 320/1024 px e `aria-live`. |
-| RNF-03 | Login, falha e logout devem concluir sem estado falso de sessão. | Demonstrar com conta de teste; execução pendente. |
+| RNF-03 | Login, falha e logout devem concluir sem estado falso de sessão. | Login e logout foram verificados com conta de teste; ausência de sessão redireciona o perfil ao login. Login inválido ainda não foi demonstrado manualmente. |
 
 ## 4. Protótipo funcional (50%)
 
@@ -62,7 +62,7 @@ A autenticação identifica o usuário antes de apresentar dados pessoais, hist�
 - Implementação: `js/script.js` e `js/supabase-config.js`.
 - Estados codificados: inicial, incompleto, processando, erro e sucesso/redirecionamento.
 - Persistência de sessão: SDK Supabase Auth.
-- Esta branch prepara o deploy integrado na Vercel; a URL final ainda não foi atribuída. O login usa diretamente o Supabase Auth; perfil e operações de compra/download dependem da API Node.js publicada. Não foi fornecida conta de demonstração/teste.
+- Fluxo verificado no projeto Supabase de teste: cadastro e confirmação de e-mail foram registrados no histórico do projeto; login, logout, perfil e recuperação de senha foram confirmados pelo usuário. O site e a API ainda não foram publicados na Vercel; domínio de produção e conta pública de demonstração não foram definidos.
 
 ## 5. Arquitetura e ADR (15%)
 
@@ -76,7 +76,7 @@ flowchart LR
 ```
 
 #### ADR-001 — Supabase Auth
-- **Status:** Implementado no cliente; validar configuração do projeto.
+- **Status:** Implementado e validado com contas de teste no projeto Supabase configurado localmente.
 - **Contexto:** credenciais não devem ser comparadas no navegador.
 - **Decisão:** autenticação pelo SDK oficial do Supabase.
 - **Alternativas:** tabela própria de senhas em texto; backend próprio. A tabela própria insegura foi removida do fluxo.
@@ -87,11 +87,11 @@ flowchart LR
 - **Decisão:** carregar `script.js` com `type="module"`.
 - **Alternativas:** script clássico com dependências globais; build bundler.
 
-#### ADR-003 — Metadados de perfil no Auth
-- **Status:** Implementado para nome; perfil adicional ainda não modelado.
-- **Contexto:** nome precisa ser exibido depois do login.
-- **Decisão:** gravar nome em `user_metadata.full_name` no cadastro.
-- **Alternativas:** tabela de perfil dedicada (futura expansão); antiga tabela que misturava credencial e perfil.
+#### ADR-003 — Perfil separado das credenciais Auth
+- **Status:** Perfil `public.profiles` implementado com RLS e gatilho de criação; edição do nome validada pelo usuário.
+- **Contexto:** nome, foto e nível adquirido pertencem ao perfil; credenciais ficam sob gestão do Supabase Auth.
+- **Decisão:** o cadastro envia `full_name` como metadado e o gatilho cria `profiles.user_name`; `user_foto` tem imagem padrão e `user_level` é atualizado por compras simuladas.
+- **Alternativas:** armazenar senha junto aos dados do perfil; reutilizar a tabela legada `Usuario` para autenticação.
 
 #### ADR-004 — Sessão mantida pelo SDK
 - **Status:** Implementado pelo SDK.
@@ -103,17 +103,17 @@ flowchart LR
 
 | Risco | Controle no código | Teste requerido |
 |---|---|---|
-| A07 — Authentication Failures | Supabase Auth; senha não selecionada da tabela pelo cliente. | Login válido/inválido, confirmação e logout; pendente. |
-| A01 — Broken Access Control | Perfil obtém o usuário com `auth.getUser()` e redireciona sessão ausente. | Abrir perfil sem sessão e verificar redirect; testar isolamento de duas contas. |
-| A02 — Cryptographic Failures | Senha entregue ao serviço de Auth, sem armazenamento próprio pela aplicação. | Conferir ausência de senha em `Usuario`, `localStorage` e chamadas da aplicação; depende da configuração Supabase. |
+| A07 — Authentication Failures | Supabase Auth valida credenciais e mantém a sessão; mensagens do cliente não revelam erros brutos. | Login e logout reais, cadastro e confirmação de e-mail e recuperação de senha foram validados. Tentativa com senha incorreta não foi demonstrada manualmente. |
+| A01 — Broken Access Control | API autentica o bearer token e consulta o perfil vinculado ao usuário; RLS separa linhas por `auth.uid()`. | Perfil sem sessão redireciona ao login; integração real de duas contas validou isolamento de dados. |
+| A02 — Cryptographic Failures | A aplicação não consulta nem armazena senha na tabela de perfil ou no `localStorage`; Auth gerencia credenciais. | Revisão do cliente/schema e teste real de redefinição concluídos; a tabela legada permanece fora do fluxo de autenticação web. |
 
-Não há screenshots/logs de testes anexados nesta versão.
+As confirmações manuais e testes foram registrados em `contexto-backup.md`. Não há pacote de screenshots/relatório de evidências anexado a este documento; a revisão responsiva e de teclado permanece pendente.
 
 ## Checklist
 
 - [x] Código de login usa Supabase Auth; não consulta `senha_usuario`.
 - [x] Há estados de processamento e mensagens de falha/sucesso.
-- [ ] Validar cadastro/login/logout no projeto Supabase real.
+- [x] Validar cadastro e confirmação de e-mail, login/logout, sessão de perfil e recuperação de senha no projeto Supabase real com contas de teste.
 - [ ] Demonstrar a 320 px/1024 px e anexar evidência.
 - [ ] Publicar site e API integrados na Vercel e disponibilizar conta de teste apropriada.
 - [ ] Executar e documentar testes de segurança.

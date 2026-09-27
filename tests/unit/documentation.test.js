@@ -19,3 +19,30 @@ test("README instructions match the current Supabase project and local setup", a
         await access(target);
     }
 });
+
+test("RF-001 to RF-004 reports distinguish verified behavior from remaining deployment work", async () => {
+    const [rf001, rf002, rf003, rf004] = await Promise.all([
+        readFile("Docs/requisitos/RF-001-login.md", "utf8"),
+        readFile("Docs/requisitos/RF-002-cadastro-usuario.md", "utf8"),
+        readFile("Docs/requisitos/RF-003-gerenciar-download-do-jogo.md", "utf8"),
+        readFile("Docs/requisitos/RF-004-gestao-pagamentos.md", "utf8")
+    ]);
+
+    assert.match(rf001, /Supabase Auth validado com contas de teste/);
+    assert.match(rf001, /recuperação de senha foram confirmados/);
+    assert.match(rf001, /Deploy de produção.*pendentes/);
+    assert.doesNotMatch(rf001, /teste com projeto configurado ainda pendente/);
+
+    assert.match(rf002, /Cadastro e confirmação de e-mail testados/);
+    assert.match(rf002, /exclusão real.*responsividade e deploy permanecem pendentes/i);
+    assert.doesNotMatch(rf002, /execução integrada ainda precisa ser validada/);
+
+    assert.match(rf003, /Teste live com duas contas confirmou/);
+    assert.match(rf003, /arquivo\/URL de release ainda não existem/);
+    assert.doesNotMatch(rf003, /Teste com duas contas pendente/);
+
+    assert.match(rf004, /testes live de duas contas e histórico de compras passaram/);
+    assert.match(rf004, /Deploy Vercel.*permanecem pendentes/);
+    assert.match(rf004, /\[x\] Standard persiste R\$ 20,00 e Plus R\$ 40,00/);
+    assert.doesNotMatch(rf004, /Pendente de execução após aplicar SQL/);
+});
