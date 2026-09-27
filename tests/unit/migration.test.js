@@ -5,6 +5,8 @@ import test from "node:test";
 
 const sqlPath = path.join(process.cwd(), "database", "ddl", "rf-004-simulated-payments.sql");
 const sql = (await readFile(sqlPath, "utf8")).toLowerCase();
+const freshSchemaPath = path.join(process.cwd(), "database", "ddl", "new-project-schema.sql");
+const freshSchema = (await readFile(freshSchemaPath, "utf8")).toLowerCase();
 
 test("RF-004 migration defines payment and download records with database constraints", () => {
     assert.match(sql, /create table if not exists public\.simulated_payments/);
@@ -13,6 +15,35 @@ test("RF-004 migration defines payment and download records with database constr
     assert.match(sql, /status = 'simulated_approved'/);
     assert.match(sql, /create table if not exists public\.game_downloads/);
     assert.match(sql, /payment_id uuid not null references public\.simulated_payments/);
+});
+
+test("novo schema cria somente as tabelas novas com perfil associado ao Supabase Auth", () => {
+    assert.match(freshSchema, /create table if not exists public\.profiles/);
+    assert.match(freshSchema, /user_id uuid primary key references auth\.users\s*\(id\) on delete cascade/);
+    assert.match(freshSchema, /user_name text not null/);
+    assert.match(freshSchema, /user_foto text/);
+    assert.match(freshSchema, /user_level text check \(user_level in \('standard', 'plus'\)\)/);
+    assert.match(freshSchema, /create table if not exists public\.admin/);
+    assert.match(freshSchema, /create table if not exists public\.simulated_payments/);
+    assert.match(freshSchema, /payment_method text not null check \(payment_method in \('boleto', 'credito', 'debito', 'pix'\)\)/);
+    assert.match(freshSchema, /create table if not exists public\.game_downloads/);
+    for (const legacyTable of ["usuario", "cartao", "administrador"]) {
+        assert.doesNotMatch(freshSchema, new RegExp(`create\\s+table[^;]*public\\.${legacyTable}\\b`));
+    }
+});
+
+test("novo schema protege nível, pedidos, downloads e administração com triggers, grants e RLS", () => {
+    assert.match(freshSchema, /after insert on auth\.users[\s\S]*execute function private\.create_profile_for_auth_user/);
+    assert.match(freshSchema, /grant update \(user_name, user_foto\) on table public\.profiles to authenticated/);
+    assert.doesNotMatch(freshSchema, /grant update \([^)]*user_level[^)]*\) to authenticated/);
+    assert.match(freshSchema, /grant select on table public\.admin to service_role/);
+    assert.doesNotMatch(freshSchema, /grant\s+(?:select|insert|update|delete|all)[^;]*public\.admin[^;]*to authenticated/);
+    assert.match(freshSchema, /new\.user_id := \(select auth\.uid\(\)\)/);
+    assert.match(freshSchema, /where id = new\.payment_id[\s\S]*user_id = \(select auth\.uid\(\)\)/);
+    assert.match(freshSchema, /user_level = case[\s\S]*user_level = 'plus' or new\.edition = 'plus' then 'plus'/);
+    assert.match(freshSchema, /alter table public\.profiles enable row level security/);
+    assert.match(freshSchema, /alter table public\.simulated_payments enable row level security/);
+    assert.match(freshSchema, /alter table public\.game_downloads enable row level security/);
 });
 
 test("RF-004 migration derives payment and download ownership and values from the authenticated user", () => {

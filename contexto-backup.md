@@ -95,3 +95,34 @@ Seguir um item por vez, adaptando o escopo ao estado atual e pedindo aprovação
 | 25/09/2026 | Harness para integração Supabase real | Criado teste opt-in para preços/titularidade, RLS entre duas contas e download próprio/alheio; credenciais apenas locais; dados simulados criados pelo teste permanecem no banco. | Alterações aprovadas pelo usuário. |
 | 25/09/2026 | Teste real RF-004 com Supabase Auth | Duas contas Auth de teste autenticaram; teste remoto aprovou preços, titularidade, isolamento entre contas e validação de downloads. Criados dois pedidos simulados e um download. `npm test`: 27 aprovados, 1 ignorado; `git diff --check` aprovado. Diagnósticos de autenticação passaram a mostrar apenas status HTTP e código. | Resultado e alteração de diagnóstico aprovados pelo usuário. |
 | 25/09/2026 | Testes reais de perfil e logout | Teste remoto verificou `GET /api/profile` com token (200, identidade correta), sem token (401), logout das duas contas e sessões encerradas; as verificações RF-004 permaneceram aprovadas. Mais dois pedidos simulados e um download foram criados. `npm test`: 27 aprovados, 1 remoto ignorado; `git diff --check` aprovado. | Resultados e alteração do teste aprovados pelo usuário. |
+
+## Retomada — 26/09/2026 (etapa aprovada)
+
+O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail será mantido no Supabase Auth e retornado pela API; `user_level` começa nulo, muda para `standard` ou `plus` conforme a compra, e `plus` prevalece. Também confirmou que será o único administrador, criando eventuais outros pelo painel.
+
+### Preparado nesta etapa
+
+- Criado `database/ddl/new-project-schema.sql`, separado da migração já aplicada no Supabase antigo. Define `profiles` vinculado a `auth.users`, tabela `admin` sem escrita pelo cliente, `simulated_payments` com forma de pagamento (`boleto`, `credito`, `debito`, `pix`) e `game_downloads`; políticas RLS, triggers de perfil/pedido/download e preços de R$ 20/40.
+- Criado `Docs/banco-supabase-proprio.md` com instruções para criar um projeto Supabase novo, aplicar o SQL pelo SQL Editor, criar a conta do usuário e conceder a ela o registro administrativo, e conferir estrutura/RLS.
+- Adicionados testes estáticos da migração nova em `tests/unit/migration.test.js`.
+- Verificação local: `npm.cmd test` — 29 passaram, 0 falharam, 1 teste de Supabase real ignorado; `npm.cmd run build` passou; `git diff --check` passou.
+
+### Estado externo e limites
+
+- Nenhum projeto remoto foi criado; nenhum SQL foi executado no Supabase novo.
+- `.env` não foi alterado nesta etapa.
+- O site ainda não é compatível com o novo schema: a criação de pedido ainda não envia `payment_method` e o formato esperado do perfil precisa ser adaptado. Não apontar o site para o banco novo antes de uma etapa de adaptação e testes.
+- A etapa foi apresentada para revisão e aprovada pelo usuário em 26/09/2026. O usuário autorizou seguir para a criação do projeto novo com o guia; isso não significa que o banco remoto já foi criado nem autoriza execução remota de SQL sem confirmação do usuário.
+- Na ocasião anterior, o usuário pediu excepcionalmente que apenas o registro de progresso fosse salvo sem commit. Com a aprovação desta etapa, os arquivos da etapa foram commitados separadamente.
+- Preservar alterações preexistentes do usuário: `.env.example` consta como removido (o usuário renomeou para `.env`) e `Docs/requisitos/RF - 01 - Login.md` consta como arquivo não rastreado/desconhecido. Não incluí-los em commits sem autorização.
+
+### Próximo ponto ao retomar
+
+1. Orientar o usuário, seguindo o guia, a criar o novo projeto. O schema e as instruções já foram aprovados e commitados. Não alterar o Supabase antigo.
+2. Depois que o usuário informar que criou o projeto e aplicar/aprovar a etapa do SQL, executar verificações estruturais e então planejar a adaptação da aplicação ao schema novo, com aprovação passo a passo e testes unitários/integração.
+
+### Registro da etapa aprovada
+
+| Data | Etapa | Alterações/verificações | Aprovação |
+|---|---|---|---|
+| 26/09/2026 | Schema inicial do Supabase novo | Criado `database/ddl/new-project-schema.sql`, guia `Docs/banco-supabase-proprio.md` e testes estáticos da migração. `npm test`: 29 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados. Nenhum banco remoto foi criado ou alterado. | Aprovada pelo usuário. Commit `Cria schema inicial do novo Supabase`. |
