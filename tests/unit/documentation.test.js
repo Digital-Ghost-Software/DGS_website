@@ -46,3 +46,13 @@ test("RF-001 to RF-004 reports distinguish verified behavior from remaining depl
     assert.match(rf004, /\[x\] Standard persiste R\$ 20,00 e Plus R\$ 40,00/);
     assert.doesNotMatch(rf004, /Pendente de execução após aplicar SQL/);
 });
+
+test("Vercel guide targets the published fork and documents remaining setup", async () => {
+    const guide = await readFile("Docs/deploy-vercel.md", "utf8");
+
+    assert.match(guide, /Digital-Ghost-Software\/DGS_website/);
+    assert.match(guide, /A branch `main` já foi enviada/);
+    assert.match(guide, /O deploy ainda não foi realizado/);
+    assert.match(guide, /SUPABASE_URL.*SUPABASE_PUBLISHABLE_KEY/);
+    assert.match(guide, /rotacionada no painel do projeto Supabase correspondente/i);
+});

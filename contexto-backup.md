@@ -254,3 +254,18 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Não foram recebidas capturas para anexar. A navegação completa por teclado e teste com leitor de tela seguem pendentes; o indicador visual `:focus-visible` foi implementado e commitado em `e1f6705`.
 - Testes desta etapa: `npm.cmd test` — 53 aprovados, 0 falhas e 1 teste live do Supabase ignorado por padrão; `npm.cmd run build` e `git diff --check` passaram.
 - Próximo passo sugerido: avaliar navegação por teclado e leitor de tela em um fluxo RF por vez, começando pelo login/cadastro, com apresentação das alterações e aprovação antes de prosseguir.
+
+## Prioridade alterada — deploy e validação final (27/09/2026)
+
+- O usuário definiu que publicação na Vercel (passo 3) e validação pós-deploy (passo 7) são prioridades; refinamentos visuais são secundários.
+- O `origin` local passou a apontar para `https://github.com/Digital-Ghost-Software/DGS_website.git`; `upstream` permanece no repositório original.
+
+## Limpeza de segredo e publicação da main (27/09/2026)
+
+- O primeiro push foi bloqueado pelo GitHub Push Protection por uma chave Supabase classificada como secreta em um commit legado de `js/script.js`.
+- Com autorização explícita do usuário, a chave foi substituída por um marcador no commit histórico e os commits descendentes da `main` foram reescritos preservando os merges. A árvore atual foi comparada com a versão aprovada anterior e permaneceu idêntica; o commit sinalizado não é mais ancestral da `main` e o padrão da chave não aparece em nenhum commit alcançável pela branch.
+- O push normal (sem force) foi aceito em `origin/main` no repositório `Digital-Ghost-Software/DGS_website`. O trabalho local acompanha `origin/main`; o projeto Vercel ainda não foi criado/importado.
+- Depois da reescrita e atualização do guia, `npm.cmd test` passou com 54 aprovados, 0 falhas e 1 teste live do Supabase ignorado; `npm.cmd run build` e `git diff --check` passaram. Foi adicionado teste unitário para garantir que o guia aponte ao novo remoto e represente o estado atual do deploy.
+- **Ação de segurança pendente:** revogar/rotacionar no painel Supabase a chave secreta do projeto legado correspondente ao código histórico. A remoção do Git não invalida credenciais que já possam ter sido copiadas ou publicadas em outro remoto. Não enviar nenhuma chave pelo chat; o `.env` local não foi lido nem alterado.
+- Os hashes registrados em seções anteriores deste backup são anteriores à limpeza e podem ter mudado. Os conteúdos e a árvore final da `main` foram preservados; consultar `git log` para os hashes atuais.
+- Próximo passo prioritário: importar o repositório publicado na Vercel, configurar somente variáveis do projeto `DGS_Web_Site` diretamente no painel, publicar e registrar o domínio. Depois ajustar URLs Auth e executar a validação final publicada (passo 7). Rotação da chave e ação no painel Vercel dependem do usuário.
