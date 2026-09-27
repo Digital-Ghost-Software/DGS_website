@@ -32,6 +32,8 @@ async function apiRequest(path, { method = "GET", body } = {}) {
     if (!response.ok) {
         const error = new Error(result.error || "Não foi possível concluir a solicitação.");
         error.code = result.code;
+        error.tokenDiagnostic = result.tokenDiagnostic;
+        error.authStatus = result.authStatus;
         error.status = response.status;
         throw error;
     }
@@ -173,7 +175,7 @@ if (profileCard) {
         try {
             profile = await apiRequest("/api/profile");
         } catch (error) {
-            console.error(`Falha ao carregar o perfil. HTTP ${error.status ?? "indisponível"}; código ${error.code ?? "indisponível"}.`);
+            console.error(`Falha ao carregar o perfil. HTTP ${error.status ?? "indisponível"}; código ${error.code ?? "indisponível"}; diagnóstico do token ${error.tokenDiagnostic ?? "indisponível"}; HTTP Auth ${error.authStatus ?? "indisponível"}.`);
             if (getProfileLoadAction(error.status) === "login") {
                 window.location.replace("login.html");
                 return;

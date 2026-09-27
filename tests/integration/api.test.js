@@ -209,7 +209,84 @@ test("profile rejects missing and invalid bearer tokens", async () => {
         headers: { Authorization: "Bearer invalid-test-token" }
     });
     assert.equal(invalid.status, 401);
-    assert.equal((await invalid.json()).code, "invalid_session");
+    const invalidBody = await invalid.json();
+    assert.equal(invalidBody.code, "token_format_invalid");
+    assert.equal(invalidBody.authStatus, 401);
+});
+
+test("profile identifies a rejected token from a different project without exposing its contents", async () => {
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const token = `${encode({ alg: "none", typ: "JWT" })}.${encode({
+        iss: "https://other-project.supabase.co/auth/v1",
+        exp: Math.floor(Date.now() / 1000) + 3600
+    })}.test-signature`;
+    const response = await fetch(`${apiBaseUrl}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.equal(response.status, 401);
+    assert.deepEqual(await response.json(), {
+        error: "Sessão inválida. Entre novamente.",
+        code: "session_project_mismatch",
+        authStatus: 401,
+        tokenDiagnostic: "session_project_mismatch"
+    });
+});
+
+test("profile identifies an expired rejected session", async () => {
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const expectedIssuer = `${new URL(process.env.SUPABASE_URL).origin}/auth/v1`;
+    const token = `${encode({ alg: "none", typ: "JWT" })}.${encode({
+        iss: expectedIssuer,
+        exp: Math.floor(Date.now() / 1000) - 60
+    })}.test-signature`;
+    const response = await fetch(`${apiBaseUrl}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.equal(response.status, 401);
+    assert.deepEqual(await response.json(), {
+        error: "Sessão inválida. Entre novamente.",
+        code: "session_expired",
+        authStatus: 401,
+        tokenDiagnostic: "session_expired"
+    });
+});
+
+test("profile identifies rejected tokens whose issuer and expiry match the configured project", async () => {
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const expectedIssuer = `${new URL(process.env.SUPABASE_URL).origin}/auth/v1`;
+    const token = `${encode({ alg: "none", typ: "JWT" })}.${encode({
+        iss: expectedIssuer,
+        exp: Math.floor(Date.now() / 1000) + 3600
+    })}.test-signature`;
+    const response = await fetch(`${apiBaseUrl}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).code, "token_claims_match_but_rejected");
+});
+
+test("profile reports safe token claims when the auth provider returns a transport-style error", async () => {
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const token = `${encode({ alg: "none", typ: "JWT" })}.${encode({
+        iss: `${new URL(process.env.SUPABASE_URL).origin}/auth/v1`,
+        exp: Math.floor(Date.now() / 1000) + 3600
+    })}.signature`;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (resource, options) => {
+        if (String(resource).includes("/auth/v1/user")) throw new TypeError("fetch failed");
+        return originalFetch(resource, options);
+    };
+    try {
+        const response = await originalFetch(`${apiBaseUrl}/api/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const body = await response.json();
+        assert.equal(body.code, "auth_provider_error");
+        assert.equal(body.authStatus, 0);
+        assert.equal(body.tokenDiagnostic, "token_claims_match_but_rejected");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("profile returns only the authenticated Supabase identity", async () => {

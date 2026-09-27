@@ -66,15 +66,39 @@ function createUserClient(token) {
     });
 }
 
+function getRejectedTokenCode(token) {
+    try {
+        const parts = token.split(".");
+        if (parts.length !== 3) return "token_format_invalid";
+        const claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+        const expectedIssuer = `${new URL(projectUrl).origin}/auth/v1`;
+        if (typeof claims.iss !== "string" || !Number.isFinite(claims.exp)) return "token_claims_incomplete";
+        if (typeof claims.iss === "string" && claims.iss !== expectedIssuer) return "session_project_mismatch";
+        if (Number.isFinite(claims.exp) && claims.exp * 1000 <= Date.now()) return "session_expired";
+        return "token_claims_match_but_rejected";
+    } catch {
+        return "token_claims_invalid";
+    }
+}
+
 async function authenticate(request) {
     const token = request.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
-    if (!token) return { error: "Autenticação necessária.", status: 401, code: "missing_bearer_token" };
+    if (!token) return { error: "Autenticação necessária.", status: 401, code: "missing_bearer_token", upstreamStatus: null };
     const { data: { user }, error } = await authClient.auth.getUser(token);
     if (error || !user) {
-        const code = typeof error?.code === "string" && /^[a-z0-9_-]{1,64}$/i.test(error.code)
-            ? error.code
-            : "invalid_session";
-        return { error: "Sessão inválida. Entre novamente.", status: 401, code };
+        const tokenDiagnostic = getRejectedTokenCode(token);
+        const code = error?.status === 401
+            ? tokenDiagnostic
+            : typeof error?.code === "string" && /^[a-z0-9_-]{1,64}$/i.test(error.code)
+                ? error.code
+                : "auth_provider_error";
+        return {
+            error: "Sessão inválida. Entre novamente.",
+            status: 401,
+            code,
+            tokenDiagnostic,
+            upstreamStatus: Number.isInteger(error?.status) ? error.status : null
+        };
     }
     return { user, client: createUserClient(token) };
 }
@@ -122,7 +146,12 @@ export async function handler(request, response) {
     try {
         if (path === "/api/profile" && request.method === "GET") {
             const auth = await authenticate(request);
-            if (auth.error) return sendJson(response, auth.status, { error: auth.error, code: auth.code }, origin);
+            if (auth.error) return sendJson(response, auth.status, {
+                error: auth.error,
+                code: auth.code,
+                authStatus: auth.upstreamStatus,
+                tokenDiagnostic: auth.tokenDiagnostic
+            }, origin);
             const { data: profile, error } = await auth.client
                 .from("profiles")
                 .select("user_name, user_foto, user_level")
