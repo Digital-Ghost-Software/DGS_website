@@ -213,4 +213,6 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Usuário confirmou que saiu da sessão e entrou com a nova senha com sucesso. O ciclo real de solicitação, recebimento do e-mail, abertura direta do formulário, redefinição e login foi validado ponta a ponta. Nenhuma senha, link ou token foi registrado.
 - Usuário validou a edição do nome pelo perfil: salvamento confirmado e valor atualizado exibido. O valor escolhido não foi copiado para o backup.
 - Usuário confirmou que a página `paginas/download.html`, acessada por “Pedidos e compras”, exibe a lista de últimas compras.
-- Ainda falta confirmar o indicador de solicitações de download exibido junto aos pedidos. Próximo passo: verificar se algum pedido mostra a contagem/horário de solicitações, sem criar nova compra ou download.
+- Usuário confirmou que um pedido exibe `Solicitações de download: 1` com data/hora. Histórico de compra e vínculo de solicitação de download foram validados visualmente.
+- A tentativa pelo botão sem release exibiu a mensagem de que o arquivo não foi publicado; o ramo sem URL não registra outra solicitação. Download do jogo permanece pendente da publicação de um arquivo/release real.
+- Próxima etapa planejada: auditoria de regressão e segurança dos requisitos RF-001 a RF-004 antes da preparação de deploy.
