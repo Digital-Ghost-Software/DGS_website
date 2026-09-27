@@ -212,4 +212,5 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Usuário confirmou que salvou a nova senha com sucesso pelo formulário de redefinição. Nenhuma senha, link ou token foi registrado.
 - Usuário confirmou que saiu da sessão e entrou com a nova senha com sucesso. O ciclo real de solicitação, recebimento do e-mail, abertura direta do formulário, redefinição e login foi validado ponta a ponta. Nenhuma senha, link ou token foi registrado.
 - Usuário validou a edição do nome pelo perfil: salvamento confirmado e valor atualizado exibido. O valor escolhido não foi copiado para o backup.
-- Próximo passo funcional: validar o histórico de pedidos e downloads no perfil, incluindo os registros de teste já criados pelas integrações autorizadas.
+- Usuário confirmou que a página `paginas/download.html`, acessada por “Pedidos e compras”, exibe a lista de últimas compras.
+- Ainda falta confirmar o indicador de solicitações de download exibido junto aos pedidos. Próximo passo: verificar se algum pedido mostra a contagem/horário de solicitações, sem criar nova compra ou download.
