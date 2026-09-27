@@ -110,7 +110,8 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 ### Estado externo e limites
 
 - O usuário criou o projeto Supabase `DGS_Web_Site` e executou nele `database/ddl/new-project-schema.sql`.
-- O usuário confirmou que as consultas estruturais retornaram como esperado: existem `profiles`, `admin`, `simulated_payments` e `game_downloads`, todas com RLS ativo; contagem de policies: 2, 0, 2 e 2, respectivamente. Nenhum dado de produção foi inserido nesta etapa.
+- O usuário confirmou que as consultas estruturais retornaram como esperado: existem `profiles`, `admin`, `simulated_payments` e `game_downloads`, todas com RLS ativo; contagem de policies: 2, 0, 2 e 2, respectivamente.
+- O usuário criou sua conta no Auth de `DGS_Web_Site`, adicionou-a à tabela `admin` e confirmou `total_administradores = 1`. O e-mail e demais dados da conta não foram registrados aqui.
 - `.env` não foi alterado nesta etapa.
 - O site ainda não é compatível com o novo schema: a criação de pedido ainda não envia `payment_method` e o formato esperado do perfil precisa ser adaptado. Não apontar o site para o banco novo antes de uma etapa de adaptação e testes.
 - O schema e o guia foram aprovados em 26/09/2026 e commitados como `Cria schema inicial do novo Supabase`. O projeto foi criado pelo usuário e a migração foi executada e estruturalmente verificada em 26/09/2026.
@@ -119,8 +120,8 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 
 ### Próximo ponto ao retomar
 
-1. Próxima etapa: criar a conta pessoal do usuário em **Authentication → Users** no projeto `DGS_Web_Site` e inseri-la na tabela `admin` pelo SQL Editor, conforme o guia. Confirmar o resultado antes de avançar.
-2. Depois, configurar credenciais locais do projeto novo (sem compartilhá-las pelo chat) e adaptar/testar a aplicação para `profiles` e `payment_method`. Não apontar o site ao banco novo antes de essa adaptação ser aprovada.
+1. Próxima etapa: adaptar aplicação, API e testes para o schema novo (`profiles`, nível de usuário e `payment_method`) sem ainda trocar a configuração local do projeto. Apresentar as mudanças e aguardar aprovação.
+2. Após aprovação da adaptação, o usuário configura URL/chave publicável do novo projeto somente no `.env` local (sem compartilhá-las no chat); então executar testes de integração reais contra o Supabase novo.
 3. Validar autenticação, criação automática de perfil, nível de compra, formas de pagamento e isolamento RLS com testes de integração no projeto novo.
 
 ### Registro da etapa aprovada
@@ -129,3 +130,4 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 |---|---|---|---|
 | 26/09/2026 | Schema inicial do Supabase novo | Criado `database/ddl/new-project-schema.sql`, guia `Docs/banco-supabase-proprio.md` e testes estáticos da migração. `npm test`: 29 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados. Commit `Cria schema inicial do novo Supabase`. | Aprovada pelo usuário. |
 | 26/09/2026 | Criação e verificação estrutural do novo banco | Usuário criou `DGS_Web_Site`, aplicou o schema aprovado e confirmou quatro tabelas com RLS ativo e policies nos totais esperados (2/0/2/2). Banco antigo não foi alterado. | Aplicação e consulta de verificação confirmadas pelo usuário. |
+| 26/09/2026 | Conta Auth e primeiro administrador | Usuário criou a conta no Supabase Auth, inseriu o próprio usuário em `public.admin` e confirmou consulta com total igual a 1. Nenhuma credencial ou dado pessoal registrado. | Resultado confirmado pelo usuário. |
