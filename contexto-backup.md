@@ -176,3 +176,11 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 
 - Em 27/09/2026, o usuário confirmou que, autenticado na página de perfil em `http://localhost:3000/paginas/perfil.html`, a navegação está funcionando. Isso conclui a verificação visual da etapa de ocultar “Entrar”.
 - Próximo passo: validar ponta a ponta o link de recuperação no novo projeto Supabase. O usuário confirmou que já adicionou `http://localhost:3000/paginas/recuperar-senha.html` em Authentication → URL Configuration → Redirect URLs. Solicitar que ele teste o envio do link, o retorno à página no estado de nova senha e o login com a senha atualizada; não registrar e-mail, senha ou token.
+
+## Etapa aprovada — correção das instruções do README (27/09/2026)
+
+- README atualizado para o projeto `DGS_Web_Site`: aponta para `new-project-schema.sql`, descreve `.env` local carregado pelo Node 22, instalação/testes, uso de `npm start`, configuração Auth e fluxo de recuperação; remove referências incorretas a `.env.example` e ao schema legado.
+- Criado teste unitário que valida os passos atuais de configuração e os links locais do README; incluído no script `test:unit`.
+- Verificações: 27 unitários e 18 de integração aprovados; suíte completa com 45 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados.
+- Aprovado pelo usuário. Commit desta etapa será `Atualiza instrucoes do README para o Supabase atual`.
+- Próxima solicitação em andamento: definir `imagens/user-img-default.jpg` como foto padrão dos perfis. Preservar a exclusão ainda não commitada de `imagens/626457731d0ab3dc14118c6c4f348661.jpg` e não alterar nem incluir qualquer imagem do usuário até concluir a análise da feature.

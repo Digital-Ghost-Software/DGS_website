@@ -6,13 +6,14 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 
 - Páginas de apresentação, cadastro, login, perfil e compra/download.
 - Cadastro e autenticação com Supabase Auth.
+- Recuperação de senha por e-mail em uma página com estados de solicitação e redefinição.
 - Pedidos simulados das edições Standard (R$ 20,00) e Plus (R$ 40,00).
 - Registro/histórico de pedidos e solicitações de download no Supabase, limitados ao usuário autenticado por RLS.
 - Troca de senha pela sessão autenticada.
 
 ## API Node.js
 
-`server/index.js` verifica o bearer token do Supabase Auth. Rotas: `GET /api/profile`, `GET/POST /api/payments`, `POST /api/downloads` e `POST /api/account/delete`. Consultas de perfil/pedido/download usam o JWT do usuário e mantêm as políticas RLS; a atualização do nome usa Supabase Auth no cliente. `server/local.js` inicia o servidor HTTP local; a chave administrativa é opcional e só é usada para exclusão da identidade autenticada.
+`server/index.js` verifica o bearer token do Supabase Auth. Rotas públicas: `GET /api/config` e `GET /api/health`. Rotas autenticadas: `GET/PATCH /api/profile`, `GET/POST /api/payments`, `POST /api/downloads` e `POST /api/account/delete`. Consultas de perfil/pedido/download usam o JWT do usuário e mantêm as políticas RLS; cadastro, login, recuperação e atualização de senha usam Supabase Auth no cliente. `server/local.js` inicia o servidor HTTP local; a chave administrativa é opcional e só é usada para exclusão da identidade autenticada.
 
 ## Deploy
 
@@ -20,13 +21,13 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 
 ## Configuração
 
-1. Configure o projeto Supabase indicado em `js/supabase-config.js` e mantenha no cliente somente a chave publicável/anon. Nunca coloque uma `service_role` key no repositório.
-2. No painel do Supabase, execute [`database/ddl/rf-004-simulated-payments.sql`](database/ddl/rf-004-simulated-payments.sql) no SQL Editor. O script cria a tabela de pedidos, política RLS e cálculo autoritativo dos valores.
-3. Habilite a autenticação por e-mail no Supabase. Para cadastro sem confirmação, ajuste a confirmação de e-mail no painel; caso ela permaneça habilitada, o usuário deve confirmar o e-mail antes do login.
-4. Execute `npm install` com Node.js 22.x e copie `.env.example` para `.env`. URL e chave publishable do Supabase já são lidas de `js/supabase-config.js`; use variáveis de ambiente apenas para sobrescrevê-las. `SUPABASE_SERVICE_ROLE_KEY` só é necessária para exclusão de conta e fica exclusivamente no servidor.
-5. Inicie a API Node.js com `npm start`. Ela valida o token do usuário; exclusão de conta exige `SUPABASE_SERVICE_ROLE_KEY` no servidor e só permite excluir a própria conta.
-6. Sirva a pasta do site por um servidor HTTP estático. Os módulos JavaScript e chamadas Supabase não devem ser executados abrindo páginas como `file://`.
-7. Um arquivo público do jogo ainda não foi disponibilizado. Quando houver uma URL estável de release, configure `GAME_DOWNLOAD_URL` em `js/script.js`; até lá o pedido é registrado, mas o botão de download informa que o arquivo está pendente.
+1. Use o projeto Supabase `DGS_Web_Site` já criado. Para criar uma instalação nova, aplique [`database/ddl/new-project-schema.sql`](database/ddl/new-project-schema.sql) no SQL Editor; não use a migração RF-004 do banco legado neste schema.
+2. Na raiz do projeto, crie um `.env` local (o arquivo é ignorado pelo Git) com `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`. Use a URL base do projeto, sem `/rest/v1/`, e a chave publicável/anon. O servidor Node 22 carrega o arquivo local e `/api/config` entrega ao navegador somente esses valores públicos. Nunca coloque senha do banco, chave `service_role` ou chave secreta no frontend, repositório ou chat.
+3. Instale dependências com Node.js 22.x usando `npm ci`. Execute `npm test` para a suíte completa ou `npm run test:unit` e `npm run test:integration` separadamente.
+4. Habilite autenticação por e-mail no Supabase e defina confirmação de e-mail conforme a política do projeto. Em Authentication → URL Configuration, inclua `http://localhost:3000/paginas/login.html` e `http://localhost:3000/paginas/recuperar-senha.html` em Redirect URLs. A recuperação por e-mail usa a segunda rota para retornar ao estado de nova senha.
+5. Inicie o site e API integrados com `npm start` e acesse `http://localhost:3000/`. Não abra as páginas como `file://` nem use outro servidor estático sem configurar também a API.
+6. `SUPABASE_SERVICE_ROLE_KEY` só é necessária para excluir uma conta; se usada, deve permanecer exclusivamente no servidor. Sem ela, essa operação retorna indisponível.
+7. Um arquivo público do jogo ainda não foi disponibilizado. Quando houver uma URL estável de release, configure `GAME_DOWNLOAD_URL` no ambiente do servidor; até lá o pedido pode ser registrado, mas o botão de download informa que o arquivo está pendente.
 
 ## Estrutura
 
@@ -44,7 +45,6 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 ├── api/[...path].js       # Adaptador da API para Vercel Functions
 ├── scripts/build-static.js # Gera os arquivos estáticos da Vercel em dist/
 ├── vercel.json            # Build e diretório estático Vercel
-├── .env.example           # Modelo das variáveis server-side
 └── index.html
 ```
 
