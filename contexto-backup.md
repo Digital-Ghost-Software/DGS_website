@@ -193,4 +193,12 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Criado teste unitário que valida os passos atuais de configuração e os links locais do README; incluído no script `test:unit`.
 - Verificações: 27 unitários e 18 de integração aprovados; suíte completa com 45 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados.
 - Aprovado pelo usuário. Commit desta etapa será `Atualiza instrucoes do README para o Supabase atual`.
-- Próxima solicitação em andamento: definir `imagens/user-img-default.jpg` como foto padrão dos perfis. Preservar a exclusão ainda não commitada de `imagens/626457731d0ab3dc14118c6c4f348661.jpg` e não alterar nem incluir qualquer imagem do usuário até concluir a análise da feature.
+- A solicitação da foto padrão descrita acima foi concluída e incluída no commit `9f7f2bc`, junto com as alterações locais autorizadas pelo usuário.
+
+## Atualização aprovada — migração da foto padrão no Supabase (27/09/2026)
+
+- Usuário executou `database/ddl/default-profile-photo.sql` no SQL Editor do projeto `DGS_Web_Site` e confirmou sucesso.
+- Regressão local: `npm.cmd test` — 50 aprovados, 0 falhas e 1 teste real do Supabase ignorado; `npm.cmd run build` passou; `git diff --check` passou.
+- O teste live `npm.cmd run test:integration:supabase` passou com acesso de rede e confirmou login das duas contas de teste, perfil com `user_foto = /imagens/user-img-default.jpg`, preços, isolamento RLS e validação de download. A tentativa inicial sem rede retornou HTTP 0; a repetição autorizada com acesso de rede passou.
+- O teste live criou três pedidos simulados (dois para a conta A e um para B) e um registro de download da conta A; a solicitação de download da conta B para o pedido da A foi rejeitada. São dados de teste nas contas descartáveis já autorizadas.
+- Próximo passo: usuário recarrega `http://localhost:3000/paginas/perfil.html` e confirma visualmente a foto padrão no perfil. O fluxo de recuperação por e-mail permanece pendente de validação quando o limite de envio do Supabase permitir.
