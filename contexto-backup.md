@@ -238,3 +238,11 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - O usuário aprovou o conjunto e autorizou incluir no commit sua alteração em `paginas/download.html`, que remove o termo “SIMULADO” do rótulo do botão de confirmação.
 - Commit desta etapa: `Atualiza evidencias dos requisitos RF-001 a RF-004` (inclui relatórios, teste, backup e a alteração de interface aprovada pelo usuário).
 - Próximo passo sugerido: demonstrar responsividade e acessibilidade dos fluxos RF-001 a RF-004 em 320 px e desktop 1024 px, documentando cada observação e corrigindo falhas encontradas. Apresentar o resultado e aguardar aprovação antes de iniciar preparação/publicação na Vercel.
+
+## Etapa aprovada — indicador de foco para teclado (27/09/2026)
+
+- Adicionado indicador `:focus-visible` com contorno de alto contraste para links, botões, campos e controles com `tabindex`.
+- Adicionado teste unitário para assegurar que os controles interativos mantenham o indicador de foco visível.
+- O usuário aprovou a alteração. Testes: `npm.cmd test` — 53 aprovados, 0 falhas e 1 teste live do Supabase ignorado por padrão; `npm.cmd run build` e `git diff --check` passaram.
+- Ainda falta verificar visualmente os fluxos em 320 px e 1024 px; esta etapa não comprova responsividade nem cobre toda a acessibilidade por teclado.
+- Próximo passo: validar visualmente as páginas RF-001 a RF-004 nessas larguras e registrar problemas antes de propor correções.
