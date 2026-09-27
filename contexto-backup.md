@@ -211,4 +211,5 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Usuário validou manualmente que o link abre diretamente no formulário de nova senha e aprovou a correção.
 - Usuário confirmou que salvou a nova senha com sucesso pelo formulário de redefinição. Nenhuma senha, link ou token foi registrado.
 - Usuário confirmou que saiu da sessão e entrou com a nova senha com sucesso. O ciclo real de solicitação, recebimento do e-mail, abertura direta do formulário, redefinição e login foi validado ponta a ponta. Nenhuma senha, link ou token foi registrado.
-- Próximo passo funcional: validar a atualização do nome no perfil; em etapa separada, validar o histórico de pedidos/downloads. Não registrar dados pessoais desnecessários.
+- Usuário validou a edição do nome pelo perfil: salvamento confirmado e valor atualizado exibido. O valor escolhido não foi copiado para o backup.
+- Próximo passo funcional: validar o histórico de pedidos e downloads no perfil, incluindo os registros de teste já criados pelas integrações autorizadas.
