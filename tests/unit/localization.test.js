@@ -16,6 +16,7 @@ test("public HTML uses Portuguese labels and has no English placeholder copy", a
     assert.match(html, />Comprar</);
     assert.match(html, />Entrar</);
     assert.match(html, />Sair</);
+    assert.match(await readFile(path.join(root, "paginas", "download.html"), "utf8"), /Cartão de crédito[\s\S]*Cartão de débito[\s\S]*Pix/);
 
     const home = await readFile(path.join(root, "index.html"), "utf8");
     assert.match(home, />\s*Download\s*</);

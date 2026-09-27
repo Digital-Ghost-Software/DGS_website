@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL as defaultProjectUrl, SUPABASE_PUBLISHABLE_KEY as defaultPublicKey } from "../js/supabase-config.js";
+import { paymentMethods } from "../js/purchase-rules.js";
 
 try {
     process.loadEnvFile();
@@ -109,11 +110,37 @@ export async function handler(request, response) {
         if (path === "/api/profile" && request.method === "GET") {
             const auth = await authenticate(request);
             if (auth.error) return sendJson(response, auth.status, { error: auth.error }, origin);
+            const { data: profile, error } = await auth.client
+                .from("profiles")
+                .select("user_name, user_foto, user_level")
+                .eq("user_id", auth.user.id)
+                .single();
+            if (error || !profile) return sendJson(response, 503, { error: "Não foi possível carregar seu perfil." }, origin);
             return sendJson(response, 200, {
                 id: auth.user.id,
                 email: auth.user.email,
-                full_name: auth.user.user_metadata?.full_name || "Usuário"
+                user_name: profile.user_name,
+                user_foto: profile.user_foto,
+                user_level: profile.user_level
             }, origin);
+        }
+
+        if (path === "/api/profile" && request.method === "PATCH") {
+            const auth = await authenticate(request);
+            if (auth.error) return sendJson(response, auth.status, { error: auth.error }, origin);
+            const payload = await readJson(request);
+            const userName = typeof payload.user_name === "string" ? payload.user_name.trim() : "";
+            if (userName.length < 2 || userName.length > 80) {
+                return sendJson(response, 400, { error: "O nome deve ter entre 2 e 80 caracteres." }, origin);
+            }
+            const { data: profile, error } = await auth.client
+                .from("profiles")
+                .update({ user_name: userName })
+                .eq("user_id", auth.user.id)
+                .select("user_name, user_foto, user_level")
+                .single();
+            if (error || !profile) return sendJson(response, 503, { error: "Não foi possível atualizar seu perfil." }, origin);
+            return sendJson(response, 200, profile, origin);
         }
 
         if (path === "/api/payments" && ["GET", "POST"].includes(request.method)) {
@@ -123,7 +150,7 @@ export async function handler(request, response) {
             if (request.method === "GET") {
                 const { data: payments, error } = await auth.client
                     .from("simulated_payments")
-                    .select("id, edition, amount_brl, status, created_at")
+                    .select("id, edition, amount_brl, payment_method, status, created_at")
                     .order("created_at", { ascending: false });
                 if (error) return sendJson(response, 503, { error: "Não foi possível carregar os pedidos." }, origin);
                 const ids = payments.map((payment) => payment.id);
@@ -144,10 +171,13 @@ export async function handler(request, response) {
             if (!["standard", "plus"].includes(payload.edition)) {
                 return sendJson(response, 400, { error: "Edição inválida. Escolha Standard ou Plus." }, origin);
             }
+            if (!Object.hasOwn(paymentMethods, payload.payment_method)) {
+                return sendJson(response, 400, { error: "Escolha uma forma de pagamento válida." }, origin);
+            }
             const { data, error } = await auth.client
                 .from("simulated_payments")
-                .insert({ edition: payload.edition })
-                .select("id, edition, amount_brl, status, created_at")
+                .insert({ edition: payload.edition, payment_method: payload.payment_method })
+                .select("id, edition, amount_brl, payment_method, status, created_at")
                 .single();
             if (error) return sendJson(response, 503, { error: "Não foi possível registrar o pedido simulado." }, origin);
             return sendJson(response, 201, data, origin);

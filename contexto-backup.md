@@ -113,16 +113,16 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - O usuário confirmou que as consultas estruturais retornaram como esperado: existem `profiles`, `admin`, `simulated_payments` e `game_downloads`, todas com RLS ativo; contagem de policies: 2, 0, 2 e 2, respectivamente.
 - O usuário criou sua conta no Auth de `DGS_Web_Site`, adicionou-a à tabela `admin` e confirmou `total_administradores = 1`. O e-mail e demais dados da conta não foram registrados aqui.
 - `.env` não foi alterado nesta etapa.
-- O site ainda não é compatível com o novo schema: a criação de pedido ainda não envia `payment_method` e o formato esperado do perfil precisa ser adaptado. Não apontar o site para o banco novo antes de uma etapa de adaptação e testes.
+- O perfil e o checkout foram adaptados no código ao schema novo e aprovados pelo usuário em 26/09/2026. A configuração ainda aponta para o projeto antigo no cliente (`js/supabase-config.js`); não executar o fluxo do site contra o banco novo antes da etapa de configuração.
 - O schema e o guia foram aprovados em 26/09/2026 e commitados como `Cria schema inicial do novo Supabase`. O projeto foi criado pelo usuário e a migração foi executada e estruturalmente verificada em 26/09/2026.
 - Na ocasião anterior, o usuário pediu excepcionalmente que apenas o registro de progresso fosse salvo sem commit. As etapas aprovadas seguintes seguem a regra normal de commit em português.
 - Preservar alterações preexistentes do usuário: `.env.example` consta como removido (o usuário renomeou para `.env`) e `Docs/requisitos/RF - 01 - Login.md` consta como arquivo não rastreado/desconhecido. Não incluí-los em commits sem autorização.
 
 ### Próximo ponto ao retomar
 
-1. Próxima etapa: adaptar aplicação, API e testes para o schema novo (`profiles`, nível de usuário e `payment_method`) sem ainda trocar a configuração local do projeto. Apresentar as mudanças e aguardar aprovação.
-2. Após aprovação da adaptação, o usuário configura URL/chave publicável do novo projeto somente no `.env` local (sem compartilhá-las no chat); então executar testes de integração reais contra o Supabase novo.
-3. Validar autenticação, criação automática de perfil, nível de compra, formas de pagamento e isolamento RLS com testes de integração no projeto novo.
+1. Próxima etapa: retirar a configuração Supabase hardcoded do frontend e expor URL/chave publicável pelo endpoint Node `/api/config`, alimentado pelas variáveis locais `.env` e pelas variáveis do ambiente de deploy. Adicionar testes unitários/integração local e apresentar para aprovação.
+2. Após a aprovação, configurar `.env` com URL/chave publicável do projeto novo (sem enviá-las pelo chat) e criar uma segunda conta de teste no Supabase Auth para validar isolamento entre duas contas.
+3. Executar teste de integração real no projeto novo: perfil, edição de nome, preços, formas de pagamento, nível Standard/Plus prevalente, RLS e downloads. Pedidos/downloads de teste permanecem no banco.
 
 ### Registro da etapa aprovada
 
@@ -131,3 +131,4 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 | 26/09/2026 | Schema inicial do Supabase novo | Criado `database/ddl/new-project-schema.sql`, guia `Docs/banco-supabase-proprio.md` e testes estáticos da migração. `npm test`: 29 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados. Commit `Cria schema inicial do novo Supabase`. | Aprovada pelo usuário. |
 | 26/09/2026 | Criação e verificação estrutural do novo banco | Usuário criou `DGS_Web_Site`, aplicou o schema aprovado e confirmou quatro tabelas com RLS ativo e policies nos totais esperados (2/0/2/2). Banco antigo não foi alterado. | Aplicação e consulta de verificação confirmadas pelo usuário. |
 | 26/09/2026 | Conta Auth e primeiro administrador | Usuário criou a conta no Supabase Auth, inseriu o próprio usuário em `public.admin` e confirmou consulta com total igual a 1. Nenhuma credencial ou dado pessoal registrado. | Resultado confirmado pelo usuário. |
+| 26/09/2026 | Adaptação do perfil e checkout ao schema novo | API consulta/atualiza `profiles`, exibe nível de usuário e aceita forma simulada boleto/crédito/débito/Pix em pedidos e histórico. Teste de integração local cobre validação e isolamento; teste live atualizado. `npm test`: 31 aprovados, 0 falhas, 1 teste remoto ignorado; build e `git diff --check` aprovados. Configuração não foi trocada e integração live no banco novo continua pendente. | Aprovada pelo usuário; commit `Adapta perfil e checkout ao novo schema`. |

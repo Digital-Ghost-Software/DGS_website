@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, API_BASE_URL } from "./supabase-config.js";
-import { formatBRL, getPurchasePlan, purchasePlans } from "./purchase-rules.js";
+import { formatBRL, getPaymentMethodLabel, getPurchasePlan, paymentMethods, purchasePlans } from "./purchase-rules.js";
 import {
     getEmailConfirmationRedirect,
     getLoginDestination,
@@ -113,7 +113,7 @@ signupForm?.addEventListener("submit", async (event) => {
         email,
         password,
         options: {
-            data: { full_name: name },
+            data: { user_name: name, full_name: name },
             emailRedirectTo: getEmailConfirmationRedirect(window.location.href)
         }
     });
@@ -173,12 +173,13 @@ if (profileCard) {
             window.location.replace("login.html");
             return;
         }
-        const name = profile.full_name || "Usuário";
+        const name = profile.user_name || "Usuário";
         const heading = $(".profile-card h1");
         const spans = $(".profile-info")?.querySelectorAll("div span");
         if (heading) heading.textContent = name.toLocaleUpperCase("pt-BR");
         if (spans?.[0]) spans[0].textContent = name;
         if (spans?.[1]) spans[1].textContent = profile.email || "";
+        if (spans?.[2]) spans[2].textContent = profile.user_level === "plus" ? "Plus" : profile.user_level === "standard" ? "Standard" : "Nenhuma edição adquirida";
     };
     void loadProfile();
 }
@@ -207,23 +208,19 @@ nameForm?.addEventListener("submit", async (event) => {
         return;
     }
     setBusy(nameForm, true, "Salvando…");
-    let result;
+    let updatedProfile;
     try {
-        result = await supabase.auth.updateUser({ data: { full_name: name } });
-    } catch (error) {
+        updatedProfile = await apiRequest("/api/profile", { method: "PATCH", body: { user_name: name } });
+    } catch {
         setBusy(nameForm, false);
         showMessage(message, "Não foi possível atualizar o nome. Tente novamente.", "error");
         return;
     }
     setBusy(nameForm, false);
-    if (result.error) {
-        showMessage(message, "Não foi possível atualizar o nome.", "error");
-        return;
-    }
     const heading = $(".profile-card h1");
     const spans = $(".profile-info")?.querySelectorAll("div span");
     if (heading) heading.textContent = name.toLocaleUpperCase("pt-BR");
-    if (spans?.[0]) spans[0].textContent = result.data.user.user_metadata?.full_name || name;
+    if (spans?.[0]) spans[0].textContent = updatedProfile.user_name;
     showMessage(message, "Nome atualizado.", "success");
 });
 
@@ -323,7 +320,8 @@ function renderOrder(order, target, downloadHistory = []) {
     const title = document.createElement("h3");
     title.textContent = `Yokai Tales — ${purchasePlans[order.edition]?.label || order.edition}`;
     const details = document.createElement("p");
-    details.textContent = `${formatBRL(Number(order.amount_brl))} · Pedido simulado · ${new Date(order.created_at).toLocaleString("pt-BR")}`;
+    const paymentMethod = getPaymentMethodLabel(order.payment_method) || "Forma não informada";
+    details.textContent = `${formatBRL(Number(order.amount_brl))} · ${paymentMethod} · Pedido simulado · ${new Date(order.created_at).toLocaleString("pt-BR")}`;
     const status = document.createElement("p");
     status.className = "purchase-status";
     status.textContent = "Pedido confirmado para fins acadêmicos. Nenhuma cobrança foi realizada.";
@@ -388,6 +386,7 @@ async function loadPurchaseHistory() {
 if ($("#purchaseForm")) {
     const purchaseForm = $("#purchaseForm");
     const editionInput = $("#edition");
+    const paymentMethodInput = $("#paymentMethod");
     const priceOutput = $("#editionPrice");
     const updatePrice = () => {
         const plan = getPurchasePlan(editionInput.value);
@@ -415,13 +414,18 @@ if ($("#purchaseForm")) {
             showMessage(purchaseMessage, "Escolha uma versão válida.", "error");
             return;
         }
+        const paymentMethod = paymentMethodInput.value;
+        if (!Object.hasOwn(paymentMethods, paymentMethod)) {
+            showMessage(purchaseMessage, "Escolha uma forma de pagamento válida.", "error");
+            return;
+        }
 
         setBusy(purchaseForm, true, "Confirmando pedido…");
         showMessage(purchaseMessage, "Registrando a simulação…");
         let order;
         let orderError;
         try {
-            order = await apiRequest("/api/payments", { method: "POST", body: { edition } });
+            order = await apiRequest("/api/payments", { method: "POST", body: { edition, payment_method: paymentMethod } });
         } catch (error) {
             orderError = error;
         }

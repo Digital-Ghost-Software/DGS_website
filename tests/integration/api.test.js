@@ -17,6 +17,7 @@ const mockPayments = [
         user_id: userIds["valid-test-token"],
         edition: "plus",
         amount_brl: 40,
+        payment_method: "pix",
         status: "simulated_approved",
         created_at: "2026-09-24T12:00:00.000Z"
     },
@@ -25,6 +26,7 @@ const mockPayments = [
         user_id: userIds["second-test-token"],
         edition: "standard",
         amount_brl: 20,
+        payment_method: "boleto",
         status: "simulated_approved",
         created_at: "2026-09-24T12:01:00.000Z"
     }
@@ -63,7 +65,7 @@ before(async () => {
     supabaseServer = createServer(async (request, response) => {
         const requestUrl = new URL(request.url, "http://localhost");
         const authorization = request.headers.authorization;
-        capturedRequests.push({ method: request.method, path: requestUrl.pathname, authorization });
+        capturedRequests.push({ method: request.method, path: requestUrl.pathname, search: requestUrl.search, authorization });
 
         if (requestUrl.pathname === "/auth/v1/user") {
             const token = authorization?.replace(/^Bearer\s+/i, "");
@@ -85,6 +87,28 @@ before(async () => {
             return sendJson(response, 200, { id: requestUrl.pathname.split("/").at(-1), deleted: true });
         }
 
+        if (requestUrl.pathname === "/rest/v1/profiles" && request.method === "GET") {
+            const token = authorization?.replace(/^Bearer\s+/i, "");
+            const userId = userIds[token];
+            if (!userId) return sendJson(response, 401, { message: "Invalid token" });
+            return sendJson(response, 200, {
+                user_id: userId,
+                user_name: token === "valid-test-token" ? "Test User" : "Second User",
+                user_foto: null,
+                user_level: token === "valid-test-token" ? "plus" : "standard"
+            });
+        }
+
+        if (requestUrl.pathname === "/rest/v1/profiles" && request.method === "PATCH") {
+            const payload = await readBody(request);
+            capturedRequests.at(-1).body = payload;
+            return sendJson(response, 200, {
+                user_name: payload.user_name,
+                user_foto: null,
+                user_level: "plus"
+            });
+        }
+
         if (requestUrl.pathname === "/rest/v1/simulated_payments" && request.method === "POST") {
             const payload = await readBody(request);
             const row = {
@@ -92,6 +116,7 @@ before(async () => {
                 user_id: userIds[authorization?.replace(/^Bearer\s+/i, "")],
                 edition: payload.edition,
                 amount_brl: payload.edition === "plus" ? 40 : 20,
+                payment_method: payload.payment_method,
                 status: "simulated_approved",
                 created_at: "2026-09-24T12:00:00.000Z"
             };
@@ -169,8 +194,33 @@ test("profile returns only the authenticated Supabase identity", async () => {
     assert.deepEqual(await response.json(), {
         id: "00000000-0000-4000-8000-000000000001",
         email: "tester@example.invalid",
-        full_name: "Test User"
+        user_name: "Test User",
+        user_foto: null,
+        user_level: "plus"
     });
+    const profileRead = capturedRequests.findLast((entry) => entry.path === "/rest/v1/profiles" && entry.method === "GET");
+    assert.equal(profileRead.authorization, "Bearer valid-test-token");
+});
+
+test("profile update validates the name and forwards only the editable field", async () => {
+    const invalid = await fetch(`${apiBaseUrl}/api/profile`, {
+        method: "PATCH",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ user_name: "A", user_level: "plus", user_id: userIds["second-test-token"] })
+    });
+    assert.equal(invalid.status, 400);
+
+    const response = await fetch(`${apiBaseUrl}/api/profile`, {
+        method: "PATCH",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ user_name: "  New Name  ", user_level: null, user_id: userIds["second-test-token"] })
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { user_name: "New Name", user_foto: null, user_level: "plus" });
+    const update = capturedRequests.findLast((entry) => entry.path === "/rest/v1/profiles" && entry.method === "PATCH");
+    assert.deepEqual(update.body, { user_name: "New Name" });
+    assert.equal(update.authorization, "Bearer valid-test-token");
+    assert.match(update.search, /user_id=eq\.00000000-0000-4000-8000-000000000001/);
 });
 
 test("order history and download history stay scoped to the authenticated token", async () => {
@@ -195,7 +245,7 @@ test("order history and download history stay scoped to the authenticated token"
     assert.equal(databaseReads.at(-1).authorization, "Bearer second-test-token");
 });
 
-test("payment creation validates the edition and forwards only that choice", async () => {
+test("payment creation validates edition and method and forwards only those choices", async () => {
     const invalid = await fetch(`${apiBaseUrl}/api/payments`, {
         method: "POST",
         headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
@@ -204,11 +254,20 @@ test("payment creation validates the edition and forwards only that choice", asy
     assert.equal(invalid.status, 400);
     assert.equal((await invalid.json()).error, "Edição inválida. Escolha Standard ou Plus.");
 
+    const invalidMethod = await fetch(`${apiBaseUrl}/api/payments`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ edition: "standard", payment_method: "cash" })
+    });
+    assert.equal(invalidMethod.status, 400);
+    assert.equal((await invalidMethod.json()).error, "Escolha uma forma de pagamento válida.");
+
     const response = await fetch(`${apiBaseUrl}/api/payments`, {
         method: "POST",
         headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
         body: JSON.stringify({
             edition: "plus",
+            payment_method: "debito",
             amount_brl: 0,
             user_id: "attacker-controlled-user",
             status: "paid"
@@ -218,9 +277,10 @@ test("payment creation validates the edition and forwards only that choice", asy
     assert.equal(response.status, 201);
     const order = await response.json();
     assert.equal(order.amount_brl, 40);
+    assert.equal(order.payment_method, "debito");
     assert.equal(order.status, "simulated_approved");
     const insertRequest = capturedRequests.findLast((entry) => entry.path === "/rest/v1/simulated_payments" && entry.method === "POST");
-    assert.deepEqual(insertRequest.body, { edition: "plus" });
+    assert.deepEqual(insertRequest.body, { edition: "plus", payment_method: "debito" });
 });
 
 test("the API rejects requests from a foreign origin", async () => {

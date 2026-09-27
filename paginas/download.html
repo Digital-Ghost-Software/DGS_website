@@ -47,6 +47,14 @@
                     <option value="standard">Standard — R$ 20,00</option>
                     <option value="plus">Plus — R$ 40,00</option>
                 </select>
+                <label for="paymentMethod">Forma de pagamento simulada</label>
+                <select id="paymentMethod" name="payment_method" required>
+                    <option value="" selected disabled>Selecione uma forma de pagamento</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="credito">Cartão de crédito</option>
+                    <option value="debito">Cartão de débito</option>
+                    <option value="pix">Pix</option>
+                </select>
                 <p class="checkout-total">Total: <strong id="editionPrice">R$ 20,00</strong></p>
                 <p class="simulation-notice">Simulação acadêmica: nenhum pagamento será processado e não informe dados de cartão.</p>
                 <button class="btn-primary" type="submit">CONFIRMAR PEDIDO SIMULADO</button>

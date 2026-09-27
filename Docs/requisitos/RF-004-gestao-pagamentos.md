@@ -77,7 +77,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 5. A página informa que a operação é acadêmica e não deve receber dados de cartão.
 6. O usuário confirma o pedido simulado.
 7. A aplicação obtém a sessão autenticada do Supabase.
-8. A aplicação envia somente a edição para `POST /api/payments` com o token de sessão.
+8. A aplicação envia a edição e a forma de pagamento simulada para `POST /api/payments` com o token de sessão; preço, titular, estado e horário continuam determinados pelo banco.
 9. A API Node.js valida o token com Supabase Auth e encaminha a solicitação usando o JWT do próprio usuário.
 10. O trigger PostgreSQL obtém `auth.uid()`, calcula o preço correspondente e define o estado `simulated_approved`.
 11. A política RLS restringe o pedido ao usuário autenticado.
@@ -104,7 +104,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 | RN-01 | Somente usuários autenticados podem registrar pedidos. |
 | RN-02 | `standard` tem preço simulado fixo de R$ 20,00. |
 | RN-03 | `plus` tem preço simulado fixo de R$ 40,00. |
-| RN-04 | A edição é a única informação de checkout enviada pelo navegador; usuário, preço, estado e horário são determinados no banco. |
+| RN-04 | Edição e forma de pagamento simulada são as únicas escolhas do checkout enviadas pelo navegador; usuário, preço, estado e horário são determinados no banco. |
 | RN-05 | Um usuário pode consultar somente os próprios pedidos. |
 | RN-06 | O estado criado é `simulated_approved`; o registro não representa pagamento real e não pode ser alterado/apagado pelo cliente. |
 | RN-07 | O pedido não libera arquivo inexistente; download real depende de release publicada e URL configurada. |
@@ -132,7 +132,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 ### Estados planejados no protótipo
 
 1. **Inicial/vazio:** sem pedidos na conta.
-2. **Seleção:** escolha Standard/Plus e total correspondente.
+2. **Seleção:** escolha Standard/Plus, uma forma entre boleto/crédito/débito/Pix e confira o total correspondente.
 3. **Processando:** botão bloqueado enquanto grava.
 4. **Erro:** sessão inválida, falha de rede ou banco não configurado.
 5. **Sucesso:** pedido simulado persistido e recibo exibido.
@@ -142,7 +142,7 @@ O código local implementa a interface e o fluxo para estados acima. A integraç
 
 ### Dado persistido
 
-`simulated_payments`: UUID do pedido, UUID do usuário autenticado, edição, valor em BRL, estado `simulated_approved` e data/hora. `game_downloads` mantém a solicitação, a versão e o horário, vinculada a um pedido do mesmo usuário. A aplicação não grava número, nome ou código de cartão.
+`simulated_payments`: UUID do pedido, UUID do usuário autenticado, edição, valor em BRL, forma de pagamento simulada, estado `simulated_approved` e data/hora. `game_downloads` mantém a solicitação, a versão e o horário, vinculada a um pedido do mesmo usuário. A aplicação não grava número, nome ou código de cartão.
 
 ## 5. Arquitetura e ADR (15%)
 

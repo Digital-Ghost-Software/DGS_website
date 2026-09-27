@@ -47,7 +47,9 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         const profile = await profileResponse.json();
         assert.equal(profile.id, loginA.data.user.id);
         assert.equal(profile.email, loginA.data.user.email);
-        assert.equal(typeof profile.full_name, "string");
+        assert.equal(typeof profile.user_name, "string");
+        assert.ok(Object.hasOwn(profile, "user_foto"));
+        assert.ok([null, "standard", "plus"].includes(profile.user_level));
 
         const anonymousProfileResponse = await fetch(`${apiBaseUrl}/api/profile`);
         assert.equal(anonymousProfileResponse.status, 401, "A API não deve expor perfil sem sessão.");
@@ -60,28 +62,53 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         .from("simulated_payments")
         .insert({
             edition: "standard",
+            payment_method: "pix",
             user_id: loginB.data.user.id,
             amount_brl: 999,
             status: "paid",
             created_at: fakeTimestamp
         })
-        .select("id, user_id, edition, amount_brl, status, created_at")
+        .select("id, user_id, edition, amount_brl, payment_method, status, created_at")
         .single();
     assert.ok(!orderAError && orderA, "Não foi possível criar o pedido de teste Standard.");
     assert.equal(orderA.user_id, loginA.data.user.id);
     assert.equal(orderA.edition, "standard");
+    assert.equal(orderA.payment_method, "pix");
     assert.equal(Number(orderA.amount_brl), 20);
     assert.equal(orderA.status, "simulated_approved");
     assert.ok(Date.parse(orderA.created_at) > Date.parse(fakeTimestamp));
 
+    const { error: invalidPaymentMethodError } = await accountA
+        .from("simulated_payments")
+        .insert({ edition: "standard", payment_method: "dinheiro" });
+    assert.ok(invalidPaymentMethodError, "O banco deve rejeitar uma forma de pagamento fora da lista permitida.");
+
+    const { data: orderAPlus, error: orderAPlusError } = await accountA
+        .from("simulated_payments")
+        .insert({ edition: "plus", payment_method: "credito" })
+        .select("id, user_id, edition, amount_brl, payment_method, status, created_at")
+        .single();
+    assert.ok(!orderAPlusError && orderAPlus, "Não foi possível criar o pedido de teste Plus da conta A.");
+    assert.equal(orderAPlus.user_id, loginA.data.user.id);
+    assert.equal(Number(orderAPlus.amount_brl), 40);
+    assert.equal(orderAPlus.payment_method, "credito");
+
+    const { data: profileAfterPurchase, error: profileAfterPurchaseError } = await accountA
+        .from("profiles")
+        .select("user_level")
+        .single();
+    assert.ok(!profileAfterPurchaseError && profileAfterPurchase, "Não foi possível consultar o nível após as compras.");
+    assert.equal(profileAfterPurchase.user_level, "plus", "A edição Plus deve prevalecer após compras Standard e Plus.");
+
     const { data: orderB, error: orderBError } = await accountB
         .from("simulated_payments")
-        .insert({ edition: "plus" })
-        .select("id, user_id, edition, amount_brl, status, created_at")
+        .insert({ edition: "plus", payment_method: "credito" })
+        .select("id, user_id, edition, amount_brl, payment_method, status, created_at")
         .single();
     assert.ok(!orderBError && orderB, "Não foi possível criar o pedido de teste Plus.");
     assert.equal(orderB.user_id, loginB.data.user.id);
     assert.equal(Number(orderB.amount_brl), 40);
+    assert.equal(orderB.payment_method, "credito");
     assert.equal(orderB.status, "simulated_approved");
 
     const { data: visibleToA, error: readAError } = await accountA
@@ -89,7 +116,7 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         .select("id")
         .in("id", [orderA.id, orderB.id]);
     assert.ok(!readAError, "A conta A não conseguiu consultar os próprios pedidos.");
-    assert.deepEqual(visibleToA.map((order) => order.id), [orderA.id]);
+    assert.deepEqual(new Set(visibleToA.map((order) => order.id)), new Set([orderA.id, orderAPlus.id]));
 
     const { data: visibleToB, error: readBError } = await accountB
         .from("simulated_payments")
