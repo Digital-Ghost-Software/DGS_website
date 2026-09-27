@@ -276,4 +276,6 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Aprovada e aplicada correção mínima em `vercel.json`: `"framework": null` fixa o preset **Other**, evitando detecção automática de framework de servidor. Build Command `npm run build`, saída `dist/` e função `api/` foram mantidos.
 - Referência oficial consultada: documentação Vercel informa que `framework: null` seleciona “Other” e substitui o Framework Preset do projeto.
 - Verificações: `npm.cmd test` — 54 aprovados, 0 falhas, 1 teste live do Supabase ignorado; `npm.cmd run build` e `git diff --check` passaram.
-- Estado neste registro: correção aprovada pelo usuário, commit ainda pendente. Próximo passo: registrar esta configuração em commit e pedir nova implantação na Vercel para confirmação real.
+- A correção foi registrada no commit `004793b` (`Corrige preset da Vercel para o deploy`) e enviada a `origin/main`.
+- O usuário confirmou sucesso da implantação. O erro de entrypoint foi resolvido na Vercel após selecionar o preset **Other** via configuração versionada.
+- Próximo passo: validação pós-deploy (prioridade 7): percorrer o site publicado e confirmar páginas/recursos estáticos, APIs serverless, autenticação Supabase, fluxo de pagamento simulado, histórico/downloads e URLs de retorno Auth. Registrar cada resultado e corrigir uma falha de cada vez com aprovação.
