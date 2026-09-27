@@ -2,7 +2,7 @@
 
 ## Laboratório de Inovação III — Prof. Edilberto Silva — 2026
 
-**Este documento é o guia técnico completo do seu projeto. Cada requisito funcional será avaliado com base neste padrão.**
+**Este documento é o guia técnico completo do projeto. Cada requisito funcional será avaliado com base neste padrão.**
 
 ⚠️ **IMPORTANTE:** Cada entrega cobre **APENAS UM REQUISITO FUNCIONAL** (ex: RF-001 Cadastro de Hóspede). Não misture múltiplos requisitos em um mesmo documento.
 

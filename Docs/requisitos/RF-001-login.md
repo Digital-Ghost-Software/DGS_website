@@ -62,7 +62,7 @@ A autenticação identifica o usuário antes de apresentar dados pessoais, hist�
 - Implementação: `js/script.js` e `js/supabase-config.js`.
 - Estados codificados: inicial, incompleto, processando, erro e sucesso/redirecionamento.
 - Persistência de sessão: SDK Supabase Auth.
-- Fluxo verificado no projeto Supabase de teste: cadastro e confirmação de e-mail foram registrados no histórico do projeto; login, logout, perfil e recuperação de senha foram confirmados pelo usuário. O site e a API ainda não foram publicados na Vercel; domínio de produção e conta pública de demonstração não foram definidos.
+- Fluxo verificado no ambiente Supabase configurado para o sistema: cadastro e confirmação de e-mail foram registrados no histórico do projeto; login, logout, perfil e recuperação de senha foram confirmados. O site e a API ainda não foram publicados na Vercel; domínio de produção e conta pública de demonstração não foram definidos.
 
 ## 5. Arquitetura e ADR (15%)
 

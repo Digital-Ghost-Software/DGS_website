@@ -15,7 +15,7 @@ Este plano cruza o feedback semanal do professor, as documentações anteriormen
 ## Ajustes na documentação
 
 - Substituídos conteúdos copiados de hotelaria/combate que não correspondiam ao sistema de login/cadastro.
-- Criadas documentações individuais para RF-001, RF-002, RF-003 e RF-004.
+- Criados relatórios separados por requisito funcional: RF-001, RF-002, RF-003 e RF-004.
 - Os pontos que dependem de ambiente externo ou comprovação são identificados como pendentes; não foram inventados links de deploy, artefatos, testes ou pontuações.
 - Removida a regra do `.gitignore` que escondia a pasta `Docs` do Git.
 
@@ -35,7 +35,7 @@ Este plano cruza o feedback semanal do professor, as documentações anteriormen
 
 1. Revisar e executar `database/ddl/rf-004-simulated-payments.sql` no SQL Editor do Supabase. O script cria duas tabelas e triggers/policies, além de bloquear acesso browser às tabelas legadas sem apagar registros. Após executar, revisar o resultado e confirmar que a aplicação consegue inserir/consultar pedidos.
 2. Conferir no painel que as tabelas antigas estão inacessíveis aos papéis web. Dados legados de `Usuario`/`Cartao` são preservados e bloqueados, conforme a decisão atual da equipe; eventual remoção deve ser discutida separadamente.
-3. Verificar as configurações de Auth no painel (confirmação por e-mail e URLs de redirecionamento). Criar contas novas para teste; não publicar credenciais pessoais.
+3. Verificar as configurações de Auth no painel (confirmação por e-mail e URLs de redirecionamento). Criar contas novas para teste; não publicar credenciais de integrantes da equipe.
 4. Publicar a API Node.js com secrets no ambiente server-side; nunca expor `SUPABASE_SERVICE_ROLE_KEY` no JavaScript ou Git.
 5. Demonstrar cadastro, login, logout, perfil, atualização de nome/senha, exclusão própria, pedidos Standard/Plus, histórico e tentativas de acesso indevido entre duas contas.
 6. Publicar o binário/release do jogo e então preencher `GAME_DOWNLOAD_URL` em `js/script.js`; testar histórico de download com um arquivo controlado.

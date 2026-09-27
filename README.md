@@ -15,13 +15,13 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 
 `server/index.js` verifica o bearer token do Supabase Auth. Rotas públicas: `GET /api/config` e `GET /api/health`. Rotas autenticadas: `GET/PATCH /api/profile`, `GET/POST /api/payments`, `POST /api/downloads` e `POST /api/account/delete`. Consultas de perfil/pedido/download usam o JWT do usuário e mantêm as políticas RLS; cadastro, login, recuperação e atualização de senha usam Supabase Auth no cliente. `server/local.js` inicia o servidor HTTP local; a chave administrativa é opcional e só é usada para exclusão da identidade autenticada.
 
-## Deploy
+## Publicação
 
-`main` está configurada para publicar site estático e API Node.js no mesmo projeto Vercel. Consulte [`Docs/deploy-vercel.md`](Docs/deploy-vercel.md) para importar a branch, definir build/variáveis e validar o deploy. `API_BASE_URL` fica vazio para as chamadas `/api/...` permanecerem na mesma origem. A chave `SUPABASE_SERVICE_ROLE_KEY` é opcional para iniciar a API e necessária para exclusão de conta. O deploy ainda não foi realizado.
+O repositório inclui a configuração para publicar site estático e API Node.js na Vercel. A configuração versionada está em `vercel.json`, `api/` e `scripts/build-static.js`; o projeto publicado usa a API na mesma origem. A chave `SUPABASE_SERVICE_ROLE_KEY` é opcional para iniciar a API e necessária para exclusão de conta.
 
 ## Configuração
 
-1. Use o projeto Supabase `DGS_Web_Site` já criado. Para criar uma instalação nova, aplique [`database/ddl/new-project-schema.sql`](database/ddl/new-project-schema.sql) no SQL Editor; não use a migração RF-004 do banco legado neste schema. Para atualizar um projeto já configurado, aplique também a migração incremental [`database/ddl/default-profile-photo.sql`](database/ddl/default-profile-photo.sql); ela preenche perfis atuais sem foto e configura o padrão para novos usuários.
+1. Use o projeto Supabase `DGS_Web_Site` configurado para o trabalho em grupo. Para criar uma instalação nova aprovada pela equipe, aplique [`database/ddl/new-project-schema.sql`](database/ddl/new-project-schema.sql) no SQL Editor; não use a migração RF-004 do banco legado neste schema. Para atualizar um projeto já configurado, aplique também a migração incremental [`database/ddl/default-profile-photo.sql`](database/ddl/default-profile-photo.sql); ela preenche perfis atuais sem foto e configura o padrão para novos usuários.
 2. Na raiz do projeto, crie um `.env` local (o arquivo é ignorado pelo Git) com `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`. Use a URL base do projeto, sem `/rest/v1/`, e a chave publicável/anon. O servidor Node 22 carrega o arquivo local e `/api/config` entrega ao navegador somente esses valores públicos. Nunca coloque senha do banco, chave `service_role` ou chave secreta no frontend, repositório ou chat.
 3. Instale dependências com Node.js 22.x usando `npm ci`. Execute `npm test` para a suíte completa ou `npm run test:unit` e `npm run test:integration` separadamente.
 4. Habilite autenticação por e-mail no Supabase e defina confirmação de e-mail conforme a política do projeto. Em Authentication → URL Configuration, inclua `http://localhost:3000/paginas/login.html` e `http://localhost:3000/paginas/recuperar-senha.html` em Redirect URLs. A recuperação por e-mail usa a segunda rota para retornar ao estado de nova senha.
@@ -55,7 +55,6 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 - [RF-003 — Gerenciar download do jogo](Docs/requisitos/RF-003-gerenciar-download-do-jogo.md)
 - [RF-004 — Gestão de pagamentos](Docs/requisitos/RF-004-gestao-pagamentos.md)
 - [Plano de refinamento e pendências](Docs/requisitos/plano-de-refinamento.md)
-- [Publicação na Vercel](Docs/deploy-vercel.md)
 
 ## Limites desta versão
 

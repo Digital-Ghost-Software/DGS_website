@@ -11,14 +11,14 @@
 | Tipo | Requisito funcional |
 | Prioridade | Alta — o feedback do professor identifica Gestão de Pagamentos como o próximo requisito. |
 | Complexidade | Média, estimativa inicial de 5 story points; confirmar com a equipe. |
-| Status | Schema e migrações aplicados no Supabase pessoal; testes live de duas contas, histórico de compras e responsividade passaram. Deploy Vercel e pacote formal de evidências permanecem pendentes. |
+| Status | Schema e migrações aplicados no projeto Supabase do sistema; testes live de duas contas, histórico de compras e responsividade passaram. Deploy Vercel e pacote formal de evidências permanecem pendentes. |
 | Criação / atualização | 23/09/2026 / 27/09/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
 
 ### Metadados do projeto/equipe
 
 - **Repositório informado nas entregas anteriores:** [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`.
-- **Supabase da entrega original:** projeto `thmtriwgvsgxdinsuxph`. Para o novo banco pessoal, a URL e a chave publicável são configuradas pelo servidor e entregues ao frontend em `/api/config`.
+- **Supabase da entrega original:** projeto `thmtriwgvsgxdinsuxph`. Para o banco `DGS_Web_Site` usado nesta versão, a URL e a chave publicável são configuradas pelo servidor e entregues ao frontend em `/api/config`.
 - **Deploy, Swagger/OpenAPI e demonstração pública:** não foram informados nas fontes.
 
 | Integrante | Papel registrado nas entregas | Contato registrado |
@@ -138,7 +138,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 5. **Sucesso:** pedido simulado persistido e recibo exibido.
 6. **Download pendente:** estado de sucesso sem link do jogo ainda publicado.
 
-O schema do projeto Supabase pessoal foi aplicado e a integração foi testada com duas contas. A suíte live validou preço, titularidade, estado, isolamento, forma de pagamento e download autorizado; o usuário validou login, consulta de pedidos e histórico pela interface. Não há evidência de deploy Vercel.
+O schema do projeto Supabase usado pelo sistema foi aplicado e a integração foi testada com duas contas. A suíte live validou preço, titularidade, estado, isolamento, forma de pagamento e download autorizado; o histórico pela interface foi validado. Não há evidência formal de deploy Vercel anexada.
 
 ### Dado persistido
 
@@ -227,7 +227,7 @@ Os controles acima têm evidência de testes automatizados e integração real. 
 
 ## 8. Critérios de aceite
 
-- [x] O schema do projeto Supabase pessoal foi executado; a migração incremental da foto padrão também foi aplicada.
+- [x] O schema do projeto Supabase do sistema foi executado; a migração incremental da foto padrão também foi aplicada.
 - [x] Duas contas criaram pedidos e cada conta consultou apenas seu histórico; download cruzado foi rejeitado.
 - [x] Standard persiste R$ 20,00 e Plus R$ 40,00, inclusive com tentativa de adulteração.
 - [x] Formulário e tabela não solicitam nem guardam dados reais de cartão.

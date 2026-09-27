@@ -126,7 +126,7 @@ Cadastro, confirmação, redefinição de senha, login, edição do nome e respo
 - [x] Código usa fluxo `signUp` e valida campos/senhas.
 - [x] Fluxo de confirmação de e-mail é tratado conforme a resposta do Auth.
 - [ ] Publicar a API Node.js com secrets server-side e testar exclusão controlada.
-- [x] Testar integração Auth/perfil com o projeto Supabase pessoal e contas descartáveis.
+- [x] Testar integração Auth/perfil com o projeto Supabase configurado para o sistema e contas descartáveis.
 - [ ] Revisar migração de contas legadas que estavam na tabela `Usuario`; senhas antigas não são migradas automaticamente.
 - [ ] Anexar evidência visual e testes de segurança.
 - [ ] Publicar site e API Node.js integrados na Vercel e disponibilizar conta de demonstração segura.
