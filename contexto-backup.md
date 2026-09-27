@@ -109,20 +109,23 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 
 ### Estado externo e limites
 
-- Nenhum projeto remoto foi criado; nenhum SQL foi executado no Supabase novo.
+- O usuário criou o projeto Supabase `DGS_Web_Site` e executou nele `database/ddl/new-project-schema.sql`.
+- O usuário confirmou que as consultas estruturais retornaram como esperado: existem `profiles`, `admin`, `simulated_payments` e `game_downloads`, todas com RLS ativo; contagem de policies: 2, 0, 2 e 2, respectivamente. Nenhum dado de produção foi inserido nesta etapa.
 - `.env` não foi alterado nesta etapa.
 - O site ainda não é compatível com o novo schema: a criação de pedido ainda não envia `payment_method` e o formato esperado do perfil precisa ser adaptado. Não apontar o site para o banco novo antes de uma etapa de adaptação e testes.
-- A etapa foi apresentada para revisão e aprovada pelo usuário em 26/09/2026. O usuário autorizou seguir para a criação do projeto novo com o guia; isso não significa que o banco remoto já foi criado nem autoriza execução remota de SQL sem confirmação do usuário.
-- Na ocasião anterior, o usuário pediu excepcionalmente que apenas o registro de progresso fosse salvo sem commit. Com a aprovação desta etapa, os arquivos da etapa foram commitados separadamente.
+- O schema e o guia foram aprovados em 26/09/2026 e commitados como `Cria schema inicial do novo Supabase`. O projeto foi criado pelo usuário e a migração foi executada e estruturalmente verificada em 26/09/2026.
+- Na ocasião anterior, o usuário pediu excepcionalmente que apenas o registro de progresso fosse salvo sem commit. As etapas aprovadas seguintes seguem a regra normal de commit em português.
 - Preservar alterações preexistentes do usuário: `.env.example` consta como removido (o usuário renomeou para `.env`) e `Docs/requisitos/RF - 01 - Login.md` consta como arquivo não rastreado/desconhecido. Não incluí-los em commits sem autorização.
 
 ### Próximo ponto ao retomar
 
-1. Orientar o usuário, seguindo o guia, a criar o novo projeto. O schema e as instruções já foram aprovados e commitados. Não alterar o Supabase antigo.
-2. Depois que o usuário informar que criou o projeto e aplicar/aprovar a etapa do SQL, executar verificações estruturais e então planejar a adaptação da aplicação ao schema novo, com aprovação passo a passo e testes unitários/integração.
+1. Próxima etapa: criar a conta pessoal do usuário em **Authentication → Users** no projeto `DGS_Web_Site` e inseri-la na tabela `admin` pelo SQL Editor, conforme o guia. Confirmar o resultado antes de avançar.
+2. Depois, configurar credenciais locais do projeto novo (sem compartilhá-las pelo chat) e adaptar/testar a aplicação para `profiles` e `payment_method`. Não apontar o site ao banco novo antes de essa adaptação ser aprovada.
+3. Validar autenticação, criação automática de perfil, nível de compra, formas de pagamento e isolamento RLS com testes de integração no projeto novo.
 
 ### Registro da etapa aprovada
 
 | Data | Etapa | Alterações/verificações | Aprovação |
 |---|---|---|---|
-| 26/09/2026 | Schema inicial do Supabase novo | Criado `database/ddl/new-project-schema.sql`, guia `Docs/banco-supabase-proprio.md` e testes estáticos da migração. `npm test`: 29 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados. Nenhum banco remoto foi criado ou alterado. | Aprovada pelo usuário. Commit `Cria schema inicial do novo Supabase`. |
+| 26/09/2026 | Schema inicial do Supabase novo | Criado `database/ddl/new-project-schema.sql`, guia `Docs/banco-supabase-proprio.md` e testes estáticos da migração. `npm test`: 29 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` aprovados. Commit `Cria schema inicial do novo Supabase`. | Aprovada pelo usuário. |
+| 26/09/2026 | Criação e verificação estrutural do novo banco | Usuário criou `DGS_Web_Site`, aplicou o schema aprovado e confirmou quatro tabelas com RLS ativo e policies nos totais esperados (2/0/2/2). Banco antigo não foi alterado. | Aplicação e consulta de verificação confirmadas pelo usuário. |
