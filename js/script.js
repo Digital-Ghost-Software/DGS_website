@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, API_BASE_URL } from "./supabase-config.js";
+import { API_BASE_URL, loadSupabaseConfig } from "./supabase-config.js";
 import { formatBRL, getPaymentMethodLabel, getPurchasePlan, paymentMethods, purchasePlans } from "./purchase-rules.js";
 import {
     getEmailConfirmationRedirect,
@@ -11,6 +11,7 @@ import {
 } from "./auth-rules.js";
 import { getDownloadLinkState } from "./download-rules.js";
 
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await loadSupabaseConfig();
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const GAME_DOWNLOAD_URL = ""; // Configure when a release file is available.
 const $ = (selector) => document.querySelector(selector);

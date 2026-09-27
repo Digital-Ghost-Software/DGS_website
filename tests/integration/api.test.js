@@ -157,8 +157,8 @@ before(async () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
     process.env.ALLOWED_ORIGINS = "";
 
-    const { handler } = await import(`../../server/index.js?test=${Date.now()}`);
-    apiServer = createServer(handler);
+    const { createLocalHandler } = await import("../../server/local.js");
+    apiServer = createServer(createLocalHandler());
     const apiPort = await listen(apiServer);
     apiBaseUrl = `http://127.0.0.1:${apiPort}`;
 });
@@ -174,6 +174,30 @@ test("health endpoint is public and returns the expected status", async () => {
     const response = await fetch(`${apiBaseUrl}/api/health`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "ok" });
+});
+
+test("public config returns only the Supabase URL and publishable key", async () => {
+    const response = await fetch(`${apiBaseUrl}/api/config`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabasePublishableKey: "test-publishable-key"
+    });
+});
+
+test("local server serves the site and blocks private project files", async () => {
+    const page = await fetch(`${apiBaseUrl}/paginas/download.html`);
+    assert.equal(page.status, 200);
+    assert.match(page.headers.get("content-type"), /text\/html/);
+    assert.match(await page.text(), /Forma de pagamento simulada/);
+
+    const clientScript = await fetch(`${apiBaseUrl}/js/supabase-config.js`);
+    assert.equal(clientScript.status, 200);
+
+    const envFile = await fetch(`${apiBaseUrl}/.env`);
+    assert.equal(envFile.status, 404);
+    const serverSource = await fetch(`${apiBaseUrl}/server/index.js`);
+    assert.equal(serverSource.status, 404);
 });
 
 test("profile rejects missing and invalid bearer tokens", async () => {

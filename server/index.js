@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_URL as defaultProjectUrl, SUPABASE_PUBLISHABLE_KEY as defaultPublicKey } from "../js/supabase-config.js";
 import { paymentMethods } from "../js/purchase-rules.js";
 
 try {
@@ -8,8 +7,8 @@ try {
     if (error.code !== "ENOENT") throw error;
 }
 
-const projectUrl = process.env.SUPABASE_URL || defaultProjectUrl;
-const publicKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || defaultPublicKey;
+const projectUrl = process.env.SUPABASE_URL;
+const publicKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const releaseVersion = process.env.GAME_RELEASE_VERSION || "1.0";
 const allowedOrigins = new Set(
@@ -101,6 +100,14 @@ export async function handler(request, response) {
 
     const requestUrl = new URL(request.url || "/", "http://localhost");
     const path = requestUrl.pathname;
+    if (request.method === "GET" && path === "/api/config") {
+        sendJson(response, 200, {
+            supabaseUrl: projectUrl,
+            supabasePublishableKey: publicKey
+        }, origin);
+        return;
+    }
+
     if (request.method === "GET" && path === "/api/health") {
         sendJson(response, 200, { status: "ok" }, origin);
         return;

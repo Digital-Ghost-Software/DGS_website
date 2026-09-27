@@ -18,7 +18,7 @@
 ### Metadados do projeto/equipe
 
 - **Repositório informado nas entregas anteriores:** [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`.
-- **Supabase configurado no cliente:** projeto `thmtriwgvsgxdinsuxph` (endpoint configurado em `js/supabase-config.js`).
+- **Supabase da entrega original:** projeto `thmtriwgvsgxdinsuxph`. Para o novo banco pessoal, a URL e a chave publicável são configuradas pelo servidor e entregues ao frontend em `/api/config`.
 - **Deploy, Swagger/OpenAPI e demonstração pública:** não foram informados nas fontes.
 
 | Integrante | Papel registrado nas entregas | Contato registrado |
@@ -126,8 +126,8 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 - Fluxo e apresentação: `js/script.js` e `paginas/download.html`.
 - API Node.js para autenticar operações e consultar/criar pedidos: `server/index.js` (`GET/POST /api/payments`, `POST /api/downloads`).
 - Estilo responsivo do checkout: `css/style.css`.
-- Migração PostgreSQL/RLS: `database/ddl/rf-004-simulated-payments.sql`.
-- Configuração pública do cliente Supabase: `js/supabase-config.js`.
+- Schema PostgreSQL/RLS do projeto novo: `database/ddl/new-project-schema.sql` (aplicado no Supabase `DGS_Web_Site`).
+- Configuração pública carregada em tempo de execução: `server/index.js` (`GET /api/config`) e `js/supabase-config.js`.
 
 ### Estados planejados no protótipo
 

@@ -65,9 +65,9 @@ As quatro linhas devem mostrar `rls_ativo = true`.
 
 ## 5. Conexão com o site
 
-Ainda não troque as variáveis do `.env` atual. O site em seu estado atual envia pedidos sem `payment_method` e espera o formato antigo de perfil; trocar agora faria o checkout falhar. Depois da aprovação desta etapa, a próxima etapa será adaptar API, interface e testes para `profiles` e para uma das quatro formas de pagamento. Só então configuraremos URL e chave publicável do projeto novo localmente e rodaremos a integração real.
+O perfil, o checkout e a API já foram adaptados ao schema novo. Antes de usar o site com o projeto recém-criado, a configuração local do servidor precisa apontar para ele; aguarde essa etapa e sua aprovação antes de trocar o `.env`.
 
-Use a URL base exibida em **Project Settings → API** e a chave publicável (`publishable`/`anon`, conforme o painel). A URL base não deve terminar em `/rest/v1/`. Não use a senha do banco, `service_role` ou chave secreta no navegador, no `.env.example`, em commit ou no chat. O arquivo `.env` é local e deve permanecer fora do Git.
+Para o desenvolvimento local, configure no `.env` ignorado pelo Git a URL base exibida em **Project Settings → API** e a chave publicável (`publishable`/`anon`, conforme o painel), nas variáveis `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`. A URL base não deve terminar em `/rest/v1/`. O servidor local disponibiliza o site e a API na mesma origem e fornece ao navegador somente esses dois valores públicos em `/api/config`. Não use a senha do banco, `service_role` ou chave secreta no navegador, em commits ou no chat. O `.env` deve permanecer fora do Git.
 
 ## Regras do modelo
 

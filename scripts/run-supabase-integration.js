@@ -7,6 +7,8 @@ try {
 }
 
 const requiredVariables = [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
     "SUPABASE_TEST_USER_A_EMAIL",
     "SUPABASE_TEST_USER_A_PASSWORD",
     "SUPABASE_TEST_USER_B_EMAIL",

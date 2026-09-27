@@ -120,9 +120,9 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 
 ### Próximo ponto ao retomar
 
-1. Próxima etapa: retirar a configuração Supabase hardcoded do frontend e expor URL/chave publicável pelo endpoint Node `/api/config`, alimentado pelas variáveis locais `.env` e pelas variáveis do ambiente de deploy. Adicionar testes unitários/integração local e apresentar para aprovação.
-2. Após a aprovação, configurar `.env` com URL/chave publicável do projeto novo (sem enviá-las pelo chat) e criar uma segunda conta de teste no Supabase Auth para validar isolamento entre duas contas.
-3. Executar teste de integração real no projeto novo: perfil, edição de nome, preços, formas de pagamento, nível Standard/Plus prevalente, RLS e downloads. Pedidos/downloads de teste permanecem no banco.
+1. Código de configuração aprovado e commitado: frontend carrega URL e chave publicável pelo `/api/config`; servidor local serve site+API na origem única e bloqueia arquivos privados. Ainda não alterar `js/supabase-config.js` com valores e não editar `.env` por conta própria sem o usuário fornecer/configurar os dados do projeto novo.
+2. Próxima ação: o usuário configura `.env` local com URL/chave publicável de `DGS_Web_Site` e duas contas descartáveis confirmadas no Auth, com credenciais somente no `.env`. Não solicitar os valores pelo chat.
+3. Executar o teste real contra o projeto novo depois da confirmação. Ele cria permanentemente 3 pedidos simulados e 1 registro de download nas contas de teste e verifica perfil, preços, formas, nível Plus prevalente, RLS e downloads.
 
 ### Registro da etapa aprovada
 
@@ -132,3 +132,4 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 | 26/09/2026 | Criação e verificação estrutural do novo banco | Usuário criou `DGS_Web_Site`, aplicou o schema aprovado e confirmou quatro tabelas com RLS ativo e policies nos totais esperados (2/0/2/2). Banco antigo não foi alterado. | Aplicação e consulta de verificação confirmadas pelo usuário. |
 | 26/09/2026 | Conta Auth e primeiro administrador | Usuário criou a conta no Supabase Auth, inseriu o próprio usuário em `public.admin` e confirmou consulta com total igual a 1. Nenhuma credencial ou dado pessoal registrado. | Resultado confirmado pelo usuário. |
 | 26/09/2026 | Adaptação do perfil e checkout ao schema novo | API consulta/atualiza `profiles`, exibe nível de usuário e aceita forma simulada boleto/crédito/débito/Pix em pedidos e histórico. Teste de integração local cobre validação e isolamento; teste live atualizado. `npm test`: 31 aprovados, 0 falhas, 1 teste remoto ignorado; build e `git diff --check` aprovados. Configuração não foi trocada e integração live no banco novo continua pendente. | Aprovada pelo usuário; commit `Adapta perfil e checkout ao novo schema`. |
+| 26/09/2026 | Configuração pública por ambiente e servidor local integrado | Removida URL/chave hardcoded do frontend; `/api/config` expõe somente URL e chave publicável. `npm start` passa a servir páginas e API na mesma origem e nega `.env`/fontes privados. Testes cobrem configuração, ausência de chave secreta na resposta e arquivos estáticos; `npm test`: 35 aprovados, 0 falhas, 1 teste remoto ignorado; build e `git diff --check` aprovados. Credenciais do novo projeto ainda não configuradas; nenhuma integração live executada. | Aprovada pelo usuário; commit `Configura Supabase por ambiente e serve site local`. |

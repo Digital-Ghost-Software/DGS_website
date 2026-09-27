@@ -2,16 +2,16 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import test from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "../../js/supabase-config.js";
-import { handler } from "../../server/index.js";
 
 const liveRunEnabled = process.env.RUN_SUPABASE_LIVE_TESTS === "true";
-const supabaseUrl = process.env.SUPABASE_URL || SUPABASE_URL;
-const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL;
+const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 
 test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedidos de download", {
     skip: !liveRunEnabled
 }, async () => {
+    assert.ok(supabaseUrl && publishableKey, "Configure URL e chave publicável do novo projeto no .env local.");
+    const { handler } = await import("../../server/index.js");
     const clientOptions = { auth: { persistSession: false, autoRefreshToken: false } };
     const accountA = createClient(supabaseUrl, publishableKey, clientOptions);
     const accountB = createClient(supabaseUrl, publishableKey, clientOptions);
