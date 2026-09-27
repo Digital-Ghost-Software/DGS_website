@@ -152,13 +152,13 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - A decisão aprovada pelo usuário é uma única página `paginas/recuperar-senha.html` com dois estados: solicitar o e-mail e, ao retornar pelo link de recuperação do Supabase, cadastrar/confirmar uma nova senha.
 - O pop-up de troca de senha do perfil permanece separado, pois depende de uma sessão autenticada e representa alteração de senha dentro da conta.
 - A implementação chama `resetPasswordForEmail` com retorno à própria página e `updateUser` para salvar a senha. O link de recuperação foi adicionado ao login e o guia de deploy documenta as Redirect URLs para localhost e produção.
-- Testes cobrem a URL de retorno, a presença dos dois formulários, localização pt-BR e entrega da página pelo servidor. Verificação após aprovação: `npm.cmd test` — 42 passaram, 0 falharam, 1 teste live do Supabase ignorado; build e diff check devem ser registrados antes do commit.
+- Testes cobrem a URL de retorno, a presença dos dois formulários, localização pt-BR e entrega da página pelo servidor. Verificação antes do commit: `npm.cmd test` — 42 passaram, 0 falharam, 1 teste live do Supabase ignorado; build e `git diff --check` passaram. Commit `Implementa recuperação de senha em página única`.
 - Preservar a edição preexistente do usuário em `index.html` (“Comprar”) e `Docs/requisitos/RF - 01 - Login.md`, que permanece não rastreado e fora do escopo deste commit.
-- Próxima etapa, separada: ajustar a navegação para ocultar “Entrar” quando a sessão já estiver autenticada. Não iniciar antes de apresentar proposta e aguardar aprovação do usuário.
+- A navegação que oculta “Entrar” quando a sessão está autenticada foi concluída e verificada separadamente; detalhes registrados abaixo.
 
 | Data | Etapa | Alterações/verificações | Aprovação |
 |---|---|---|---|
-| 27/09/2026 | Recuperação de senha em página de dois estados | Implementados solicitação e redefinição na mesma página, retorno explícito do Supabase, link no login, documentação de Redirect URLs e testes unitários/de integração. `npm.cmd test`: 42 aprovados, 0 falhas, 1 teste live ignorado. | Aprovada pelo usuário; commit pendente. |
+| 27/09/2026 | Recuperação de senha em página de dois estados | Implementados solicitação e redefinição na mesma página, retorno explícito do Supabase, link no login, documentação de Redirect URLs e testes unitários/de integração. `npm.cmd test`: 42 aprovados, 0 falhas, 1 teste live ignorado; build e `git diff --check` aprovados. Commit `Implementa recuperação de senha em página única`. | Aprovada pelo usuário. |
 
 ## Etapa aprovada — navegação conforme sessão autenticada (27/09/2026)
 
@@ -167,3 +167,8 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Verificação: `npm.cmd test` — 43 aprovados, 0 falhas e 1 teste live do Supabase ignorado; `npm.cmd run build` e `git diff --check` aprovados.
 - Usuário aprovou as alterações. Commit desta etapa: `Oculta entrada quando a sessão está autenticada`.
 - Próximo passo funcional ainda deve ser proposto e aprovado separadamente; não foi iniciado nesta etapa.
+
+### Verificação manual da navegação
+
+- Em 27/09/2026, o usuário confirmou que, autenticado na página de perfil em `http://localhost:3000/paginas/perfil.html`, a navegação está funcionando. Isso conclui a verificação visual da etapa de ocultar “Entrar”.
+- Próximo passo: validar ponta a ponta o link de recuperação no novo projeto Supabase. O usuário confirmou que já adicionou `http://localhost:3000/paginas/recuperar-senha.html` em Authentication → URL Configuration → Redirect URLs. Solicitar que ele teste o envio do link, o retorno à página no estado de nova senha e o login com a senha atualizada; não registrar e-mail, senha ou token.
