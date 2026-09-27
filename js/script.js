@@ -4,6 +4,7 @@ import { formatBRL, getPaymentMethodLabel, getPurchasePlan, paymentMethods, purc
 import {
     getEmailConfirmationRedirect,
     getLoginDestination,
+    getPasswordRecoveryRedirect,
     getProfileLoadAction,
     validateLogin,
     validatePasswordChange,
@@ -14,6 +15,7 @@ import { getDownloadLinkState } from "./download-rules.js";
 
 const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await loadSupabaseConfig();
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const isPasswordRecoveryCallback = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
 const GAME_DOWNLOAD_URL = ""; // Configure when a release file is available.
 const $ = (selector) => document.querySelector(selector);
 
@@ -172,6 +174,76 @@ loginForm?.addEventListener("submit", async (event) => {
     const destination = getLoginDestination(returnToPurchase ? "purchase" : null, edition);
     window.setTimeout(() => { window.location.href = destination; }, 500);
 });
+
+const recoveryForm = $("#formRecuperacaoSenha");
+recoveryForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = $("#emailRecuperacao").value.trim();
+    const message = $("#mensagemRecuperacao");
+    if (!email) {
+        showMessage(message, "Informe seu e-mail para receber o link de recuperação.", "error");
+        return;
+    }
+
+    setBusy(recoveryForm, true, "Enviando…");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getPasswordRecoveryRedirect(window.location.href)
+    });
+    setBusy(recoveryForm, false);
+    showMessage(
+        message,
+        error
+            ? "Não foi possível solicitar a recuperação. Tente novamente."
+            : "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha.",
+        error ? "error" : "success"
+    );
+});
+
+const resetPasswordForm = $("#formRedefinirSenha");
+const resetPasswordMessage = $("#mensagemRedefinirSenha");
+if (resetPasswordForm) {
+    const recoveryForm = $("#formRecuperacaoSenha");
+    const recoveryTitle = $("#tituloRecuperacao");
+    const recoveryDescription = $("#descricaoRecuperacao");
+    resetPasswordForm.hidden = true;
+
+    if (isPasswordRecoveryCallback) {
+        void supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error || !session) {
+                showMessage($("#mensagemRecuperacao"), "Link inválido ou expirado. Solicite uma nova recuperação de senha.", "error");
+                return;
+            }
+            recoveryForm.hidden = true;
+            resetPasswordForm.hidden = false;
+            recoveryTitle.textContent = "REDEFINIR SENHA";
+            recoveryDescription.textContent = "Escolha uma nova senha para sua conta.";
+        });
+    }
+
+    resetPasswordForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const password = $("#novaSenha").value;
+        const confirmation = $("#confirmarNovaSenha").value;
+        const validation = validatePasswordChange(password, confirmation);
+        if (validation) {
+            showMessage(resetPasswordMessage, validation === "password-too-short"
+                ? "A senha deve ter pelo menos 8 caracteres."
+                : "As senhas não coincidem.", "error");
+            return;
+        }
+
+        setBusy(resetPasswordForm, true, "Salvando…");
+        const { error } = await supabase.auth.updateUser({ password });
+        setBusy(resetPasswordForm, false);
+        if (error) {
+            showMessage(resetPasswordMessage, "Não foi possível redefinir a senha. Solicite um novo link.", "error");
+            return;
+        }
+
+        showMessage(resetPasswordMessage, "Senha redefinida com sucesso. Redirecionando ao perfil…", "success");
+        window.setTimeout(() => { window.location.href = "perfil.html"; }, 900);
+    });
+}
 
 const profileCard = $(".profile-card");
 if (profileCard) {

@@ -188,6 +188,8 @@ test("public config returns only the Supabase URL and publishable key", async ()
 test("local server serves the site and blocks private project files", async () => {
     const page = await fetch(`${apiBaseUrl}/paginas/download.html`);
     assert.equal(page.status, 200);
+    const passwordRecoveryPage = await fetch(`${apiBaseUrl}/paginas/recuperar-senha.html`);
+    assert.equal(passwordRecoveryPage.status, 200);
     assert.match(page.headers.get("content-type"), /text\/html/);
     assert.match(await page.text(), /Forma de pagamento simulada/);
 

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
     getEmailConfirmationRedirect,
     getLoginDestination,
+    getPasswordRecoveryRedirect,
     getProfileLoadAction,
     validateLogin,
     validatePasswordChange,
@@ -41,6 +42,13 @@ test("email confirmation returns to login on the same serving domain", () => {
     assert.equal(
         getEmailConfirmationRedirect("https://preview.example/paginas/cadastro.html"),
         "https://preview.example/paginas/login.html"
+    );
+});
+
+test("password recovery returns to the shared two-state recovery page", () => {
+    assert.equal(
+        getPasswordRecoveryRedirect("http://localhost:3000/paginas/recuperar-senha.html"),
+        "http://localhost:3000/paginas/recuperar-senha.html"
     );
 });
 

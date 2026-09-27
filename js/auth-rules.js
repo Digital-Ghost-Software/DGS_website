@@ -25,6 +25,10 @@ export function getEmailConfirmationRedirect(currentUrl) {
     return new URL("login.html", currentUrl).href;
 }
 
+export function getPasswordRecoveryRedirect(currentUrl) {
+    return new URL("recuperar-senha.html", currentUrl).href;
+}
+
 export function validateProfileName(name) {
     return name?.trim().length >= 2 ? null : "name-too-short";
 }
