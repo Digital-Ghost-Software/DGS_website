@@ -114,7 +114,7 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
     const { data: visibleToA, error: readAError } = await accountA
         .from("simulated_payments")
         .select("id")
-        .in("id", [orderA.id, orderB.id]);
+        .in("id", [orderA.id, orderAPlus.id, orderB.id]);
     assert.ok(!readAError, "A conta A não conseguiu consultar os próprios pedidos.");
     assert.deepEqual(new Set(visibleToA.map((order) => order.id)), new Set([orderA.id, orderAPlus.id]));
 
