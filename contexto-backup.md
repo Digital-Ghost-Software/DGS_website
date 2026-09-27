@@ -269,3 +269,11 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - **Ação de segurança pendente:** revogar/rotacionar no painel Supabase a chave secreta do projeto legado correspondente ao código histórico. A remoção do Git não invalida credenciais que já possam ter sido copiadas ou publicadas em outro remoto. Não enviar nenhuma chave pelo chat; o `.env` local não foi lido nem alterado.
 - Os hashes registrados em seções anteriores deste backup são anteriores à limpeza e podem ter mudado. Os conteúdos e a árvore final da `main` foram preservados; consultar `git log` para os hashes atuais.
 - Próximo passo prioritário: importar o repositório publicado na Vercel, configurar somente variáveis do projeto `DGS_Web_Site` diretamente no painel, publicar e registrar o domínio. Depois ajustar URLs Auth e executar a validação final publicada (passo 7). Rotação da chave e ação no painel Vercel dependem do usuário.
+
+## Correção de configuração para deploy Vercel (27/09/2026)
+
+- Após receber erro `No entrypoint found in "/vercel/path0"`, foi identificado que o repositório é um site estático compilado em `dist/` com uma função serverless em `api/`, e não um servidor Express/Node convencional com arquivo de entrada na raiz.
+- Aprovada e aplicada correção mínima em `vercel.json`: `"framework": null` fixa o preset **Other**, evitando detecção automática de framework de servidor. Build Command `npm run build`, saída `dist/` e função `api/` foram mantidos.
+- Referência oficial consultada: documentação Vercel informa que `framework: null` seleciona “Other” e substitui o Framework Preset do projeto.
+- Verificações: `npm.cmd test` — 54 aprovados, 0 falhas, 1 teste live do Supabase ignorado; `npm.cmd run build` e `git diff --check` passaram.
+- Estado neste registro: correção aprovada pelo usuário, commit ainda pendente. Próximo passo: registrar esta configuração em commit e pedir nova implantação na Vercel para confirmação real.
