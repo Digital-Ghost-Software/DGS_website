@@ -210,4 +210,5 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Testes: `npm.cmd test` — 51 aprovados, 0 falhas e 1 teste live ignorado; `npm.cmd run build`, `node --check js/script.js` e `git diff --check` passaram.
 - Usuário validou manualmente que o link abre diretamente no formulário de nova senha e aprovou a correção.
 - Usuário confirmou que salvou a nova senha com sucesso pelo formulário de redefinição. Nenhuma senha, link ou token foi registrado.
-- Próximo passo: testar login com a nova senha e confirmar que a sessão abre normalmente. Não registrar senha, link nem token.
+- Usuário confirmou que saiu da sessão e entrou com a nova senha com sucesso. O ciclo real de solicitação, recebimento do e-mail, abertura direta do formulário, redefinição e login foi validado ponta a ponta. Nenhuma senha, link ou token foi registrado.
+- Próximo passo funcional: validar a atualização do nome no perfil; em etapa separada, validar o histórico de pedidos/downloads. Não registrar dados pessoais desnecessários.
