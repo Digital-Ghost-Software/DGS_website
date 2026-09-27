@@ -9,11 +9,21 @@ revoke all on schema private from public, anon, authenticated, service_role;
 create table if not exists public.profiles (
     user_id uuid primary key references auth.users (id) on delete cascade,
     user_name text not null check (char_length(btrim(user_name)) between 1 and 80),
-    user_foto text check (user_foto is null or char_length(user_foto) <= 500),
+    user_foto text not null default '/imagens/user-img-default.jpg' check (char_length(user_foto) <= 500),
     user_level text check (user_level in ('standard', 'plus')),
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
+
+alter table public.profiles
+    alter column user_foto set default '/imagens/user-img-default.jpg';
+
+update public.profiles
+set user_foto = '/imagens/user-img-default.jpg'
+where user_foto is null;
+
+alter table public.profiles
+    alter column user_foto set not null;
 
 create table if not exists public.admin (
     user_id uuid primary key references auth.users (id) on delete cascade,
@@ -67,7 +77,7 @@ begin
     values (
         new.id,
         profile_name,
-        nullif(new.raw_user_meta_data ->> 'user_foto', '')
+        coalesce(nullif(new.raw_user_meta_data ->> 'user_foto', ''), '/imagens/user-img-default.jpg')
     )
     on conflict (user_id) do nothing;
 
@@ -95,7 +105,7 @@ select
         ),
         80
     ),
-    nullif(raw_user_meta_data ->> 'user_foto', '')
+    coalesce(nullif(raw_user_meta_data ->> 'user_foto', ''), '/imagens/user-img-default.jpg')
 from auth.users
 on conflict (user_id) do nothing;
 

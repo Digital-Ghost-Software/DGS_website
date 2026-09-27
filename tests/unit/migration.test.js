@@ -7,6 +7,8 @@ const sqlPath = path.join(process.cwd(), "database", "ddl", "rf-004-simulated-pa
 const sql = (await readFile(sqlPath, "utf8")).toLowerCase();
 const freshSchemaPath = path.join(process.cwd(), "database", "ddl", "new-project-schema.sql");
 const freshSchema = (await readFile(freshSchemaPath, "utf8")).toLowerCase();
+const defaultProfilePhotoMigrationPath = path.join(process.cwd(), "database", "ddl", "default-profile-photo.sql");
+const defaultProfilePhotoMigration = (await readFile(defaultProfilePhotoMigrationPath, "utf8")).toLowerCase();
 
 test("RF-004 migration defines payment and download records with database constraints", () => {
     assert.match(sql, /create table if not exists public\.simulated_payments/);
@@ -44,6 +46,16 @@ test("novo schema protege nível, pedidos, downloads e administração com trigg
     assert.match(freshSchema, /alter table public\.profiles enable row level security/);
     assert.match(freshSchema, /alter table public\.simulated_payments enable row level security/);
     assert.match(freshSchema, /alter table public\.game_downloads enable row level security/);
+});
+
+test("schema novo and additive migration assign the default photo to profiles", () => {
+    for (const source of [freshSchema, defaultProfilePhotoMigration]) {
+        assert.match(source, /user_foto[^;]*default '\/imagens\/user-img-default\.jpg'/);
+        assert.match(source, /coalesce\(nullif\([^)]*user_foto[^)]*\), '\/imagens\/user-img-default\.jpg'\)/);
+    }
+    assert.match(defaultProfilePhotoMigration, /update public\.profiles[\s\S]*set user_foto = '\/imagens\/user-img-default\.jpg'[\s\S]*where user_foto is null/);
+    assert.match(defaultProfilePhotoMigration, /begin;[\s\S]*commit;/);
+    assert.doesNotMatch(defaultProfilePhotoMigration, /\b(?:drop\s+table|truncate\s+table|delete\s+from)\b/);
 });
 
 test("RF-004 migration derives payment and download ownership and values from the authenticated user", () => {

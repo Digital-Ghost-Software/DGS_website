@@ -177,6 +177,16 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Em 27/09/2026, o usuário confirmou que, autenticado na página de perfil em `http://localhost:3000/paginas/perfil.html`, a navegação está funcionando. Isso conclui a verificação visual da etapa de ocultar “Entrar”.
 - Próximo passo: validar ponta a ponta o link de recuperação no novo projeto Supabase. O usuário confirmou que já adicionou `http://localhost:3000/paginas/recuperar-senha.html` em Authentication → URL Configuration → Redirect URLs. Solicitar que ele teste o envio do link, o retorno à página no estado de nova senha e o login com a senha atualizada; não registrar e-mail, senha ou token.
 
+## Etapa aprovada — foto padrão dos perfis (27/09/2026)
+
+- `imagens/user-img-default.jpg` é a imagem padrão solicitada. O perfil exibe esse caminho quando `user_foto` estiver nulo/vazio e o HTML já inicia com a mesma imagem.
+- O schema de instalação nova define `user_foto` como não nulo, com default `/imagens/user-img-default.jpg`; o gatilho Auth também atribui esse valor aos novos perfis.
+- Criada a migração incremental `database/ddl/default-profile-photo.sql` para o projeto `DGS_Web_Site` existente. Conforme aprovação explícita, preenche fotos nulas dos perfis existentes, define o default/não nulo e atualiza o gatilho para novos usuários. **A migração ainda não foi executada pelo usuário no Supabase**; aguardar confirmação antes de afirmar que a foto persistida no banco está ativa.
+- Testes: `npm.cmd run test:unit` — 32 aprovados; `npm.cmd run test:integration` — 18 aprovados; suíte completa — 50 aprovados, 0 falhas, 1 teste remoto ignorado. Build copiou a imagem para `dist/imagens/user-img-default.jpg`; `git diff --check` passou.
+- Usuário aprovou a implementação e o backfill. Commit: `Define foto padrao para perfis`.
+- A exclusão local de `imagens/626457731d0ab3dc14118c6c4f348661.jpg`, a alteração do usuário em `index.html` e o documento RF-001 não rastreado foram preservados fora do commit.
+- Próximo passo: usuário executa `database/ddl/default-profile-photo.sql` no SQL Editor do projeto existente e informa o resultado. Depois validar no perfil e, quando o limite do Supabase permitir, concluir o fluxo de recuperação de senha por e-mail.
+
 ## Etapa aprovada — correção das instruções do README (27/09/2026)
 
 - README atualizado para o projeto `DGS_Web_Site`: aponta para `new-project-schema.sql`, descreve `.env` local carregado pelo Node 22, instalação/testes, uso de `npm start`, configuração Auth e fluxo de recuperação; remove referências incorretas a `.env.example` e ao schema legado.

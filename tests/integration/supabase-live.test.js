@@ -48,7 +48,7 @@ test("Supabase real aplica preços, titularidade, isolamento RLS e valida pedido
         assert.equal(profile.id, loginA.data.user.id);
         assert.equal(profile.email, loginA.data.user.email);
         assert.equal(typeof profile.user_name, "string");
-        assert.ok(Object.hasOwn(profile, "user_foto"));
+        assert.equal(profile.user_foto, "/imagens/user-img-default.jpg");
         assert.ok([null, "standard", "plus"].includes(profile.user_level));
 
         const anonymousProfileResponse = await fetch(`${apiBaseUrl}/api/profile`);

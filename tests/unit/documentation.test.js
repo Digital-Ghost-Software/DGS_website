@@ -6,6 +6,7 @@ test("README instructions match the current Supabase project and local setup", a
     const readme = await readFile("README.md", "utf8");
 
     assert.match(readme, /database\/ddl\/new-project-schema\.sql/);
+    assert.match(readme, /database\/ddl\/default-profile-photo\.sql/);
     assert.match(readme, /SUPABASE_URL/);
     assert.match(readme, /SUPABASE_PUBLISHABLE_KEY/);
     assert.match(readme, /npm ci/);

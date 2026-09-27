@@ -5,7 +5,7 @@
     "build": "node scripts/build-static.js",
     "start": "node server/local.js",
     "test": "node --test",
-    "test:unit": "node --test tests/unit/purchase-rules.test.js tests/unit/auth-rules.test.js tests/unit/download-rules.test.js tests/unit/localization.test.js tests/unit/migration.test.js tests/unit/supabase-config.test.js tests/unit/documentation.test.js",
+    "test:unit": "node --test tests/unit/purchase-rules.test.js tests/unit/auth-rules.test.js tests/unit/download-rules.test.js tests/unit/localization.test.js tests/unit/migration.test.js tests/unit/supabase-config.test.js tests/unit/documentation.test.js tests/unit/profile-photo.test.js",
     "test:integration": "node --test tests/integration/api.test.js",
     "test:integration:supabase": "node scripts/run-supabase-integration.js"
   },

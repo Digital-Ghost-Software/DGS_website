@@ -14,6 +14,7 @@ import {
     validateRegistration
 } from "./auth-rules.js";
 import { getDownloadLinkState } from "./download-rules.js";
+import { getProfilePhotoSource } from "./profile-rules.js";
 
 const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await loadSupabaseConfig();
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -274,6 +275,8 @@ if (profileCard) {
         if (spans?.[0]) spans[0].textContent = name;
         if (spans?.[1]) spans[1].textContent = profile.email || "";
         if (spans?.[2]) spans[2].textContent = profile.user_level === "plus" ? "Plus" : profile.user_level === "standard" ? "Standard" : "Nenhuma edição adquirida";
+        const profilePhoto = $("#fotoPerfilUsuario");
+        if (profilePhoto) profilePhoto.src = getProfilePhotoSource(profile.user_foto);
     };
     void loadProfile();
 }

@@ -21,7 +21,7 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 
 ## Configuração
 
-1. Use o projeto Supabase `DGS_Web_Site` já criado. Para criar uma instalação nova, aplique [`database/ddl/new-project-schema.sql`](database/ddl/new-project-schema.sql) no SQL Editor; não use a migração RF-004 do banco legado neste schema.
+1. Use o projeto Supabase `DGS_Web_Site` já criado. Para criar uma instalação nova, aplique [`database/ddl/new-project-schema.sql`](database/ddl/new-project-schema.sql) no SQL Editor; não use a migração RF-004 do banco legado neste schema. Para atualizar um projeto já configurado, aplique também a migração incremental [`database/ddl/default-profile-photo.sql`](database/ddl/default-profile-photo.sql); ela preenche perfis atuais sem foto e configura o padrão para novos usuários.
 2. Na raiz do projeto, crie um `.env` local (o arquivo é ignorado pelo Git) com `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`. Use a URL base do projeto, sem `/rest/v1/`, e a chave publicável/anon. O servidor Node 22 carrega o arquivo local e `/api/config` entrega ao navegador somente esses valores públicos. Nunca coloque senha do banco, chave `service_role` ou chave secreta no frontend, repositório ou chat.
 3. Instale dependências com Node.js 22.x usando `npm ci`. Execute `npm test` para a suíte completa ou `npm run test:unit` e `npm run test:integration` separadamente.
 4. Habilite autenticação por e-mail no Supabase e defina confirmação de e-mail conforme a política do projeto. Em Authentication → URL Configuration, inclua `http://localhost:3000/paginas/login.html` e `http://localhost:3000/paginas/recuperar-senha.html` em Redirect URLs. A recuperação por e-mail usa a segunda rota para retornar ao estado de nova senha.

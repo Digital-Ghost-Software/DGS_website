@@ -94,7 +94,7 @@ before(async () => {
             return sendJson(response, 200, {
                 user_id: userId,
                 user_name: token === "valid-test-token" ? "Test User" : "Second User",
-                user_foto: null,
+                user_foto: "/imagens/user-img-default.jpg",
                 user_level: token === "valid-test-token" ? "plus" : "standard"
             });
         }
@@ -104,7 +104,7 @@ before(async () => {
             capturedRequests.at(-1).body = payload;
             return sendJson(response, 200, {
                 user_name: payload.user_name,
-                user_foto: null,
+                user_foto: "/imagens/user-img-default.jpg",
                 user_level: "plus"
             });
         }
@@ -196,6 +196,10 @@ test("local server serves the site and blocks private project files", async () =
     const stylesheet = await fetch(`${apiBaseUrl}/css/style.css`);
     assert.equal(stylesheet.status, 200);
     assert.match(await stylesheet.text(), /\.form-container form\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
+    const defaultProfilePhoto = await fetch(`${apiBaseUrl}/imagens/user-img-default.jpg`);
+    assert.equal(defaultProfilePhoto.status, 200);
+    assert.match(defaultProfilePhoto.headers.get("content-type"), /image\/jpeg/);
+    assert.ok(Number(defaultProfilePhoto.headers.get("content-length")) > 0);
     assert.match(page.headers.get("content-type"), /text\/html/);
     assert.match(await page.text(), /Forma de pagamento simulada/);
 
@@ -318,7 +322,7 @@ test("profile returns only the authenticated Supabase identity", async () => {
         id: "00000000-0000-4000-8000-000000000001",
         email: "tester@example.invalid",
         user_name: "Test User",
-        user_foto: null,
+        user_foto: "/imagens/user-img-default.jpg",
         user_level: "plus"
     });
     const profileRead = capturedRequests.findLast((entry) => entry.path === "/rest/v1/profiles" && entry.method === "GET");
@@ -339,7 +343,7 @@ test("profile update validates the name and forwards only the editable field", a
         body: JSON.stringify({ user_name: "  New Name  ", user_level: null, user_id: userIds["second-test-token"] })
     });
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { user_name: "New Name", user_foto: null, user_level: "plus" });
+    assert.deepEqual(await response.json(), { user_name: "New Name", user_foto: "/imagens/user-img-default.jpg", user_level: "plus" });
     const update = capturedRequests.findLast((entry) => entry.path === "/rest/v1/profiles" && entry.method === "PATCH");
     assert.deepEqual(update.body, { user_name: "New Name" });
     assert.equal(update.authorization, "Bearer valid-test-token");
