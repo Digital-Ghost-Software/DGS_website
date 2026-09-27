@@ -7,7 +7,7 @@
 | ID / título | RF-002 — Cadastrar usuário |
 | Tipo / prioridade | Funcional / Alta |
 | Complexidade | Média, estimativa inicial de 5 story points (confirmar pela equipe). |
-| Status | Cadastro e confirmação de e-mail testados no Supabase Auth; perfil e edição de nome também foram validados. Exclusão real, responsividade e deploy permanecem pendentes. |
+| Status | Cadastro, confirmação de e-mail, perfil, edição de nome e responsividade foram validados. Exclusão real e deploy permanecem pendentes. |
 | Projeto | Digital Ghost Software — Yokai Tales |
 | Atualização | 27/09/2026 |
 
@@ -55,7 +55,7 @@ O cadastro identifica usuários que desejam manter uma conta e acompanhar seus p
 |---|---|---|
 | RNF-01 | Proteção de credenciais | Serviço Supabase Auth gerencia senha; validar configuração e fluxo real. |
 | RNF-02 | Usabilidade/acessibilidade | Erros e estados do formulário anunciados via `aria-live`; conferir visualmente. |
-| RNF-03 | Compatibilidade | Formulário utilizável em 320 px e 1024 px; teste manual pendente. |
+| RNF-03 | Compatibilidade | Usuário confirmou o formulário utilizável em 320 px e 1024 px. |
 
 ## 4. Protótipo funcional (50%)
 
@@ -65,7 +65,7 @@ O cadastro identifica usuários que desejam manter uma conta e acompanhar seus p
 - Exclusão da identidade pede confirmação explícita e senha atual; `server/index.js` valida o token e apaga somente a identidade autenticada. A API precisa ser publicada e configurada com `SUPABASE_SERVICE_ROLE_KEY` como segredo exclusivamente server-side.
 - Estados: vazio, preenchimento, campos inválidos, criação/processamento e sucesso/confirmação pendente.
 - O cadastro usa Supabase Auth e armazena o nome em `user_metadata.full_name`.
-- Cadastro pela interface e confirmação de e-mail foram concluídos com conta de teste; o perfil criado e a edição do nome foram validados. O projeto Supabase `DGS_Web_Site` usa o schema novo. Deploy Vercel, demonstração responsiva e evidências formais ainda não foram concluídos.
+- Cadastro pela interface e confirmação de e-mail foram concluídos com conta de teste; o perfil criado, a edição do nome e a responsividade foram validados pelo usuário. O projeto Supabase `DGS_Web_Site` usa o schema novo. Deploy Vercel e evidências formais ainda não foram concluídos.
 
 ## 5. Arquitetura e ADR (15%)
 
@@ -119,7 +119,7 @@ flowchart LR
 | A04 — Insecure Design | Formulário valida campos e senhas; Auth controla unicidade e confirmação. | Testes unitários de campos vazios/senhas e cadastro real confirmado. Teste de rede offline pendente. |
 | A01 — Broken Access Control | API Node.js valida token para rotas de perfil; exclusão usa somente a identidade autenticada. | Testes de token ausente/inválido e identidade estão na suíte de integração local. Exclusão real pendente da chave server-side e deploy. |
 
-Cadastro, confirmação, redefinição de senha, login e edição do nome foram confirmados pelo usuário; as evidências estão resumidas em `contexto-backup.md`. Screenshots formais e teste responsivo/teclado não foram anexados.
+Cadastro, confirmação, redefinição de senha, login, edição do nome e responsividade foram confirmados pelo usuário; as evidências estão resumidas em `contexto-backup.md`. Screenshots formais e teste de navegação por teclado/leitor de tela não foram anexados.
 
 ## Checklist
 

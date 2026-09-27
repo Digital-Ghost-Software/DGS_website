@@ -11,7 +11,7 @@
 | Tipo | Requisito funcional |
 | Prioridade | Alta — o feedback do professor identifica Gestão de Pagamentos como o próximo requisito. |
 | Complexidade | Média, estimativa inicial de 5 story points; confirmar com a equipe. |
-| Status | Schema e migrações aplicados no Supabase pessoal; testes live de duas contas e histórico de compras passaram. Deploy Vercel, responsividade e evidências formais permanecem pendentes. |
+| Status | Schema e migrações aplicados no Supabase pessoal; testes live de duas contas, histórico de compras e responsividade passaram. Deploy Vercel e pacote formal de evidências permanecem pendentes. |
 | Criação / atualização | 23/09/2026 / 27/09/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
 
@@ -115,7 +115,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 |---|---|---|---|
 | RNF-01 | Segurança | RLS separa pedidos por `auth.uid()` e o banco calcula valor/estado. | Teste live com duas contas e tentativa de forjar preço/usuário/estado passou após aplicação SQL. |
 | RNF-02 | Usabilidade | Estados vazio, seleção, processamento, erro e confirmação são claros e acessíveis. | Confirmação e histórico foram vistos na interface; navegação por teclado e evidência visual formal ainda pendentes. |
-| RNF-03 | Responsividade | Checkout utilizável em 320 px e desktop 1024 px. | Verificação nessas larguras ainda pendente. |
+| RNF-03 | Responsividade | Checkout utilizável em 320 px e desktop 1024 px. | Usuário confirmou revisão responsiva nessas larguras. |
 | RNF-04 | Integridade | Cada confirmação bem-sucedida gera registro consultável com preço correto. | Teste live confirmou valores e recibos; usuário confirmou a lista de últimas compras no site. |
 
 ## 4. Protótipo funcional (50%)
@@ -210,7 +210,7 @@ flowchart LR
 | A05 — Authentication Failures / preço adulterado | Supabase Auth; trigger sobrescreve titular, preço, estado e horário. | Teste live enviou valores adulterados e confirmou os valores calculados no banco. |
 | A03 — Injection | Edição e forma de pagamento são validadas na API e no banco; acesso usa cliente Supabase estruturado. | Teste live rejeitou forma de pagamento inválida; teste unitário/API cobre edição inválida. |
 
-Os controles acima têm evidência de testes automatizados e integração real. Isso não equivale a auditoria externa ou teste de penetração. Screenshots formais e demonstração responsiva ainda são necessários para a entrega acadêmica completa.
+Os controles acima têm evidência de testes automatizados e integração real. Isso não equivale a auditoria externa ou teste de penetração. Screenshots formais ainda são necessários para a entrega acadêmica completa; a responsividade foi confirmada pelo usuário.
 
 ## 7. Checklist de atendimento e pendências
 

@@ -237,7 +237,7 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Testes executados: `npm.cmd run test:unit` (34 aprovados), `npm.cmd run test:integration` (18 aprovados), `npm.cmd test` (52 aprovados e 1 teste live do Supabase ignorado por padrão), `npm.cmd run build` e `git diff --check` aprovados.
 - O usuário aprovou o conjunto e autorizou incluir no commit sua alteração em `paginas/download.html`, que remove o termo “SIMULADO” do rótulo do botão de confirmação.
 - Commit desta etapa: `Atualiza evidencias dos requisitos RF-001 a RF-004` (inclui relatórios, teste, backup e a alteração de interface aprovada pelo usuário).
-- Próximo passo sugerido: demonstrar responsividade e acessibilidade dos fluxos RF-001 a RF-004 em 320 px e desktop 1024 px, documentando cada observação e corrigindo falhas encontradas. Apresentar o resultado e aguardar aprovação antes de iniciar preparação/publicação na Vercel.
+- Próximo passo na ocasião: demonstrar responsividade e acessibilidade dos fluxos RF-001 a RF-004 em 320 px e desktop 1024 px. A revisão responsiva foi concluída conforme registrado abaixo; teclado/leitor de tela continua pendente.
 
 ## Etapa aprovada — indicador de foco para teclado (27/09/2026)
 
@@ -246,3 +246,11 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - O usuário aprovou a alteração. Testes: `npm.cmd test` — 53 aprovados, 0 falhas e 1 teste live do Supabase ignorado por padrão; `npm.cmd run build` e `git diff --check` passaram.
 - Ainda falta verificar visualmente os fluxos em 320 px e 1024 px; esta etapa não comprova responsividade nem cobre toda a acessibilidade por teclado.
 - Próximo passo: validar visualmente as páginas RF-001 a RF-004 nessas larguras e registrar problemas antes de propor correções.
+
+## Etapa aprovada — validação responsiva RF-001 a RF-004 (27/09/2026)
+
+- O usuário informou que verificou a responsividade e obteve sucesso; este relato fecha a validação manual planejada para 320 px e 1024 px nos fluxos RF-001 a RF-004.
+- Relatórios RF-001 a RF-004 foram atualizados para registrar responsividade confirmada e manter como pendentes apenas evidências visuais formais quando aplicável. O teste unitário de consistência documental foi ajustado.
+- Não foram recebidas capturas para anexar. A navegação completa por teclado e teste com leitor de tela seguem pendentes; o indicador visual `:focus-visible` foi implementado e commitado em `e1f6705`.
+- Testes desta etapa: `npm.cmd test` — 53 aprovados, 0 falhas e 1 teste live do Supabase ignorado por padrão; `npm.cmd run build` e `git diff --check` passaram.
+- Próximo passo sugerido: avaliar navegação por teclado e leitor de tela em um fluxo RF por vez, começando pelo login/cadastro, com apresentação das alterações e aprovação antes de prosseguir.

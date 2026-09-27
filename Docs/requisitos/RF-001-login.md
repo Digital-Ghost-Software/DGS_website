@@ -7,7 +7,7 @@
 | ID / título | RF-001 — Autenticar usuário |
 | Tipo / prioridade | Funcional / Alta |
 | Complexidade | Média, estimativa inicial de 5 story points (confirmar pela equipe). |
-| Status | Supabase Auth validado com contas de teste; login, logout, perfil e recuperação de senha foram confirmados. Deploy de produção e evidências visuais responsivas continuam pendentes. |
+| Status | Supabase Auth validado com contas de teste; login, logout, perfil, recuperação de senha e responsividade foram confirmados. Deploy de produção e pacote formal de evidências continuam pendentes. |
 | Projeto | Digital Ghost Software — Yokai Tales |
 | Atualização | 27/09/2026 |
 
@@ -53,7 +53,7 @@ A autenticação identifica o usuário antes de apresentar dados pessoais, hist�
 | ID | Requisito | Verificação |
 |---|---|---|
 | RNF-01 | Senha nunca deve ser persistida no `localStorage` ou tabela de perfil. | Inspecionar chamadas/tabelas e armazenamento do navegador. |
-| RNF-02 | Formulário responsivo e mensagens acessíveis por leitor de tela. | Validar em 320/1024 px e `aria-live`. |
+| RNF-02 | Formulário responsivo e mensagens acessíveis por leitor de tela. | Usuário confirmou revisão responsiva em 320/1024 px; `aria-live` está implementado. Teste com leitor de tela e evidência formal pendentes. |
 | RNF-03 | Login, falha e logout devem concluir sem estado falso de sessão. | Login e logout foram verificados com conta de teste; ausência de sessão redireciona o perfil ao login. Login inválido ainda não foi demonstrado manualmente. |
 
 ## 4. Protótipo funcional (50%)
@@ -107,14 +107,15 @@ flowchart LR
 | A01 — Broken Access Control | API autentica o bearer token e consulta o perfil vinculado ao usuário; RLS separa linhas por `auth.uid()`. | Perfil sem sessão redireciona ao login; integração real de duas contas validou isolamento de dados. |
 | A02 — Cryptographic Failures | A aplicação não consulta nem armazena senha na tabela de perfil ou no `localStorage`; Auth gerencia credenciais. | Revisão do cliente/schema e teste real de redefinição concluídos; a tabela legada permanece fora do fluxo de autenticação web. |
 
-As confirmações manuais e testes foram registrados em `contexto-backup.md`. Não há pacote de screenshots/relatório de evidências anexado a este documento; a revisão responsiva e de teclado permanece pendente.
+As confirmações manuais e testes foram registrados em `contexto-backup.md`. A revisão responsiva foi confirmada pelo usuário. Não há pacote de screenshots/relatório de evidências anexado; navegação completa por teclado e teste com leitor de tela permanecem pendentes.
 
 ## Checklist
 
 - [x] Código de login usa Supabase Auth; não consulta `senha_usuario`.
 - [x] Há estados de processamento e mensagens de falha/sucesso.
 - [x] Validar cadastro e confirmação de e-mail, login/logout, sessão de perfil e recuperação de senha no projeto Supabase real com contas de teste.
-- [ ] Demonstrar a 320 px/1024 px e anexar evidência.
+- [x] Verificar responsividade em 320 px/1024 px (confirmação manual do usuário).
+- [ ] Anexar evidência visual e verificar com leitor de tela.
 - [ ] Publicar site e API integrados na Vercel e disponibilizar conta de teste apropriada.
 - [ ] Executar e documentar testes de segurança.
 

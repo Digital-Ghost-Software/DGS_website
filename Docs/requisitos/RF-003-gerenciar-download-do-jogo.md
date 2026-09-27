@@ -52,7 +52,7 @@ O download permite que o jogador obtenha a versão publicada do jogo. O feedback
 | ID | Requisito | Verificação |
 |---|---|---|
 | RNF-01 | Download acessível por HTTPS e com nome/tamanho/versão conhecidos. | Ainda não verificável: release não publicada. |
-| RNF-02 | Interface responsiva e estado pendente compreensível. | Revisão visual em 320/1024 px pendente. |
+| RNF-02 | Interface responsiva e estado pendente compreensível. | Usuário confirmou revisão responsiva em 320/1024 px; o estado sem arquivo também foi validado na interface. |
 | RNF-03 | Acesso a pedidos isolado pelo Supabase RLS. | Teste live com duas contas confirmou a leitura somente de pedidos próprios e rejeição de download de pedido alheio. |
 
 ## 4. Protótipo funcional (50%)

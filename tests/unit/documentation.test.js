@@ -33,15 +33,15 @@ test("RF-001 to RF-004 reports distinguish verified behavior from remaining depl
     assert.match(rf001, /Deploy de produção.*pendentes/);
     assert.doesNotMatch(rf001, /teste com projeto configurado ainda pendente/);
 
-    assert.match(rf002, /Cadastro e confirmação de e-mail testados/);
-    assert.match(rf002, /exclusão real.*responsividade e deploy permanecem pendentes/i);
+    assert.match(rf002, /Cadastro, confirmação de e-mail, perfil, edição de nome e responsividade foram validados/);
+    assert.match(rf002, /responsividade foram validados\. Exclusão real e deploy permanecem pendentes/i);
     assert.doesNotMatch(rf002, /execução integrada ainda precisa ser validada/);
 
     assert.match(rf003, /Teste live com duas contas confirmou/);
     assert.match(rf003, /arquivo\/URL de release ainda não existem/);
     assert.doesNotMatch(rf003, /Teste com duas contas pendente/);
 
-    assert.match(rf004, /testes live de duas contas e histórico de compras passaram/);
+    assert.match(rf004, /testes live de duas contas, histórico de compras e responsividade passaram/);
     assert.match(rf004, /Deploy Vercel.*permanecem pendentes/);
     assert.match(rf004, /\[x\] Standard persiste R\$ 20,00 e Plus R\$ 40,00/);
     assert.doesNotMatch(rf004, /Pendente de execução após aplicar SQL/);
