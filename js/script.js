@@ -173,11 +173,11 @@ if (profileCard) {
         try {
             profile = await apiRequest("/api/profile");
         } catch (error) {
+            console.error(`Falha ao carregar o perfil. HTTP ${error.status ?? "indisponível"}; código ${error.code ?? "indisponível"}.`);
             if (getProfileLoadAction(error.status) === "login") {
                 window.location.replace("login.html");
                 return;
             }
-            console.error("Falha ao carregar o perfil. HTTP", error.status ?? "sem resposta");
             showMessage($("#mensagemPerfil"), "Não foi possível carregar seu perfil. Tente novamente.", "error");
             return;
         }

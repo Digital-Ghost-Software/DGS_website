@@ -203,11 +203,13 @@ test("local server serves the site and blocks private project files", async () =
 test("profile rejects missing and invalid bearer tokens", async () => {
     const missing = await fetch(`${apiBaseUrl}/api/profile`);
     assert.equal(missing.status, 401);
+    assert.equal((await missing.json()).code, "missing_bearer_token");
 
     const invalid = await fetch(`${apiBaseUrl}/api/profile`, {
         headers: { Authorization: "Bearer invalid-test-token" }
     });
     assert.equal(invalid.status, 401);
+    assert.equal((await invalid.json()).code, "invalid_session");
 });
 
 test("profile returns only the authenticated Supabase identity", async () => {

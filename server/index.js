@@ -68,9 +68,14 @@ function createUserClient(token) {
 
 async function authenticate(request) {
     const token = request.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
-    if (!token) return { error: "Autenticação necessária.", status: 401 };
+    if (!token) return { error: "Autenticação necessária.", status: 401, code: "missing_bearer_token" };
     const { data: { user }, error } = await authClient.auth.getUser(token);
-    if (error || !user) return { error: "Sessão inválida. Entre novamente.", status: 401 };
+    if (error || !user) {
+        const code = typeof error?.code === "string" && /^[a-z0-9_-]{1,64}$/i.test(error.code)
+            ? error.code
+            : "invalid_session";
+        return { error: "Sessão inválida. Entre novamente.", status: 401, code };
+    }
     return { user, client: createUserClient(token) };
 }
 
@@ -117,7 +122,7 @@ export async function handler(request, response) {
     try {
         if (path === "/api/profile" && request.method === "GET") {
             const auth = await authenticate(request);
-            if (auth.error) return sendJson(response, auth.status, { error: auth.error }, origin);
+            if (auth.error) return sendJson(response, auth.status, { error: auth.error, code: auth.code }, origin);
             const { data: profile, error } = await auth.client
                 .from("profiles")
                 .select("user_name, user_foto, user_level")
