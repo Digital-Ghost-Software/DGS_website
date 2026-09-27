@@ -5,6 +5,7 @@ import {
     getLoginDestination,
     getNavigationState,
     getPasswordRecoveryRedirect,
+    isPasswordRecoveryEvent,
     getProfileLoadAction,
     getSafeAuthErrorDetails,
     validateLogin,
@@ -52,6 +53,12 @@ test("password recovery returns to the shared two-state recovery page", () => {
         getPasswordRecoveryRedirect("http://localhost:3000/paginas/recuperar-senha.html"),
         "http://localhost:3000/paginas/recuperar-senha.html"
     );
+});
+
+test("only the Supabase password recovery event opens the new password state", () => {
+    assert.equal(isPasswordRecoveryEvent("PASSWORD_RECOVERY"), true);
+    assert.equal(isPasswordRecoveryEvent("SIGNED_IN"), false);
+    assert.equal(isPasswordRecoveryEvent("INITIAL_SESSION"), false);
 });
 
 test("navigation shows only the action matching the authentication state", () => {

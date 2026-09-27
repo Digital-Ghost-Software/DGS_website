@@ -29,6 +29,10 @@ export function getPasswordRecoveryRedirect(currentUrl) {
     return new URL("recuperar-senha.html", currentUrl).href;
 }
 
+export function isPasswordRecoveryEvent(event) {
+    return event === "PASSWORD_RECOVERY";
+}
+
 export function getSafeAuthErrorDetails(error) {
     const safeCode = typeof error?.code === "string" && /^[a-z0-9_-]{1,64}$/i.test(error.code)
         ? error.code

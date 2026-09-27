@@ -6,6 +6,7 @@ import {
     getLoginDestination,
     getNavigationState,
     getPasswordRecoveryRedirect,
+    isPasswordRecoveryEvent,
     getSafeAuthErrorDetails,
     getProfileLoadAction,
     validateLogin,
@@ -18,7 +19,6 @@ import { getProfilePhotoSource } from "./profile-rules.js";
 
 const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await loadSupabaseConfig();
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-const isPasswordRecoveryCallback = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
 const GAME_DOWNLOAD_URL = ""; // Configure when a release file is available.
 const $ = (selector) => document.querySelector(selector);
 
@@ -215,18 +215,17 @@ if (resetPasswordForm) {
     const recoveryDescription = $("#descricaoRecuperacao");
     resetPasswordForm.hidden = true;
 
-    if (isPasswordRecoveryCallback) {
-        void supabase.auth.getSession().then(({ data: { session }, error }) => {
-            if (error || !session) {
-                showMessage($("#mensagemRecuperacao"), "Link inválido ou expirado. Solicite uma nova recuperação de senha.", "error");
-                return;
-            }
-            recoveryForm.hidden = true;
-            resetPasswordForm.hidden = false;
-            recoveryTitle.textContent = "REDEFINIR SENHA";
-            recoveryDescription.textContent = "Escolha uma nova senha para sua conta.";
-        });
-    }
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (!isPasswordRecoveryEvent(event)) return;
+        if (!session) {
+            showMessage($("#mensagemRecuperacao"), "Link inválido ou expirado. Solicite uma nova recuperação de senha.", "error");
+            return;
+        }
+        recoveryForm.hidden = true;
+        resetPasswordForm.hidden = false;
+        recoveryTitle.textContent = "REDEFINIR SENHA";
+        recoveryDescription.textContent = "Escolha uma nova senha para sua conta.";
+    });
 
     resetPasswordForm.addEventListener("submit", async (event) => {
         event.preventDefault();

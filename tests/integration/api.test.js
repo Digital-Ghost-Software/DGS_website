@@ -193,6 +193,12 @@ test("local server serves the site and blocks private project files", async () =
     const recoveryHtml = await passwordRecoveryPage.text();
     assert.match(recoveryHtml, /<form id="formRecuperacaoSenha">/);
     assert.match(recoveryHtml, /<form id="formRedefinirSenha" hidden>/);
+    const recoveryClientScript = await fetch(`${apiBaseUrl}/js/script.js`);
+    assert.equal(recoveryClientScript.status, 200);
+    const recoveryClientScriptSource = await recoveryClientScript.text();
+    assert.match(recoveryClientScriptSource, /onAuthStateChange\(\(event, session\) =>/);
+    assert.match(recoveryClientScriptSource, /isPasswordRecoveryEvent\(event\)/);
+    assert.match(recoveryClientScriptSource, /resetPasswordForm\.hidden = false/);
     const stylesheet = await fetch(`${apiBaseUrl}/css/style.css`);
     assert.equal(stylesheet.status, 200);
     assert.match(await stylesheet.text(), /\.form-container form\[hidden\]\s*\{\s*display:\s*none\s*!important;/);

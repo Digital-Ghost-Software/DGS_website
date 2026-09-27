@@ -202,3 +202,11 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - O teste live `npm.cmd run test:integration:supabase` passou com acesso de rede e confirmou login das duas contas de teste, perfil com `user_foto = /imagens/user-img-default.jpg`, preços, isolamento RLS e validação de download. A tentativa inicial sem rede retornou HTTP 0; a repetição autorizada com acesso de rede passou.
 - O teste live criou três pedidos simulados (dois para a conta A e um para B) e um registro de download da conta A; a solicitação de download da conta B para o pedido da A foi rejeitada. São dados de teste nas contas descartáveis já autorizadas.
 - Próximo passo: usuário recarrega `http://localhost:3000/paginas/perfil.html` e confirma visualmente a foto padrão no perfil. O fluxo de recuperação por e-mail permanece pendente de validação quando o limite de envio do Supabase permitir.
+
+## Etapa aprovada — abrir diretamente o estado de nova senha (27/09/2026)
+
+- O callback da página agora usa `supabase.auth.onAuthStateChange` e o evento `PASSWORD_RECOVERY` para abrir o formulário de nova senha quando o link de recuperação retorna com sessão válida; o formulário de solicitação fica oculto.
+- Removida a dependência exclusiva do fragmento `type=recovery` na URL, que não identificava o retorno observado pelo usuário.
+- Testes: `npm.cmd test` — 51 aprovados, 0 falhas e 1 teste live ignorado; `npm.cmd run build`, `node --check js/script.js` e `git diff --check` passaram.
+- Usuário validou manualmente que o link abre diretamente no formulário de nova senha e aprovou a correção.
+- Próximo passo: usuário salvar a nova senha e depois testar login com ela. Não registrar senha, link nem token.
