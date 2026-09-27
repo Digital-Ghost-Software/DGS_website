@@ -216,3 +216,13 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Usuário confirmou que um pedido exibe `Solicitações de download: 1` com data/hora. Histórico de compra e vínculo de solicitação de download foram validados visualmente.
 - A tentativa pelo botão sem release exibiu a mensagem de que o arquivo não foi publicado; o ramo sem URL não registra outra solicitação. Download do jogo permanece pendente da publicação de um arquivo/release real.
 - Próxima etapa planejada: auditoria de regressão e segurança dos requisitos RF-001 a RF-004 antes da preparação de deploy.
+
+## Auditoria aprovada — RF-001 a RF-004 (27/09/2026)
+
+- Revisados os requisitos versionados, API Node.js, SQL/RLS, cliente e cobertura automatizada. A suíte `npm.cmd test` passou: 51 aprovados, 0 falhas e 1 teste Supabase live ignorado por padrão. `npm.cmd run build` e `git diff --check` passaram.
+- Controles já cobertos/validados: Supabase Auth e sessão; perfil e edição de nome; isolamento por token/RLS; trigger de preço e titularidade; métodos de pagamento permitidos; histórico de pedidos/downloads; solicitação cruzada rejeitada; download pendente sem arquivo real. O teste live de duas contas passou anteriormente após aplicação das migrações; não foi repetido nesta auditoria para não criar novamente registros de teste.
+- Não foram identificadas falhas críticas nos controles examinados. Isso não equivale a auditoria externa ou a teste de penetração.
+- Documentação precisa ser sincronizada: os relatórios `RF-001-login.md`, RF-003 e RF-004 ainda marcam como pendentes testes/SQL já confirmados; RF-002 tem itens parcialmente desatualizados. `RF - 01 - Login.md` é um modelo/instrução genérico, mas seu nome o faz parecer relatório específico de login, enquanto `RF-001-login.md` é o relatório do projeto. Não renomear/remover sem aprovação.
+- Permanecem pendentes: evidências manuais a 320 px/1024 px e acessibilidade/teclado; deploy Vercel e URLs de retorno de produção; configuração server-side da chave service-role para exclusão de conta; publicação de artefatos reais Standard/Plus e URL/checksum do download. O teste Supabase live é ignorado na suíte padrão e deve ser executado separadamente quando se desejar nova validação remota.
+- A alteração preexistente em `paginas/download.html` foi deixada intacta e fora do commit desta auditoria.
+- Próximo passo sugerido: atualizar a documentação RF com as evidências desta auditoria, mantendo explícitas as pendências externas.
