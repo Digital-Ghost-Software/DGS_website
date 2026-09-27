@@ -1078,6 +1078,10 @@ form {
     flex-direction: column;
 }
 
+.form-container form[hidden] {
+    display: none !important;
+}
+
 
 /* Labels */
 

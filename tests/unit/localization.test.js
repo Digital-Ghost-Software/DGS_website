@@ -22,7 +22,10 @@ test("public HTML uses Portuguese labels and has no English placeholder copy", a
     const recoveryPage = await readFile(path.join(root, "paginas", "recuperar-senha.html"), "utf8");
     assert.match(recoveryPage, /formRecuperacaoSenha/);
     assert.match(recoveryPage, /formRedefinirSenha/);
+    assert.match(recoveryPage, /<form id="formRedefinirSenha" hidden>/);
     assert.match(recoveryPage, /<label for="novaSenha">Nova senha<\/label>/);
+    const stylesheet = await readFile(path.join(root, "css", "style.css"), "utf8");
+    assert.match(stylesheet, /\.form-container\s+form\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
 
     const home = await readFile(path.join(root, "index.html"), "utf8");
     assert.match(home, />\s*(?:Download|Comprar)\s*</);
@@ -35,4 +38,7 @@ test("client does not expose raw authentication provider errors to users", async
     assert.match(script, /new Error\("Entre na sua conta para continuar\."\)/);
     assert.match(script, /Não foi possível criar a conta\. Confira os dados e tente novamente\./);
     assert.match(script, /Não foi possível atualizar o nome\. Tente novamente\./);
+    assert.match(script, /Falha ao solicitar recuperação de senha\./);
+    assert.match(script, /getSafeAuthErrorDetails\(error\)/);
+    assert.doesNotMatch(script, /console\.error\([^\n]*error\.message/);
 });

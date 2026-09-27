@@ -6,6 +6,7 @@ import {
     getNavigationState,
     getPasswordRecoveryRedirect,
     getProfileLoadAction,
+    getSafeAuthErrorDetails,
     validateLogin,
     validatePasswordChange,
     validateProfileName,
@@ -56,6 +57,21 @@ test("password recovery returns to the shared two-state recovery page", () => {
 test("navigation shows only the action matching the authentication state", () => {
     assert.deepEqual(getNavigationState(false), { loginHidden: false, logoutHidden: true });
     assert.deepEqual(getNavigationState(true), { loginHidden: true, logoutHidden: false });
+});
+
+test("recovery diagnostics expose only a safe HTTP status and error code", () => {
+    assert.deepEqual(getSafeAuthErrorDetails({
+        status: 429,
+        code: "over_email_send_rate_limit",
+        message: "private user detail"
+    }), { status: 429, code: "over_email_send_rate_limit" });
+    assert.deepEqual(getSafeAuthErrorDetails({
+        status: 400,
+        code: "sensitive value with spaces",
+        name: "AuthApiError",
+        message: "private user detail"
+    }), { status: 400, code: "AuthApiError" });
+    assert.deepEqual(getSafeAuthErrorDetails(new Error("private user detail")), { status: null, code: "Error" });
 });
 
 test("profile name and password updates enforce the documented minimums", () => {

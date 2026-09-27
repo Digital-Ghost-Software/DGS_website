@@ -29,6 +29,18 @@ export function getPasswordRecoveryRedirect(currentUrl) {
     return new URL("recuperar-senha.html", currentUrl).href;
 }
 
+export function getSafeAuthErrorDetails(error) {
+    const safeCode = typeof error?.code === "string" && /^[a-z0-9_-]{1,64}$/i.test(error.code)
+        ? error.code
+        : typeof error?.name === "string" && /^[a-z0-9_-]{1,64}$/i.test(error.name)
+            ? error.name
+            : null;
+    return {
+        status: Number.isInteger(error?.status) ? error.status : null,
+        code: safeCode
+    };
+}
+
 export function getNavigationState(isAuthenticated) {
     const authenticated = Boolean(isAuthenticated);
     return { loginHidden: authenticated, logoutHidden: !authenticated };

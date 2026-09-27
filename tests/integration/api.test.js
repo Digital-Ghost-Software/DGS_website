@@ -190,6 +190,12 @@ test("local server serves the site and blocks private project files", async () =
     assert.equal(page.status, 200);
     const passwordRecoveryPage = await fetch(`${apiBaseUrl}/paginas/recuperar-senha.html`);
     assert.equal(passwordRecoveryPage.status, 200);
+    const recoveryHtml = await passwordRecoveryPage.text();
+    assert.match(recoveryHtml, /<form id="formRecuperacaoSenha">/);
+    assert.match(recoveryHtml, /<form id="formRedefinirSenha" hidden>/);
+    const stylesheet = await fetch(`${apiBaseUrl}/css/style.css`);
+    assert.equal(stylesheet.status, 200);
+    assert.match(await stylesheet.text(), /\.form-container form\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
     assert.match(page.headers.get("content-type"), /text\/html/);
     assert.match(await page.text(), /Forma de pagamento simulada/);
 

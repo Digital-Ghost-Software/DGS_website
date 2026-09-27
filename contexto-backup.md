@@ -153,12 +153,16 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - O pop-up de troca de senha do perfil permanece separado, pois depende de uma sessão autenticada e representa alteração de senha dentro da conta.
 - A implementação chama `resetPasswordForEmail` com retorno à própria página e `updateUser` para salvar a senha. O link de recuperação foi adicionado ao login e o guia de deploy documenta as Redirect URLs para localhost e produção.
 - Testes cobrem a URL de retorno, a presença dos dois formulários, localização pt-BR e entrega da página pelo servidor. Verificação antes do commit: `npm.cmd test` — 42 passaram, 0 falharam, 1 teste live do Supabase ignorado; build e `git diff --check` passaram. Commit `Implementa recuperação de senha em página única`.
+- Correção visual: o seletor `form { display: flex; }` sobrepunha o comportamento padrão do atributo HTML `hidden`. Foi adicionada uma regra específica para manter oculto o formulário de nova senha fora do retorno do link. A captura do usuário após essa correção mostra apenas o formulário de solicitação.
+- Diagnóstico do envio real: usuário forneceu `HTTP 429` e `over_email_send_rate_limit`. O endpoint do projeto Supabase foi chamado com a URL de retorno configurada; o limite de envio por e-mail foi atingido. A aplicação registra localmente somente status/código sanitizados. A suíte atual passou com 44 aprovados, 0 falhas e 1 teste remoto ignorado; build e `git diff --check` passaram.
+- O usuário autorizou continuar e fará a validação do link recebido por e-mail em outro momento. O teste e-mail → estado de nova senha → login permanece pendente por causa do rate limit, não sendo considerado falha de implementação.
 - Preservar a edição preexistente do usuário em `index.html` (“Comprar”) e `Docs/requisitos/RF - 01 - Login.md`, que permanece não rastreado e fora do escopo deste commit.
 - A navegação que oculta “Entrar” quando a sessão está autenticada foi concluída e verificada separadamente; detalhes registrados abaixo.
 
 | Data | Etapa | Alterações/verificações | Aprovação |
 |---|---|---|---|
 | 27/09/2026 | Recuperação de senha em página de dois estados | Implementados solicitação e redefinição na mesma página, retorno explícito do Supabase, link no login, documentação de Redirect URLs e testes unitários/de integração. `npm.cmd test`: 42 aprovados, 0 falhas, 1 teste live ignorado; build e `git diff --check` aprovados. Commit `Implementa recuperação de senha em página única`. | Aprovada pelo usuário. |
+| 27/09/2026 | Correção da exibição dos estados e diagnóstico do rate limit | Corrigido CSS para respeitar `hidden`; testes de unidade/integração cobrem markup e regra CSS. Adicionado diagnóstico restrito a status HTTP/código Supabase, sem logar mensagem bruta, e testes de sanitização. `npm.cmd test`: 44 aprovados, 0 falhas, 1 teste live ignorado; build e `git diff --check` aprovados. Usuário confirmou o 429 `over_email_send_rate_limit` e optou por validar o e-mail depois. | Usuário autorizou prosseguir; validação externa do e-mail pendente. |
 
 ## Etapa aprovada — navegação conforme sessão autenticada (27/09/2026)
 

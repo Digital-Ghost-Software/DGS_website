@@ -6,6 +6,7 @@ import {
     getLoginDestination,
     getNavigationState,
     getPasswordRecoveryRedirect,
+    getSafeAuthErrorDetails,
     getProfileLoadAction,
     validateLogin,
     validatePasswordChange,
@@ -195,6 +196,7 @@ recoveryForm?.addEventListener("submit", async (event) => {
         redirectTo: getPasswordRecoveryRedirect(window.location.href)
     });
     setBusy(recoveryForm, false);
+    if (error) console.error("Falha ao solicitar recuperação de senha.", getSafeAuthErrorDetails(error));
     showMessage(
         message,
         error
