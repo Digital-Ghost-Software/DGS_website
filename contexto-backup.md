@@ -279,3 +279,13 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - A correção foi registrada no commit `004793b` (`Corrige preset da Vercel para o deploy`) e enviada a `origin/main`.
 - O usuário confirmou sucesso da implantação. O erro de entrypoint foi resolvido na Vercel após selecionar o preset **Other** via configuração versionada.
 - Próximo passo: validação pós-deploy (prioridade 7): percorrer o site publicado e confirmar páginas/recursos estáticos, APIs serverless, autenticação Supabase, fluxo de pagamento simulado, histórico/downloads e URLs de retorno Auth. Registrar cada resultado e corrigir uma falha de cada vez com aprovação.
+
+## Validação inicial pós-deploy na Vercel (27/09/2026)
+
+- Site publicado confirmado em `https://dgs-website-omega.vercel.app/`.
+- Smoke test público: página inicial e rotas Yokai Tales, login, cadastro, perfil e compras responderam HTTP 200; CSS, JavaScript e imagem padrão também responderam HTTP 200. `/api/health` e `/api/config` responderam HTTP 200.
+- Segurança básica dos endpoints: `/api/profile` e `/api/payments` sem sessão responderam HTTP 401, conforme esperado.
+- O usuário confirmou que, autenticado no site publicado, acessar “Pedidos e compras” mantém a sessão e carrega o histórico. Nenhum pedido novo foi criado durante a validação.
+- Esta etapa cobre a disponibilidade básica e o acesso autenticado ao histórico; ainda falta validar as demais operações pós-deploy (perfil, recuperação/login, criação de pedido simulado sem cobrança, solicitação de download condicionada à release, URLs Auth e revisão visual em produção).
+- Testes locais repetidos após esta validação: `npm.cmd test`, `npm.cmd run build` e `git diff --check`.
+- Próximo passo sugerido: continuar o smoke test autenticado com operações sem escrita primeiro; antes de gerar pedido de demonstração, apresentar o teste específico para aprovação e não transmitir dados financeiros reais.
