@@ -19,7 +19,12 @@ const $ = (selector) => document.querySelector(selector);
 
 async function apiRequest(path, { method = "GET", body } = {}) {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.access_token) throw new Error("Entre na sua conta para continuar.");
+    if (sessionError) throw sessionError;
+    if (!session?.access_token) {
+        const error = new Error("Entre na sua conta para continuar.");
+        error.code = "missing_bearer_token";
+        throw error;
+    }
     const response = await fetch(`${API_BASE_URL.replace(/\/+$/, "")}${path}`, {
         method,
         headers: {
@@ -176,7 +181,7 @@ if (profileCard) {
             profile = await apiRequest("/api/profile");
         } catch (error) {
             console.error(`Falha ao carregar o perfil. HTTP ${error.status ?? "indisponível"}; código ${error.code ?? "indisponível"}; diagnóstico do token ${error.tokenDiagnostic ?? "indisponível"}; HTTP Auth ${error.authStatus ?? "indisponível"}.`);
-            if (getProfileLoadAction(error.status) === "login") {
+            if (getProfileLoadAction(error.status, error.code) === "login") {
                 window.location.replace("login.html");
                 return;
             }

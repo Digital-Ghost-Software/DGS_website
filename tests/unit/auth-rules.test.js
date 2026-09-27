@@ -31,6 +31,7 @@ test("checkout return preserves only supported editions", () => {
 
 test("profile redirects only when the API reports an unauthenticated session", () => {
     assert.equal(getProfileLoadAction(401), "login");
+    assert.equal(getProfileLoadAction(undefined, "missing_bearer_token"), "login");
     assert.equal(getProfileLoadAction(403), "message");
     assert.equal(getProfileLoadAction(503), "message");
     assert.equal(getProfileLoadAction(undefined), "message");

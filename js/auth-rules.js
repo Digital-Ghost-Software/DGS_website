@@ -17,8 +17,8 @@ export function getLoginDestination(returnTo, edition) {
         : "perfil.html";
 }
 
-export function getProfileLoadAction(status) {
-    return status === 401 ? "login" : "message";
+export function getProfileLoadAction(status, code) {
+    return status === 401 || code === "missing_bearer_token" ? "login" : "message";
 }
 
 export function getEmailConfirmationRedirect(currentUrl) {
