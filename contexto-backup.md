@@ -289,3 +289,12 @@ O usuário confirmou as duas decisões pendentes para o novo banco: o e-mail ser
 - Esta etapa cobre a disponibilidade básica e o acesso autenticado ao histórico; ainda falta validar as demais operações pós-deploy (perfil, recuperação/login, criação de pedido simulado sem cobrança, solicitação de download condicionada à release, URLs Auth e revisão visual em produção).
 - Testes locais repetidos após esta validação: `npm.cmd test`, `npm.cmd run build` e `git diff --check`.
 - Próximo passo sugerido: continuar o smoke test autenticado com operações sem escrita primeiro; antes de gerar pedido de demonstração, apresentar o teste específico para aprovação e não transmitir dados financeiros reais.
+
+## Teste de integração live do Supabase — 27/09/2026
+
+- A pedido e com aprovação do usuário, foi executado `npm.cmd run test:integration:supabase` contra o projeto Supabase configurado no `.env` local (o arquivo permanece ignorado pelo Git e seu conteúdo não foi exibido).
+- Resultado: 1 teste aprovado, 0 falhas, 0 ignorados. O teste validou login das duas contas descartáveis, endpoint de perfil autenticado e recusa anônima, normalização de titularidade/preços/status/data dos pedidos, rejeição de método inválido, nível Plus, isolamento RLS entre contas, download próprio, bloqueio de download cruzado e encerramento das sessões.
+- A primeira tentativa dentro do sandbox não alcançou o Supabase (erro de rede HTTP 0); a execução repetida com acesso de rede foi bem-sucedida.
+- Efeitos permanentes do teste no banco: três pedidos simulados (dois para a conta de teste A, Standard e Plus; um pedido Plus para a conta B) e um registro de download associado a pedido da conta A. O teste atual não implementa limpeza automática. Não houve cobrança. Nenhuma credencial ou dado de perfil foi gravado neste backup.
+- O usuário aprovou o resultado e o registro desta etapa. O commit será criado após revalidar os testes locais, build e `git diff --check`.
+- Próximo passo: retomar validação pós-deploy das operações restantes RF-001 a RF-004. Antes de qualquer operação persistente em produção, apresentar seu efeito e aguardar aprovação específica.
