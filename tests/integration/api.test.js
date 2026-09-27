@@ -326,6 +326,14 @@ test("the API accepts a matching same-origin request", async () => {
     assert.equal(response.status, 200);
 });
 
+test("the local HTTP server accepts its own origin without proxy headers", async () => {
+    const apiHost = new URL(apiBaseUrl).host;
+    const response = await fetch(`${apiBaseUrl}/api/health`, {
+        headers: { Origin: `http://${apiHost}` }
+    });
+    assert.equal(response.status, 200);
+});
+
 test("download requests require an order ID and can only use an owned order", async () => {
     const invalid = await fetch(`${apiBaseUrl}/api/downloads`, {
         method: "POST",

@@ -4,6 +4,7 @@ import { formatBRL, getPaymentMethodLabel, getPurchasePlan, paymentMethods, purc
 import {
     getEmailConfirmationRedirect,
     getLoginDestination,
+    getProfileLoadAction,
     validateLogin,
     validatePasswordChange,
     validateProfileName,
@@ -31,6 +32,7 @@ async function apiRequest(path, { method = "GET", body } = {}) {
     if (!response.ok) {
         const error = new Error(result.error || "Não foi possível concluir a solicitação.");
         error.code = result.code;
+        error.status = response.status;
         throw error;
     }
     return result;
@@ -170,8 +172,13 @@ if (profileCard) {
         let profile;
         try {
             profile = await apiRequest("/api/profile");
-        } catch {
-            window.location.replace("login.html");
+        } catch (error) {
+            if (getProfileLoadAction(error.status) === "login") {
+                window.location.replace("login.html");
+                return;
+            }
+            console.error("Falha ao carregar o perfil. HTTP", error.status ?? "sem resposta");
+            showMessage($("#mensagemPerfil"), "Não foi possível carregar seu perfil. Tente novamente.", "error");
             return;
         }
         const name = profile.user_name || "Usuário";

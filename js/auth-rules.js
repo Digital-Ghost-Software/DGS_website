@@ -17,6 +17,10 @@ export function getLoginDestination(returnTo, edition) {
         : "perfil.html";
 }
 
+export function getProfileLoadAction(status) {
+    return status === 401 ? "login" : "message";
+}
+
 export function getEmailConfirmationRedirect(currentUrl) {
     return new URL("login.html", currentUrl).href;
 }

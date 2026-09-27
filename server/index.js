@@ -77,7 +77,8 @@ async function authenticate(request) {
 export async function handler(request, response) {
     const origin = request.headers.origin;
     const forwardedHost = request.headers["x-forwarded-host"] || request.headers.host;
-    const forwardedProto = request.headers["x-forwarded-proto"]?.split(",")[0] || "https";
+    const forwardedProto = request.headers["x-forwarded-proto"]?.split(",")[0]
+        || (request.socket.encrypted ? "https" : "http");
     const isSameOrigin = origin && forwardedHost && origin === `${forwardedProto}://${forwardedHost}`;
     if (origin && !allowedOrigins.has(origin) && !isSameOrigin) {
         sendJson(response, 403, { error: "Origem não autorizada." });
