@@ -11,16 +11,14 @@
 | Tipo | Requisito funcional |
 | Prioridade | Alta — o feedback do professor identifica Gestão de Pagamentos como o próximo requisito. |
 | Complexidade | Média, estimativa inicial de 5 story points; confirmar com a equipe. |
-| Status | Schema e migrações aplicados no projeto Supabase do sistema; testes live de duas contas, histórico de compras e responsividade passaram. Deploy Vercel |
-| Criação / atualização | 23/09/2026 / 27/09/2026 |
+| Status | Pedidos simulados implementados e validados com Supabase. O download real depende da publicação da release. |
+| Criação / atualização | 23/09/2026 / 29/09/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
 
 ### Metadados do projeto/equipe
 
-- **Repositório informado nas entregas anteriores:** [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`.
-- **Repositório atualizado:** [Digital-Ghost-Software/DGS_website](https://github.com/Digital-Ghost-Software/DGS_website), branch `main`.
-- **Supabase da entrega original:** projeto `thmtriwgvsgxdinsuxph`. Para o banco `DGS_Web_Site` usado nesta versão, a URL e a chave publicável são configuradas pelo servidor e entregues ao frontend em `/api/config`.
-- **Deploy Vercel, Swagger/OpenAPI e demonstração pública:** [DGS Web Site](dgs-website-omega.vercel.app.)
+- **Repositório:** [Digital-Ghost-Software/DGS_website](https://github.com/Digital-Ghost-Software/DGS_website), branch `main`.
+- **Aplicação publicada:** [DGS Web Site](https://dgs-website-omega.vercel.app/). A API é servida na mesma origem.
 
 | Integrante | Papel registrado nas entregas | Contato registrado |
 | --- | --- | --- |
@@ -32,6 +30,83 @@
 | Pedro Henrique Coelho Lima | Marketing | <pedro57951426@edu.df.senac.br> |
 | Raphael Alves Mendes | Marketing / Modelagem | <raphael59068396@edu.df.senac.br> |
 | Tiago de Andrade Lima | full-Stack | <tiago59068726@edu.df.senac.br> |
+
+### Estrutura de diretórios e caminhos
+
+Os caminhos abaixo são relativos à raiz atual do repositório `Digital-Web-Site/`:
+
+```text
+Digital-Web-Site/
+├── .gitignore
+├── index.html
+├── README.md
+├── package.json
+├── package-lock.json
+├── vercel.json
+├── api/
+│   └── [...path].js
+├── css/
+│   └── style.css
+├── database/
+│   └── ddl/
+│       ├── default-profile-photo.sql
+│       ├── new-project-schema.sql
+│       └── rf-004-simulated-payments.sql
+├── Docs/
+│   ├── RF - 01 - Login.md
+│   ├── RF-001-login.md
+│   ├── RF-002-cadastro-usuario.md
+│   ├── RF-003-gerenciar-download-do-jogo.md
+│   └── RF-004-gestao-pagamentos-e-refinamento.md
+├── imagens/
+│   ├── ESSE_NEGOCIO_TA_COISADO.png
+│   ├── Yokai.png
+│   ├── favicon.ico
+│   ├── foxy.png
+│   ├── logo.png
+│   ├── user-img-default.jpg
+│   └── favicon_io (1)/
+│       ├── android-chrome-192x192.png
+│       ├── android-chrome-512x512.png
+│       ├── apple-touch-icon.png
+│       ├── favicon-16x16.png
+│       ├── favicon-32x32.png
+│       └── site.webmanifest
+├── js/
+│   ├── auth-rules.js
+│   ├── download-rules.js
+│   ├── profile-rules.js
+│   ├── purchase-rules.js
+│   ├── script.js
+│   └── supabase-config.js
+├── paginas/
+│   ├── cadastro.html
+│   ├── download.html
+│   ├── login.html
+│   ├── perfil.html
+│   ├── recuperar-senha.html
+│   └── tales.html
+├── scripts/
+│   ├── build-static.js
+│   └── run-supabase-integration.js
+├── server/
+│   ├── index.js
+│   └── local.js
+└── tests/
+    ├── integration/
+    │   ├── api.test.js
+    │   └── supabase-live.test.js
+    └── unit/
+        ├── accessibility.test.js
+        ├── auth-rules.test.js
+        ├── download-rules.test.js
+        ├── localization.test.js
+        ├── migration.test.js
+        ├── profile-photo.test.js
+        ├── purchase-rules.test.js
+        └── supabase-config.test.js
+```
+
 
 ## 2. Descrição e atores (6%)
 
@@ -66,7 +141,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 
 1. O site está servido por HTTP/HTTPS e o JavaScript modular carregou.
 2. O usuário tem uma sessão válida do Supabase Auth.
-3. A migração SQL do RF-004 foi executada e a tabela/políticas estão disponíveis.
+3. O schema atual do Supabase, definido em `database/ddl/new-project-schema.sql`, foi aplicado e suas tabelas/políticas estão disponíveis.
 4. O jogo apresenta as edições Standard e Plus.
 
 **Fluxo principal**
@@ -126,7 +201,8 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 - Fluxo e apresentação: `js/script.js` e `paginas/download.html`.
 - API Node.js para autenticar operações e consultar/criar pedidos: `server/index.js` (`GET/POST /api/payments`, `POST /api/downloads`).
 - Estilo responsivo do checkout: `css/style.css`.
-- Schema PostgreSQL/RLS do projeto novo: `database/ddl/new-project-schema.sql` (aplicado no Supabase `DGS_Web_Site`).
+- Schema PostgreSQL/RLS do projeto atual: `database/ddl/new-project-schema.sql` (aplicado no Supabase `DGS_Web_Site`); ele inclui a coluna `payment_method` usada pelos pedidos.
+- `database/ddl/rf-004-simulated-payments.sql` corresponde ao banco legado e não inclui `payment_method`; não é a migração do schema atual. A migração incremental `database/ddl/default-profile-photo.sql` foi aplicada ao banco atual.
 - Configuração pública carregada em tempo de execução: `server/index.js` (`GET /api/config`) e `js/supabase-config.js`.
 
 ### Estados planejados no protótipo
@@ -138,7 +214,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 5. **Sucesso:** pedido simulado persistido e recibo exibido.
 6. **Download pendente:** estado de sucesso sem link do jogo ainda publicado.
 
-O schema do projeto Supabase usado pelo sistema foi aplicado e a integração foi testada com duas contas. A suíte live validou preço, titularidade, estado, isolamento, forma de pagamento e download autorizado; o histórico pela interface foi validado. Não há evidência formal de deploy Vercel anexada.
+O schema atual do Supabase foi aplicado e a integração live foi testada com duas contas. A suíte validou preço, titularidade, estado, isolamento, forma de pagamento e autorização de download; o histórico foi confirmado na interface. A implantação e a validação inicial na Vercel também foram confirmadas. Ainda não há um pacote formal de evidências anexado a este requisito.
 
 ### Dado persistido
 
@@ -219,9 +295,9 @@ Os controles acima têm evidência de testes automatizados e integração real. 
 | T1 — Identificação (2%) | Preenchido; estimativa de complexidade deve ser validada pela equipe. |
 | T2 — Descrição e atores (6%) | Objetivo, três atores e CRUD definidos. |
 | T3 — Casos de uso/RNF (15%) | Pré/pós-condições, 12 passos, quatro alternativos, sete regras e quatro RNF. |
-| T4 — Protótipo (50%) | HTML/JS e schema aplicados; integração Supabase e histórico foram testados. Deploy Vercel e arquivo do jogo não foram confirmados. |
+| T4 — Protótipo (50%) | HTML/JS e schema aplicados; integração Supabase e histórico foram testados; site e API estão publicados na Vercel e passaram pela validação inicial. |
 | T5 — Arquitetura/ADR (15%) | Diagrama, fluxo e quatro ADRs descritos. |
-| T6 — OWASP (12%) | RLS, tentativa de forjar preço/titular, método inválido e solicitação cruzada de download foram testados. Anexar evidências formais; revisão não é auditoria externa. |
+| T6 — OWASP (12%) | RLS, tentativa de forjar preço/titular, método inválido e solicitação cruzada de download foram testados. A revisão não equivale a uma auditoria externa. |
 
 **Nota:** não foi atribuída pontuação. O critério de protótipo exige execução funcional, deploy e evidência; documentação isolada não prova esses itens.
 
@@ -232,7 +308,8 @@ Os controles acima têm evidência de testes automatizados e integração real. 
 - [x] Standard persiste R$ 20,00 e Plus R$ 40,00, inclusive com tentativa de adulteração.
 - [x] Formulário e tabela não solicitam nem guardam dados reais de cartão.
 - [x] Os estados de interface são demonstrados em tela pequena e desktop.
-- [x] Publicar e validar site/API integrados na Vercel.
+- [x] Publicar site/API integrados na Vercel e concluir a validação inicial.
 - [ ] Release do jogo é publicada e `GAME_DOWNLOAD_URL` recebe o endereço real antes de prometer download.
+- [ ] Anexar evidências formais dos testes e da demonstração.
 
 **Fontes usadas:** feedback do professor, documentações RF-001/RF-002 fornecidas, `requisitos.md` v15, código e estrutura local do projeto, além das decisões informadas pelo usuário. Nenhuma fonte externa foi usada.
