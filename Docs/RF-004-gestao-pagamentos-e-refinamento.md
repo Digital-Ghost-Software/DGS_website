@@ -108,13 +108,13 @@ Digital-Web-Site/
 ```
 
 
-## 2. Descrição e atores (6%)
+## 2. Descrição e atores (10%)
 
-### Objetivo e contexto
+### Descrição detalhada
 
-Permitir que um usuário autenticado selecione uma edição do jogo, confirme um pedido acadêmico simulado e consulte seus próprios pedidos. O histórico registra edição, preço definido pelo banco, estado simulado e horário. Nenhuma cobrança ocorre. O pedido prevê acesso ao download quando o artefato do jogo estiver publicado.
+O usuário acessa a página de compra, escolhe uma edição e uma forma de pagamento simulada e confirma o pedido. A aplicação exige autenticação, registra o pedido no Supabase e apresenta o recibo e o histórico do próprio usuário. O preço e o estado são definidos pelo banco. Nenhuma cobrança ocorre e nenhum dado de cartão é solicitado ou armazenado. O download só fica disponível quando o arquivo do jogo estiver publicado e associado ao pedido.
 
-Benefícios esperados: (1) demonstrar um fluxo de compra completo para avaliação; (2) manter histórico de pedidos associado ao usuário; (3) distinguir as edições e seus conteúdos/preços.
+O requisito atende a três objetivos: (1) demonstrar o fluxo de compra simulado do jogo; (2) manter um histórico de pedidos associado ao usuário autenticado; (3) apresentar com clareza as diferenças de conteúdo e preço entre as edições.
 
 ### Edições
 
@@ -125,15 +125,16 @@ Benefícios esperados: (1) demonstrar um fluxo de compra completo para avaliaç�
 
 ### Atores e permissões
 
-| Ator | Papel e responsabilidade | CRUD no escopo |
-| --- | --- | --- |
-| Usuário autenticado | Seleciona a edição, confirma o pedido e consulta seu histórico. | Create e Read dos próprios pedidos. Não altera nem apaga registros de pedido. |
-| Aplicação web | Exibe opções/estados, envia a edição selecionada e apresenta o recibo e a disponibilidade do download. | Solicita Create/Read; não define preço ou identidade do titular como fonte confiável. |
-| Supabase Auth e banco PostgreSQL | Autentica a identidade, aplica RLS, determina o preço e persiste os pedidos. | Create/Read conforme políticas; sem atualização ou exclusão pelo cliente. |
+| Ator | Papel e responsabilidade | CREATE | READ | UPDATE | DELETE |
+| --- | --- | :---: | :---: | :---: | :---: |
+| Usuário autenticado | Seleciona edição e forma simulada, confirma o pedido e consulta o próprio histórico. | ✅ Pedido próprio | ✅ Pedidos próprios | ❌ | ❌ |
+| Aplicação web | Apresenta edições, estados, recibo e disponibilidade do download; encaminha a solicitação autenticada. | ✅ Solicita à API | ✅ Solicita à API | ❌ | ❌ |
+| Supabase Auth e PostgreSQL | Valida a identidade, aplica RLS, calcula preço/estado e persiste pedidos e solicitações de download. | ✅ Conforme políticas | ✅ Conforme políticas | ❌ pelo cliente | ❌ pelo cliente |
+| Administrador do projeto | Mantém usuários e permissões do projeto pelo painel administrativo; não participa da confirmação de pedidos do RF-004. | Fora do fluxo | Fora do fluxo | Fora do fluxo | Fora do fluxo |
 
-Não há ator de provedor de pagamento: o escopo é simulado e não existe transação financeira.
+Não há ator de provedor de pagamento: o escopo é simulado e não existe transação financeira. A administração de contas não autoriza nem condiciona um pedido neste requisito.
 
-## 3. Caso de uso e requisitos não funcionais (15%)
+## 3. Caso de uso e requisitos não funcionais (20%)
 
 ### UC-004 — Confirmar pedido simulado
 
@@ -161,16 +162,48 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 13. A aplicação exibe confirmação, estado simulado e histórico de pedidos do usuário.
 14. Se a URL de release estiver configurada, a interface apresenta o download; sem artefato publicado, informa que ele está pendente.
 
-**Pós-condições**
+**Pós-condições (sucesso)**
 
-- **Sucesso:** pedido simulado persistido e consultável somente pelo titular; sem movimentação financeira.
+- O pedido simulado é persistido com edição, preço, forma escolhida, estado e horário definidos conforme as regras do sistema.
+- O pedido aparece no histórico do titular e não fica visível para outras contas.
+- Nenhum valor é cobrado e nenhum dado de cartão é coletado ou armazenado.
+
+**Pós-condições (falha)**
+
+- A interface não apresenta confirmação de sucesso quando a API rejeita a solicitação ou não consegue confirmar o resultado.
+- Se a solicitação for rejeitada antes da persistência, nenhum pedido novo é criado.
+- Em caso de falha de rede com resultado indeterminado, o usuário consulta o histórico antes de tentar novamente, pois a gravação pode ter sido concluída antes da interrupção da resposta.
+- Uma falha na solicitação do download não altera o pedido simulado já registrado.
 
 **Fluxos alternativos**
 
-- **A1 — Usuário sem sessão:** nenhum pedido é gravado; a interface pede login e preserva edição escolhida no retorno.
-- **A2 — Edição ausente/inválida:** não envia a operação e solicita escolha entre Standard e Plus.
-- **A3 — Banco, RLS ou rede indisponível:** não afirma sucesso e informa que a configuração do Supabase precisa ser verificada.
-- **A4 — Arquivo de jogo ainda não publicado:** mostra pedido confirmado, mas mantém download indisponível e informa a pendência.
+**A1 — Usuário sem sessão**
+
+1. A aplicação detecta que não há usuário autenticado.
+2. A aplicação não envia a criação do pedido.
+3. A interface solicita que o usuário entre na conta e oferece o link para login com a edição escolhida.
+4. Após o login, o usuário retorna ao fluxo de compra e confirma o pedido.
+
+**A2 — Edição ou forma de pagamento inválida**
+
+1. A interface ou a API detecta uma edição ou forma não permitida.
+2. A solicitação não é persistida e a interface não apresenta recibo.
+3. A interface informa que a escolha é inválida e mantém o formulário disponível para correção.
+
+**A3 — API, Supabase ou RLS rejeita a solicitação**
+
+1. A API recebe erro de autenticação, autorização, validação ou persistência.
+2. A interface informa que não foi possível confirmar o pedido e não apresenta mensagem de sucesso.
+3. Se o serviço confirmar que a gravação foi rejeitada, nenhum pedido novo é criado.
+4. Se a conexão cair sem resposta conclusiva, o usuário consulta o histórico antes de tentar novamente.
+
+**A4 — Arquivo do jogo ainda não publicado**
+
+1. O pedido simulado é confirmado e aparece no histórico.
+2. A aplicação verifica que não há arquivo de release disponível.
+3. A interface informa que o download está pendente e não apresenta um link funcional.
+
+**Ponto pendente de escopo — verificação de cartão:** o feedback recebido menciona uma verificação de cartão antes da compra, mas esse comportamento não existe no sistema atual. O checkout não coleta dados de cartão e o schema atual não possui cadastro de cartões. A inclusão deste fluxo depende de decisão da equipe e não está descrita como funcionalidade implementada.
 
 ### Regras de negócio
 
@@ -186,14 +219,14 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 
 ### Requisitos não funcionais
 
-| ID | Atributo | Requisito | Critério de verificação |
-| --- | --- | --- | --- |
-| RNF-01 | Segurança | RLS separa pedidos por `auth.uid()` e o banco calcula valor/estado. | Teste live com duas contas e tentativa de forjar preço/usuário/estado passou após aplicação SQL. |
-| RNF-02 | Usabilidade | Estados vazio, seleção, processamento, erro e confirmação são claros e acessíveis. | Confirmação e histórico foram vistos na interface; navegação por teclado e evidência visual formal ainda pendentes. |
-| RNF-03 | Responsividade | Checkout utilizável em 320 px e desktop 1024 px. | Usuário confirmou revisão responsiva nessas larguras. |
-| RNF-04 | Integridade | Cada confirmação bem-sucedida gera registro consultável com preço correto. | Teste live confirmou valores e recibos; usuário confirmou a lista de últimas compras no site. |
+| ID | Atributo | Requisito | Métrica | Justificativa |
+| --- | --- | --- | --- | --- |
+| RNF-01 | Segurança | RLS separa pedidos por `auth.uid()` e o banco define titular, preço e estado. | Zero pedidos de outra conta visíveis; tentativas de adulterar os campos protegidos são rejeitadas ou sobrescritas. | Protege o histórico e evita que o cliente altere dados confiáveis do pedido. Teste live com duas contas e tentativa de adulteração foi aprovado. |
+| RNF-02 | Usabilidade | Os estados vazio, seleção, processamento, erro e confirmação devem ser compreensíveis e acessíveis. | 5 estados identificáveis; fluxo principal utilizável por teclado e com mensagens anunciadas por tecnologia assistiva. | Ajuda o usuário a entender o resultado e corrigir erros. A confirmação e o histórico foram vistos; revisão formal de teclado, leitores de tela e evidências visuais segue pendente. |
+| RNF-03 | Responsividade | O checkout deve permanecer utilizável em telas pequenas e desktop. | Viewports de 320 px, 768 px e 1024 px, sem rolagem horizontal no conteúdo principal. | Mantém o fluxo disponível em celular, tablet e desktop. A responsividade foi validada pelo usuário; evidência formal por largura ainda não foi anexada. |
+| RNF-04 | Integridade | Cada confirmação concluída deve gerar um pedido consultável com preço correspondente à edição. | Standard = R$ 20,00; Plus = R$ 40,00; valor retornado deve coincidir com o persistido. | Evita divergência entre o total exibido, o recibo e o histórico. Os testes live confirmaram os valores e o usuário confirmou a lista de últimos pedidos. |
 
-## 4. Protótipo funcional (50%)
+## 4. Protótipo funcional (40%)
 
 ### Artefatos
 
@@ -277,7 +310,7 @@ flowchart LR
 | Autenticação e API | Supabase Auth/Data API | Identidade autenticada e persistência gerenciada já escolhida pela equipe. |
 | Banco | PostgreSQL no Supabase | Trigger, constraints e RLS aplicam preço/estado e isolamento. |
 
-## 6. Segurança OWASP (12%)
+## 6. Segurança OWASP (10%)
 
 | Risco | Implementação no protótipo | Teste/evidência necessário |
 | --- | --- | --- |
