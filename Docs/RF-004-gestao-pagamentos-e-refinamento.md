@@ -5,7 +5,7 @@
 ## 1. Metadados do requisito (2%)
 
 | Campo | Valor |
-|---|---|
+| --- | --- |
 | ID | RF-004 |
 | Título | Gerir pedidos de compra das edições de Yokai Tales |
 | Tipo | Requisito funcional |
@@ -20,18 +20,18 @@
 - **Repositório informado nas entregas anteriores:** [AndreBlackDragon/YokaiTales-Webpage](https://github.com/AndreBlackDragon/YokaiTales-Webpage), branch `main`.
 - **Repositório atualizado:** [Digital-Ghost-Software/DGS_website](https://github.com/Digital-Ghost-Software/DGS_website), branch `main`.
 - **Supabase da entrega original:** projeto `thmtriwgvsgxdinsuxph`. Para o banco `DGS_Web_Site` usado nesta versão, a URL e a chave publicável são configuradas pelo servidor e entregues ao frontend em `/api/config`.
-- **Deploy Vercel, Swagger/OpenAPI e demonstração pública:** (dgs-website-omega.vercel.app.)
+- **Deploy Vercel, Swagger/OpenAPI e demonstração pública:** [DGS Web Site](dgs-website-omega.vercel.app.)
 
 | Integrante | Papel registrado nas entregas | Contato registrado |
-|---|---|---|
-| Andre Luis Macedo Nascimento | Back-end | andre58212086@edu.df.senac.br |
-| Calebe Bezerra Feitosa | Marketing | calebe58107886@edu.df.senac.br |
-| Douglas Rocha Vasco | Back-end / Modelagem | douglas58129016@edu.df.senac.br |
-| Jonas Santos Barbosa | História / Marketing | jonas59300436@edu.df.senac.br |
-| Letícia Lacerda Domingues | Dubladora | leticia49518826@edu.df.senac.br |
-| Pedro Henrique Coelho Lima | Marketing | pedro57951426@edu.df.senac.br |
-| Raphael Alves Mendes | Marketing / Modelagem | raphael59068396@edu.df.senac.br |
-| Tiago de Andrade Lima | full-Stack | tiago59068726@edu.df.senac.br |
+| --- | --- | --- |
+| Andre Luis Macedo Nascimento | Back-end | <andre58212086@edu.df.senac.br> |
+| Calebe Bezerra Feitosa | Marketing | <calebe58107886@edu.df.senac.br> |
+| Douglas Rocha Vasco | Back-end / Modelagem | <douglas58129016@edu.df.senac.br> |
+| Jonas Santos Barbosa | História / Marketing | <jonas59300436@edu.df.senac.br> |
+| Letícia Lacerda Domingues | Dubladora | <leticia49518826@edu.df.senac.br> |
+| Pedro Henrique Coelho Lima | Marketing | <pedro57951426@edu.df.senac.br> |
+| Raphael Alves Mendes | Marketing / Modelagem | <raphael59068396@edu.df.senac.br> |
+| Tiago de Andrade Lima | full-Stack | <tiago59068726@edu.df.senac.br> |
 
 ## 2. Descrição e atores (6%)
 
@@ -44,14 +44,14 @@ Benefícios esperados: (1) demonstrar um fluxo de compra completo para avaliaç�
 ### Edições
 
 | Edição | Preço simulado | Conteúdo informado |
-|---|---:|---|
+| --- | ---: | --- |
 | Standard | R$ 20,00 | Jogo base Yokai Tales |
 | Plus | R$ 40,00 | Jogo base, DLC e conteúdos adicionais |
 
 ### Atores e permissões
 
 | Ator | Papel e responsabilidade | CRUD no escopo |
-|---|---|---|
+| --- | --- | --- |
 | Usuário autenticado | Seleciona a edição, confirma o pedido e consulta seu histórico. | Create e Read dos próprios pedidos. Não altera nem apaga registros de pedido. |
 | Aplicação web | Exibe opções/estados, envia a edição selecionada e apresenta o recibo e a disponibilidade do download. | Solicita Create/Read; não define preço ou identidade do titular como fonte confiável. |
 | Supabase Auth e banco PostgreSQL | Autentica a identidade, aplica RLS, determina o preço e persiste os pedidos. | Create/Read conforme políticas; sem atualização ou exclusão pelo cliente. |
@@ -100,7 +100,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 ### Regras de negócio
 
 | ID | Regra |
-|---|---|
+| --- | --- |
 | RN-01 | Somente usuários autenticados podem registrar pedidos. |
 | RN-02 | `standard` tem preço simulado fixo de R$ 20,00. |
 | RN-03 | `plus` tem preço simulado fixo de R$ 40,00. |
@@ -112,7 +112,7 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 ### Requisitos não funcionais
 
 | ID | Atributo | Requisito | Critério de verificação |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | RNF-01 | Segurança | RLS separa pedidos por `auth.uid()` e o banco calcula valor/estado. | Teste live com duas contas e tentativa de forjar preço/usuário/estado passou após aplicação SQL. |
 | RNF-02 | Usabilidade | Estados vazio, seleção, processamento, erro e confirmação são claros e acessíveis. | Confirmação e histórico foram vistos na interface; navegação por teclado e evidência visual formal ainda pendentes. |
 | RNF-03 | Responsividade | Checkout utilizável em 320 px e desktop 1024 px. | Usuário confirmou revisão responsiva nessas larguras. |
@@ -194,7 +194,7 @@ flowchart LR
 ### Tecnologias
 
 | Componente | Tecnologia | Motivo |
-|---|---|---|
+| --- | --- | --- |
 | UI | HTML5/CSS3 | Formulário sem dados financeiros reais e adaptação para telas pequenas. |
 | Lógica | JavaScript ES Modules | Fluxo de sessão, seleção, mensagens e consulta do pedido. |
 | API | Node.js | Valida identidade Supabase, encaminha operações e isola credenciais administrativas. |
@@ -204,7 +204,7 @@ flowchart LR
 ## 6. Segurança OWASP (12%)
 
 | Risco | Implementação no protótipo | Teste/evidência necessário |
-|---|---|---|
+| --- | --- | --- |
 | A01 — Broken Access Control: leitura de pedido/download alheio | Políticas RLS limitam pedidos e solicitações a `auth.uid()`; trigger exige pedido aprovado do próprio usuário. | Teste live com duas contas passou: isolamento de histórico e rejeição de download cruzado. |
 | A04 — Insecure Design / exposição de dados de cartão | Checkout simulado não solicita nem persiste PAN, CVV ou nome de titular. | Inspeção do formulário/schema e suíte de testes; não inserir cartões reais. Screenshot formal não anexado. |
 | A05 — Authentication Failures / preço adulterado | Supabase Auth; trigger sobrescreve titular, preço, estado e horário. | Teste live enviou valores adulterados e confirmou os valores calculados no banco. |
@@ -215,7 +215,7 @@ Os controles acima têm evidência de testes automatizados e integração real. 
 ## 7. Checklist de atendimento e pendências
 
 | Tópico | Estado |
-|---|---|
+| --- | --- |
 | T1 — Identificação (2%) | Preenchido; estimativa de complexidade deve ser validada pela equipe. |
 | T2 — Descrição e atores (6%) | Objetivo, três atores e CRUD definidos. |
 | T3 — Casos de uso/RNF (15%) | Pré/pós-condições, 12 passos, quatro alternativos, sete regras e quatro RNF. |

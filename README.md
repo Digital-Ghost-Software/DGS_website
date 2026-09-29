@@ -50,11 +50,10 @@ O repositório inclui a configuração para publicar site estático e API Node.j
 
 ## Documentação
 
-- [RF-001 — Login](Docs/requisitos/RF-001-login.md)
-- [RF-002 — Cadastro de usuário](Docs/requisitos/RF-002-cadastro-usuario.md)
-- [RF-003 — Gerenciar download do jogo](Docs/requisitos/RF-003-gerenciar-download-do-jogo.md)
-- [RF-004 — Gestão de pagamentos](Docs/requisitos/RF-004-gestao-pagamentos.md)
-- [Plano de refinamento e pendências](Docs/requisitos/plano-de-refinamento.md)
+- [RF-001 — Login](Docs/RF-001-login.md)
+- [RF-002 — Cadastro de usuário](DocsRF-002-cadastro-usuario.md)
+- [RF-003 — Gerenciar download do jogo](Docs/RF-003-gerenciar-download-do-jogo.md)
+- [RF-004 — Gestão de pagamentos](Docs/RF-004-gestao-pagamentos.md)
 
 ## Limites desta versão
 
