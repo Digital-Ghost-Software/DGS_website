@@ -8,6 +8,4 @@ dist/
 # Anotações e guias operacionais locais, fora da entrega do projeto em grupo
 /contexto-backup.md
 /oque-mudou.md
-/Docs/deploy-vercel.md
-/Docs/guia-banco-supabase.md
-/Docs/banco-supabase-proprio.md
+/Docs
