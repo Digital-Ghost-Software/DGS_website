@@ -385,12 +385,17 @@ flowchart LR
   UI -. release futura .-> FILE[Arquivo do jogo ainda não publicado]
 ```
 
+### Padrão arquitetural
+
+A funcionalidade usa camadas com responsabilidades separadas: a interface HTML/CSS coleta as escolhas; módulos JavaScript controlam sessão e apresentação; a API REST Node.js valida o token e encaminha a operação; Supabase Auth identifica o usuário e PostgreSQL aplica regras, RLS e persistência. A API do site é servida na mesma origem da aplicação pela configuração da Vercel.
+
 ### ADR-004-01 — Simulação sem provedor financeiro
 
 - **Status:** Aceito para o protótipo acadêmico.
 - **Contexto:** o professor solicitou Gestão de Pagamentos; a equipe definiu que não haverá cobrança real.
 - **Decisão:** confirmar pedido simulado diretamente no Supabase, sem pedir dados de cartão.
 - **Alternativas:** integração com gateway real; formulários que coletam dados de cartão. Ambas fora do escopo atual.
+- **Consequências:** ✅ fluxo simples, sem cobrança ou armazenamento de dados financeiros; ✅ resultados determinísticos para demonstração; ⚠️ não valida pagamento real e não prova que o arquivo do jogo pode ser entregue.
 
 ### ADR-004-02 — Preço calculado no PostgreSQL
 
@@ -398,6 +403,7 @@ flowchart LR
 - **Contexto:** valores informados pelo navegador podem ser adulterados.
 - **Decisão:** trigger escolhe R$ 20 ou R$ 40 conforme edição e define o estado simulado.
 - **Alternativas:** confiar no preço enviado pela tela; endpoint próprio de backend.
+- **Consequências:** ✅ banco como fonte autoritativa de preço, titular e estado; ✅ tentativa de adulteração do cliente não define o recibo; ⚠️ mudança de preço ou regra exige alteração e validação do schema/função PostgreSQL.
 
 ### ADR-004-03 — RLS por usuário autenticado
 
@@ -405,6 +411,7 @@ flowchart LR
 - **Contexto:** histórico precisa ser isolado entre contas.
 - **Decisão:** permitir insert/select autenticado e restringir linhas por `auth.uid()`; cliente não recebe update/delete.
 - **Alternativas:** tabela aberta anonimamente; controle só na interface. Ambas insuficientes para isolamento.
+- **Consequências:** ✅ isolamento aplicado no banco mesmo quando a interface não é confiável; ⚠️ políticas precisam acompanhar mudanças do schema e ser verificadas com contas distintas; credenciais privilegiadas podem contornar RLS e devem permanecer no servidor.
 
 ### ADR-004-04 — Registro de pedido imutável
 
@@ -412,16 +419,18 @@ flowchart LR
 - **Contexto:** não há liquidação, estorno ou gateway; o histórico é evidência acadêmica.
 - **Decisão:** usuário pode criar e consultar pedidos, mas não editar ou excluir recibos.
 - **Alternativas:** permitir edição/exclusão ao cliente; adicionar fluxo administrativo de cancelamento em requisito futuro.
+- **Consequências:** ✅ histórico preserva o registro original do pedido; ⚠️ corrigir ou cancelar um registro exige um procedimento administrativo controlado, ainda fora deste requisito.
 
 ### Tecnologias
 
-| Componente | Tecnologia | Motivo |
-| --- | --- | --- |
-| UI | HTML5/CSS3 | Formulário sem dados financeiros reais e adaptação para telas pequenas. |
-| Lógica | JavaScript ES Modules | Fluxo de sessão, seleção, mensagens e consulta do pedido. |
-| API | Node.js | Valida identidade Supabase, encaminha operações e isola credenciais administrativas. |
-| Autenticação e API | Supabase Auth/Data API | Identidade autenticada e persistência gerenciada já escolhida pela equipe. |
-| Banco | PostgreSQL no Supabase | Trigger, constraints e RLS aplicam preço/estado e isolamento. |
+| Componente | Tecnologia | Versão utilizada | Motivo |
+| --- | --- | --- | --- |
+| Interface | HTML e CSS | Padrões Web; versões não fixadas pelo projeto. | Estrutura semântica e checkout adaptável a diferentes telas. |
+| Lógica do navegador | JavaScript ES Modules | Módulos nativos do navegador; sem versão de pacote. | Controla sessão, seleção, mensagens e consulta do pedido. |
+| API | Node.js | 22.x, conforme `package.json`. | Valida a identidade Supabase e encaminha as operações autenticadas. |
+| SDK Supabase | `@supabase/supabase-js` | 2.116.0 no `package-lock.json`; dependência declarada como `^2.116.0`. | Integra a API Node.js com Auth e Data API. |
+| Autenticação e API de dados | Supabase Auth/Data API | Serviço gerenciado; versão da plataforma não fixada pelo repositório. | Autenticação e persistência gerenciadas para a aplicação. |
+| Banco | PostgreSQL no Supabase | Serviço gerenciado; versão exata não declarada pelo repositório. | Triggers, constraints e RLS calculam os valores e isolam os registros. |
 
 ## 6. Segurança OWASP (10%)
 
