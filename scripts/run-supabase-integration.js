@@ -15,6 +15,9 @@ const requiredVariables = [
     "SUPABASE_TEST_USER_B_PASSWORD"
 ];
 const missingVariables = requiredVariables.filter((name) => !process.env[name]);
+if (!process.env.SUPABASE_SECRET_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    missingVariables.push("SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)");
+}
 if (missingVariables.length) {
     console.error(`Configure estas variáveis locais antes do teste: ${missingVariables.join(", ")}. Use apenas contas descartáveis.`);
     process.exit(1);
