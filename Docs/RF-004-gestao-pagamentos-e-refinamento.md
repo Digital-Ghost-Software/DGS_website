@@ -238,7 +238,120 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 - `database/ddl/rf-004-simulated-payments.sql` corresponde ao banco legado e não inclui `payment_method`; não é a migração do schema atual. A migração incremental `database/ddl/default-profile-photo.sql` foi aplicada ao banco atual.
 - Configuração pública carregada em tempo de execução: `server/index.js` (`GET /api/config`) e `js/supabase-config.js`.
 
-### Estados planejados no protótipo
+### Mockups dos estados do checkout
+
+Os esboços abaixo representam estados da mesma página `paginas/download.html`; não são páginas distintas. Textos e campos seguem a interface atual.
+
+**Tela 1 — Estado inicial de usuário autenticado, sem pedidos anteriores**
+
+```text
++--------------------------------------------------+
+| DIGITAL GHOST       Início  Yokai Tales  Comprar |
++--------------------------------------------------+
+| EDIÇÕES DIGITAIS                                 |
+| YOKAI TALES                                      |
+| Escolha uma edição para registrar um pedido de   |
+| demonstração.                                    |
+|                                                  |
+| [ Standard — R$ 20,00 ] [ Plus — R$ 40,00 ]      |
+|                                                  |
+| Versão desejada                                  |
+| [ Standard — R$ 20,00                       v ]  |
+| Forma de pagamento simulada                      |
+| [ Selecione uma forma de pagamento          v ]  |
+| Total: R$ 20,00                                  |
+| Simulação acadêmica: nenhum pagamento será       |
+| processado e não informe dados de cartão.        |
+| [ CONFIRMAR PEDIDO ]                             |
+|                                                  |
+| Seus pedidos                                     |
+| Nenhum pedido registrado nesta conta.            |
++--------------------------------------------------+
+```
+
+**Tela 2 — Formulário preenchido**
+
+```text
++--------------------------------------------------+
+| YOKAI TALES                                      |
+| Versão desejada                                  |
+| [ Plus — R$ 40,00                           v ]  |
+| Forma de pagamento simulada                      |
+| [ Pix                                      v ]   |
+| Total: R$ 40,00                                  |
+| Simulação acadêmica: nenhum pagamento será       |
+| processado e não informe dados de cartão.        |
+| [ CONFIRMAR PEDIDO ]                             |
++--------------------------------------------------+
+```
+
+**Tela 3 — Pedido sendo processado**
+
+```text
++--------------------------------------------------+
+| YOKAI TALES                                      |
+| Versão desejada: Plus — R$ 40,00                 |
+| Forma simulada: Pix                              |
+| Total: R$ 40,00                                  |
+| [ Confirmando pedido… ]  (desabilitado)          |
+| Registrando a simulação…                         |
++--------------------------------------------------+
+```
+
+**Tela 4 — Erro de validação**
+
+```text
++--------------------------------------------------+
+| YOKAI TALES                                      |
+| Versão desejada                                  |
+| [ Standard — R$ 20,00                       v ]  |
+| Forma de pagamento simulada                      |
+| [ Selecione uma forma de pagamento          v ]  |
+| Total: R$ 20,00                                  |
+| [ CONFIRMAR PEDIDO ]                             |
+| Escolha uma forma de pagamento válida.           |
++--------------------------------------------------+
+```
+
+**Tela 5 — Sucesso e recibo**
+
+```text
++--------------------------------------------------+
+| YOKAI TALES                                      |
+| Pedido confirmado: R$ 40,00.                     |
+|                                                  |
+| Seus pedidos                                     |
+| Yokai Tales — Plus                               |
+| R$ 40,00 · Pix · Pedido simulado · [data/hora]   |
+| Pedido confirmado para fins acadêmicos.          |
+| Nenhuma cobrança foi realizada.                  |
+| [ ARQUIVO DO JOGO PENDENTE ]                     |
+| O arquivo do jogo ainda não foi publicado.       |
++--------------------------------------------------+
+```
+
+### Navegação entre telas
+
+| Origem | Ação | Destino ou resultado |
+| --- | --- | --- |
+| Início ou página Yokai Tales | Selecionar **Comprar** | `paginas/download.html` |
+| Checkout sem sessão | Confirmar pedido | A interface mostra o link para login e mantém a edição na URL de retorno. |
+| Login iniciado pelo checkout | Entrar com sucesso | Retorna a `paginas/download.html` com a edição escolhida. |
+| Checkout autenticado | Escolher edição e método simulado; confirmar pedido | Exibe resultado e atualiza a seção **Seus pedidos**. |
+| Recibo com arquivo ainda não publicado | Tentar acessar o download | Mantém o download indisponível e informa que o arquivo ainda não foi publicado. |
+| Navegação principal | Selecionar **Perfil** | `paginas/perfil.html`; o checkout permanece acessível pelo item **Comprar**. |
+
+### Comportamento responsivo
+
+| Largura de referência | Layout do checkout | Navegação e controles |
+| --- | --- | --- |
+| Mobile — 320 px | Edições empilhadas em uma coluna; painel ocupa a largura disponível com margens e espaçamento reduzidos. | Campos e botão ocupam a largura do painel; a navegação usa o comportamento responsivo geral do site. |
+| Tablet — 768 px | Edições lado a lado; painel limitado à largura disponível e centralizado. | Campos permanecem em largura total; texto e recibos podem quebrar linha. |
+| Desktop — 1024 px | Edições lado a lado; painel centralizado com largura máxima de 900 px. | Campos permanecem em largura total e histórico aparece abaixo do formulário. |
+
+O CSS muda as edições para uma coluna até 600 px e reduz os espaçamentos do painel nesse breakpoint. As larguras acima descrevem os alvos de apresentação; a equipe confirmou a validação responsiva, mas não anexou capturas por largura.
+
+### Estados do protótipo
 
 1. **Inicial/vazio:** sem pedidos na conta.
 2. **Seleção:** escolha Standard/Plus, uma forma entre boleto/crédito/débito/Pix e confira o total correspondente.
