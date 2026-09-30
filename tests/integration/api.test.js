@@ -100,7 +100,7 @@ before(async () => {
         }
 
         if (requestUrl.pathname.startsWith("/auth/v1/admin/users/") && request.method === "DELETE") {
-            if (request.headers.apikey !== "test-service-role") {
+            if (!['test-service-role', 'test-sb-secret-key'].includes(request.headers.apikey)) {
                 return sendJson(response, 401, { message: "Invalid admin key" });
             }
             return sendJson(response, 200, { id: requestUrl.pathname.split("/").at(-1), deleted: true });
@@ -193,6 +193,7 @@ before(async () => {
     process.env.SUPABASE_URL = `http://127.0.0.1:${supabasePort}`;
     process.env.SUPABASE_PUBLISHABLE_KEY = "test-publishable-key";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
+    process.env.SUPABASE_SECRET_KEY = "";
     process.env.ALLOWED_ORIGINS = "";
     process.env.STRIPE_SECRET_KEY = "";
     process.env.STRIPE_WEBHOOK_SECRET = "";
@@ -233,7 +234,7 @@ before(async () => {
 
 after(async () => {
     await Promise.all([apiServer, stripeApiServer, supabaseServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
-    for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "ALLOWED_ORIGINS", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "PUBLIC_APP_URL"]) {
+    for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY", "ALLOWED_ORIGINS", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "PUBLIC_APP_URL"]) {
         delete process.env[key];
     }
 });
@@ -649,9 +650,10 @@ test("account deletion remains unavailable when no service role is configured", 
     assert.equal(result.code, "ACCOUNT_DELETION_UNAVAILABLE");
 });
 
-test("account deletion uses the service role only on the server and deletes the authenticated identity", async () => {
+test("account deletion accepts the Supabase secret key only on the server", async () => {
     const originalServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role";
+    const originalSecretKey = process.env.SUPABASE_SECRET_KEY;
+    process.env.SUPABASE_SECRET_KEY = "test-sb-secret-key";
     const { handler } = await import(`../../server/index.js?admin-test=${Date.now()}`);
     const adminServer = createServer(handler);
     const adminPort = await listen(adminServer);
@@ -664,10 +666,12 @@ test("account deletion uses the service role only on the server and deletes the 
         assert.deepEqual(await response.json(), { deleted: true });
         const adminRequest = capturedRequests.findLast((entry) => entry.path.startsWith("/auth/v1/admin/users/") && entry.method === "DELETE");
         assert.equal(adminRequest.path, `/auth/v1/admin/users/${userIds["valid-test-token"]}`);
-        assert.equal(adminRequest.authorization, "Bearer test-service-role");
+        assert.equal(adminRequest.authorization, "Bearer test-sb-secret-key");
     } finally {
         await new Promise((resolve) => adminServer.close(resolve));
         if (originalServiceRole === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
         else process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRole;
+        if (originalSecretKey === undefined) delete process.env.SUPABASE_SECRET_KEY;
+        else process.env.SUPABASE_SECRET_KEY = originalSecretKey;
     }
 });

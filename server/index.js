@@ -10,7 +10,7 @@ try {
 
 const projectUrl = process.env.SUPABASE_URL;
 const publicKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServerKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
 const stripeClient = /^sk_test_/.test(stripeSecretKey) ? new Stripe(stripeSecretKey) : null;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -30,7 +30,7 @@ if (!projectUrl || !publicKey) {
 const authClient = createClient(projectUrl, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false }
 });
-const adminClient = serviceRoleKey ? createClient(projectUrl, serviceRoleKey, {
+const adminClient = supabaseServerKey ? createClient(projectUrl, supabaseServerKey, {
     auth: { persistSession: false, autoRefreshToken: false }
 }) : null;
 
