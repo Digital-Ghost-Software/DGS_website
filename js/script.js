@@ -417,10 +417,17 @@ function renderOrder(order, target, downloadHistory = []) {
     title.textContent = `Yokai Tales — ${purchasePlans[order.edition]?.label || order.edition}`;
     const details = document.createElement("p");
     const paymentMethod = getPaymentMethodLabel(order.payment_method) || "Forma não informada";
-    details.textContent = `${formatBRL(Number(order.amount_brl))} · ${paymentMethod} · Pedido simulado · ${new Date(order.created_at).toLocaleString("pt-BR")}`;
+    details.textContent = `${formatBRL(Number(order.amount_brl))} · ${paymentMethod} · ${new Date(order.created_at).toLocaleString("pt-BR")}`;
     const status = document.createElement("p");
     status.className = "purchase-status";
-    status.textContent = "Pedido confirmado para fins acadêmicos. Nenhuma cobrança foi realizada.";
+    const statusMessages = {
+        pending: "Aguardando confirmação do pagamento no ambiente de teste da Stripe.",
+        paid: "Pagamento confirmado no ambiente de teste. Nenhuma cobrança real foi realizada.",
+        failed: "O pagamento não foi concluído. Você pode iniciar um novo checkout.",
+        expired: "A sessão de pagamento expirou. Você pode iniciar um novo checkout.",
+        simulated_approved: "Pedido legado confirmado para fins acadêmicos. Nenhuma cobrança foi realizada."
+    };
+    status.textContent = statusMessages[order.status] || "O status do pedido não está disponível.";
     article.append(title, details, status);
     const orderDownloads = downloadHistory.filter((item) => item.payment_id === order.id);
     if (orderDownloads.length) {
@@ -429,8 +436,17 @@ function renderOrder(order, target, downloadHistory = []) {
         article.append(history);
     }
 
-    const download = document.createElement("a");
+    const canDownload = ["paid", "simulated_approved"].includes(order.status);
+    const download = canDownload ? document.createElement("a") : document.createElement("button");
     download.className = "btn-primary";
+    if (!canDownload) {
+        download.type = "button";
+        download.disabled = true;
+        download.textContent = "Download disponível após a confirmação do pagamento";
+        article.append(download);
+        target.append(article);
+        return;
+    }
     const linkState = getDownloadLinkState(GAME_DOWNLOAD_URL);
     if (linkState.available) {
         download.href = linkState.href;
@@ -489,6 +505,12 @@ if ($("#purchaseForm")) {
         priceOutput.textContent = plan ? formatBRL(plan.value) : "Selecione uma versão";
     };
     const requestedEdition = new URLSearchParams(window.location.search).get("edition");
+    const checkoutResult = new URLSearchParams(window.location.search).get("checkout");
+    if (checkoutResult === "success") {
+        showMessage(purchaseMessage, "Checkout concluído. A confirmação do pagamento pode levar alguns instantes; acompanhe o histórico abaixo.", "success");
+    } else if (checkoutResult === "cancelled") {
+        showMessage(purchaseMessage, "Checkout cancelado. Nenhuma cobrança real foi realizada.");
+    }
     if (getPurchasePlan(requestedEdition)) editionInput.value = requestedEdition;
     editionInput.addEventListener("change", updatePrice);
     updatePrice();
@@ -516,24 +538,30 @@ if ($("#purchaseForm")) {
             return;
         }
 
-        setBusy(purchaseForm, true, "Confirmando pedido…");
-        showMessage(purchaseMessage, "Registrando a simulação…");
-        let order;
-        let orderError;
+        setBusy(purchaseForm, true, "Preparando checkout…");
+        showMessage(purchaseMessage, "Conectando ao checkout seguro da Stripe…");
+        let checkout;
+        let checkoutError;
         try {
-            order = await apiRequest("/api/payments", { method: "POST", body: { edition, payment_method: paymentMethod } });
+            checkout = await apiRequest("/api/payments", { method: "POST", body: { edition, payment_method: paymentMethod } });
         } catch (error) {
-            orderError = error;
+            checkoutError = error;
         }
         setBusy(purchaseForm, false);
 
-        if (orderError) {
-            console.error("Falha ao registrar o pedido simulado.", orderError);
-            showMessage(purchaseMessage, `${orderError.message} Confira a API Node.js e a migração do Supabase.`, "error");
+        if (checkoutError) {
+            console.error("Falha ao iniciar o checkout da Stripe.", checkoutError);
+            showMessage(purchaseMessage, checkoutError.message, "error");
             return;
         }
-        showMessage(purchaseMessage, `Pedido confirmado: ${formatBRL(Number(order.amount_brl))}.`, "success");
-        await loadPurchaseHistory();
+        try {
+            const checkoutUrl = new URL(checkout.checkout_url);
+            if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com") throw new Error("URL de checkout inválida.");
+            window.location.assign(checkoutUrl.href);
+        } catch (error) {
+            console.error("A API retornou uma URL de checkout inválida.", error);
+            showMessage(purchaseMessage, "Não foi possível abrir o checkout da Stripe. Tente novamente.", "error");
+        }
     });
 
     void getCurrentUser().then((user) => {

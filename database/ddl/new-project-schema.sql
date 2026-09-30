@@ -36,7 +36,7 @@ create table if not exists public.simulated_payments (
     edition text not null check (edition in ('standard', 'plus')),
     amount_brl numeric(10, 2) not null check (amount_brl in (20.00, 40.00)),
     payment_method text not null check (payment_method in ('boleto', 'credito', 'debito', 'pix')),
-    status text not null check (status = 'simulated_approved'),
+    status text not null check (status in ('pending', 'paid', 'failed', 'expired')),
     created_at timestamptz not null default now()
 );
 
@@ -133,17 +133,18 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-    if (select auth.uid()) is null then
-        raise exception 'Authentication is required to create an order';
+    if (select auth.uid()) is not null then
+        new.user_id := (select auth.uid());
+    elsif current_user <> 'service_role' or new.user_id is null then
+        raise exception 'A verified authenticated user is required to create an order';
     end if;
 
-    new.user_id := (select auth.uid());
     new.amount_brl := case new.edition
         when 'standard' then 20.00
         when 'plus' then 40.00
         else null
     end;
-    new.status := 'simulated_approved';
+    new.status := 'pending';
     new.created_at := now();
     return new;
 end;
@@ -163,6 +164,10 @@ security definer
 set search_path = ''
 as $$
 begin
+    if new.status not in ('paid', 'simulated_approved') then
+        return new;
+    end if;
+
     update public.profiles
     set user_level = case
         when user_level = 'plus' or new.edition = 'plus' then 'plus'
@@ -185,6 +190,11 @@ create trigger refresh_user_level_after_payment
     after insert on public.simulated_payments
     for each row execute function private.refresh_user_level_after_payment();
 
+drop trigger if exists refresh_user_level_after_payment_status on public.simulated_payments;
+create trigger refresh_user_level_after_payment_status
+    after update of status on public.simulated_payments
+    for each row execute function private.refresh_user_level_after_payment();
+
 create or replace function private.set_game_download_owner()
 returns trigger
 language plpgsql
@@ -200,7 +210,7 @@ begin
         from public.simulated_payments
         where id = new.payment_id
           and user_id = (select auth.uid())
-          and status = 'simulated_approved'
+          and status in ('paid', 'simulated_approved')
     ) then
         raise exception 'An approved order belonging to the current user is required';
     end if;
@@ -239,11 +249,6 @@ create policy "Users can read their own simulated orders"
     on public.simulated_payments for select to authenticated
     using (user_id = (select auth.uid()));
 
-drop policy if exists "Users can create their own simulated orders" on public.simulated_payments;
-create policy "Users can create their own simulated orders"
-    on public.simulated_payments for insert to authenticated
-    with check (user_id = (select auth.uid()));
-
 drop policy if exists "Users can read their own download requests" on public.game_downloads;
 create policy "Users can read their own download requests"
     on public.game_downloads for select to authenticated
@@ -262,7 +267,8 @@ revoke all on table public.admin from public, anon, authenticated, service_role;
 grant select on table public.admin to service_role;
 
 revoke all on table public.simulated_payments from public, anon, authenticated, service_role;
-grant select, insert on table public.simulated_payments to authenticated;
+grant select on table public.simulated_payments to authenticated;
+grant select, insert, update on table public.simulated_payments to service_role;
 
 revoke all on table public.game_downloads from public, anon, authenticated, service_role;
 grant select, insert on table public.game_downloads to authenticated;

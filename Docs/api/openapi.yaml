@@ -3,19 +3,70 @@ info:
   title: Yokai Tales — API do RF-004
   version: 1.0.0
   description: >-
-    Contrato dos endpoints de pedidos simulados e solicitações de download do
-    RF-004. Os pedidos são acadêmicos: nenhum pagamento real é processado.
+    Contrato dos endpoints de pedidos e solicitações de download do RF-004.
+    O pagamento usa Checkout hospedado da Stripe em modo de teste. Dados
+    financeiros não são enviados nem persistidos pela aplicação.
 servers:
   - url: /
     description: Mesma origem do site, local ou publicada
 tags:
   - name: Pedidos
-    description: Consulta e criação de pedidos simulados do usuário autenticado
+    description: Consulta de pedidos e criação de sessões Stripe para o usuário autenticado
   - name: Downloads
     description: Registro de solicitação de download vinculada ao próprio pedido
 security:
   - bearerAuth: []
 paths:
+  /api/stripe/webhook:
+    post:
+      security: []
+      tags: [Pedidos]
+      summary: Receber eventos assinados de Checkout da Stripe
+      operationId: receberEventoStripe
+      description: >-
+        Valida o corpo bruto usando Stripe-Signature. Atualiza apenas pedidos
+        pendentes com base nos eventos de pagamento; eventos duplicados são
+        inofensivos. Nenhum dado financeiro é salvo no Supabase.
+      parameters:
+        - in: header
+          name: Stripe-Signature
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Evento Stripe assinado; a API valida o corpo original.
+      responses:
+        '200':
+          description: Evento recebido ou ignorado por não afetar o estado do pedido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+        '400':
+          description: Assinatura inválida ou referência de pedido inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          description: Chaves ou cliente administrativo não configurados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/payments:
     get:
       tags: [Pedidos]
@@ -47,8 +98,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
     post:
       tags: [Pedidos]
-      summary: Registrar um pedido simulado
-      operationId: criarPedidoSimulado
+      summary: Criar uma sessão de Checkout de teste
+      operationId: criarSessaoCheckout
       requestBody:
         required: true
         content:
@@ -60,18 +111,19 @@ paths:
               payment_method: pix
       responses:
         '201':
-          description: Pedido simulado criado
+          description: Pedido pendente criado e URL do Checkout hospedado retornada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SimulatedPayment'
+                $ref: '#/components/schemas/CheckoutSession'
               example:
                 id: 6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b
                 edition: standard
                 amount_brl: 20.00
                 payment_method: pix
-                status: simulated_approved
+                status: pending
                 created_at: '2026-09-29T12:00:00Z'
+                checkout_url: https://checkout.stripe.com/c/pay/cs_test_example
         '400':
           description: JSON inválido ou edição ou forma de pagamento fora dos valores permitidos
           content:
@@ -92,13 +144,19 @@ paths:
         '403':
           $ref: '#/components/responses/OriginForbidden'
         '503':
-          description: Não foi possível registrar o pedido no Supabase
+          description: Checkout, Supabase ou configuração indisponível
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: Não foi possível registrar o pedido simulado.
+                error: O checkout de teste não está configurado no servidor.
+        '502':
+          description: Stripe não conseguiu criar uma sessão válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/downloads:
@@ -222,9 +280,10 @@ components:
         payment_method:
           type: string
           enum: [boleto, credito, debito, pix]
-    SimulatedPayment:
+          description: Cartão de crédito e débito são enviados à Stripe como o método card.
+    CheckoutSession:
       type: object
-      required: [id, edition, amount_brl, payment_method, status, created_at]
+      required: [id, edition, amount_brl, payment_method, status, created_at, checkout_url]
       properties:
         id:
           type: string
@@ -241,7 +300,34 @@ components:
           enum: [boleto, credito, debito, pix]
         status:
           type: string
-          enum: [simulated_approved]
+          enum: [pending]
+        created_at:
+          type: string
+          format: date-time
+        checkout_url:
+          type: string
+          format: uri
+          description: URL hospedada em checkout.stripe.com; contém somente a sessão de teste.
+    PaymentRecord:
+      type: object
+      required: [id, edition, amount_brl, payment_method, status, created_at]
+      description: Pedido no histórico; estados possíveis incluem pedidos atuais e registros legados.
+      properties:
+        id:
+          type: string
+          format: uuid
+        edition:
+          type: string
+          enum: [standard, plus]
+        amount_brl:
+          type: number
+          enum: [20, 40]
+        payment_method:
+          type: string
+          enum: [boleto, credito, debito, pix]
+        status:
+          type: string
+          enum: [pending, paid, failed, expired, simulated_approved]
         created_at:
           type: string
           format: date-time
@@ -252,7 +338,7 @@ components:
         payments:
           type: array
           items:
-            $ref: '#/components/schemas/SimulatedPayment'
+            $ref: '#/components/schemas/PaymentRecord'
         downloads:
           type: array
           items:

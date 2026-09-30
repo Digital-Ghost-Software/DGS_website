@@ -47,7 +47,7 @@
                     <option value="standard">Standard — R$ 20,00</option>
                     <option value="plus">Plus — R$ 40,00</option>
                 </select>
-                <label for="paymentMethod">Forma de pagamento simulada</label>
+                <label for="paymentMethod">Forma de pagamento</label>
                 <select id="paymentMethod" name="payment_method" required>
                     <option value="" selected disabled>Selecione uma forma de pagamento</option>
                     <option value="boleto">Boleto</option>
@@ -56,10 +56,10 @@
                     <option value="pix">Pix</option>
                 </select>
                 <p class="checkout-total">Total: <strong id="editionPrice">R$ 20,00</strong></p>
-                <p class="simulation-notice">Simulação acadêmica: nenhum pagamento será processado e não informe dados de cartão.</p>
-                <button class="btn-primary" type="submit">CONFIRMAR PEDIDO</button>
+                <p class="simulation-notice">Pagamento de teste pela Stripe. Nenhuma cobrança real será feita; os dados financeiros não serão armazenados pelo site.</p>
+                <button class="btn-primary" type="submit">IR PARA PAGAMENTO</button>
                 <p id="purchaseMessage" class="form-message" aria-live="polite" role="status"></p>
-                <p id="purchaseLoginLink" hidden><a href="login.html">Entre na sua conta</a> para registrar seu pedido.</p>
+                <p id="purchaseLoginLink" hidden><a href="login.html">Entre na sua conta</a> para continuar com o pagamento.</p>
             </form>
 
             <section class="purchase-history" aria-labelledby="historyTitle">

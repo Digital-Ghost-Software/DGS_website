@@ -1,6 +1,6 @@
 # RF-004 — Gestão de pedidos e pagamentos simulados
 
-> **Natureza:** protótipo acadêmico. Este requisito não processa pagamentos reais, não se conecta a provedor financeiro e não coleta dados de cartão. O termo “pagamento” designa o registro de um pedido simulado.
+> **Natureza:** protótipo acadêmico com Stripe Checkout em modo de teste. Não há cobrança real. A aplicação não coleta nem persiste dados financeiros; o Checkout hospedado da Stripe recebe os dados do método de pagamento. O Supabase guarda somente os dados mínimos do pedido e seu estado.
 
 ## 1. Metadados do requisito (2%)
 
@@ -11,7 +11,7 @@
 | Tipo | Requisito funcional |
 | Prioridade | Alta — o feedback do professor identifica Gestão de Pagamentos como o próximo requisito. |
 | Complexidade | Média, estimativa inicial de 5 story points; confirmar com a equipe. |
-| Status | Pedidos simulados implementados e validados com Supabase. O download real depende da publicação da release. |
+| Status | Integração Stripe Checkout em modo de teste implementada localmente; depende da migração incremental e configuração de segredos/webhook para validação integrada. O download real depende da publicação da release. |
 | Criação / atualização | 23/09/2026 / 29/09/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
 | Contrato OpenAPI | [Docs/api/openapi.yaml](api/openapi.yaml) |
@@ -52,6 +52,7 @@ Digital-Web-Site/
 │   └── ddl/
 │       ├── default-profile-photo.sql
 │       ├── new-project-schema.sql
+│       ├── stripe-test-checkout.sql
 │       └── rf-004-simulated-payments.sql
 ├── Docs/
 │   ├── api/
@@ -115,7 +116,7 @@ Digital-Web-Site/
 
 ### Descrição detalhada
 
-O usuário acessa a página de compra, escolhe uma edição e uma forma de pagamento simulada e confirma o pedido. A aplicação exige autenticação, registra o pedido no Supabase e apresenta o recibo e o histórico do próprio usuário. O preço e o estado são definidos pelo banco. Nenhuma cobrança ocorre e nenhum dado de cartão é solicitado ou armazenado. O download só fica disponível quando o arquivo do jogo estiver publicado e associado ao pedido.
+O usuário acessa a página de compra, escolhe uma edição e uma forma de pagamento (cartão, Pix ou boleto) e inicia o checkout de teste hospedado pela Stripe. A aplicação exige autenticação, cria um pedido pendente no Supabase e redireciona ao Checkout. Um webhook assinado atualiza o pedido após a confirmação do provedor. Nenhuma cobrança real ocorre e dados financeiros não passam pela aplicação nem são gravados no Supabase. O download só fica disponível após o pedido estar pago e quando o arquivo estiver publicado.
 
 O requisito atende a três objetivos: (1) demonstrar o fluxo de compra simulado do jogo; (2) manter um histórico de pedidos associado ao usuário autenticado; (3) apresentar com clareza as diferenças de conteúdo e preço entre as edições.
 
@@ -130,16 +131,17 @@ O requisito atende a três objetivos: (1) demonstrar o fluxo de compra simulado 
 
 | Ator | Papel e responsabilidade | CREATE | READ | UPDATE | DELETE |
 | --- | --- | :---: | :---: | :---: | :---: |
-| Usuário autenticado | Seleciona edição e forma simulada, confirma o pedido e consulta o próprio histórico. | ✅ Pedido próprio | ✅ Pedidos próprios | ❌ | ❌ |
-| Aplicação web | Apresenta edições, estados, recibo e disponibilidade do download; encaminha a solicitação autenticada. | ✅ Solicita à API | ✅ Solicita à API | ❌ | ❌ |
-| Supabase Auth e PostgreSQL | Valida a identidade, aplica RLS, calcula preço/estado e persiste pedidos e solicitações de download. | ✅ Conforme políticas | ✅ Conforme políticas | ❌ pelo cliente | ❌ pelo cliente |
+| Usuário autenticado | Seleciona edição e forma de pagamento, conclui o checkout e consulta o próprio histórico. | ✅ Pedido próprio | ✅ Pedidos próprios | ❌ | ❌ |
+| Aplicação web/API | Cria sessão Stripe de teste e pedido pendente; recebe eventos assinados; apresenta estados e disponibilidade do download. | ✅ Via API | ✅ Via API | ✅ Via webhook | ❌ |
+| Stripe Checkout (modo de teste) | Recebe os dados financeiros no ambiente hospedado de teste e comunica o resultado por webhook. | Cria sessão | Envia eventos | — | — |
+| Supabase Auth e PostgreSQL | Valida a identidade, aplica RLS, persiste dados mínimos do pedido e libera nível/download após confirmação. | ✅ Serviço servidor | ✅ Conforme políticas | ✅ Serviço servidor | ❌ pelo cliente |
 | Administrador do projeto | Mantém usuários e permissões do projeto pelo painel administrativo; não participa da confirmação de pedidos do RF-004. | Fora do fluxo | Fora do fluxo | Fora do fluxo | Fora do fluxo |
 
-Não há ator de provedor de pagamento: o escopo é simulado e não existe transação financeira. A administração de contas não autoriza nem condiciona um pedido neste requisito.
+O provedor é ator externo somente em modo de teste; nenhuma transação financeira real ocorre. A administração de contas não autoriza nem condiciona um pedido neste requisito.
 
 ## 3. Caso de uso e requisitos não funcionais (20%)
 
-### UC-004 — Confirmar pedido simulado
+### UC-004 — Iniciar e acompanhar pedido de teste
 
 **Pré-condições**
 
@@ -154,22 +156,22 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 2. A interface apresenta Standard por R$ 20,00 e Plus por R$ 40,00.
 3. O usuário seleciona uma edição.
 4. A interface atualiza o total exibido.
-5. A página informa que a operação é acadêmica e não deve receber dados de cartão.
-6. O usuário confirma o pedido simulado.
+5. A página informa que o checkout usa Stripe em modo de teste e que o site não armazena dados financeiros.
+6. O usuário inicia o checkout.
 7. A aplicação obtém a sessão autenticada do Supabase.
-8. A aplicação envia a edição e a forma de pagamento simulada para `POST /api/payments` com o token de sessão; preço, titular, estado e horário continuam determinados pelo banco.
+8. A aplicação envia edição e método (`credito`, `debito`, `pix` ou `boleto`) para `POST /api/payments` com o token de sessão. A API encaminha crédito e débito à Stripe como tipo `card`.
 9. A API Node.js valida o token com Supabase Auth e encaminha a solicitação usando o JWT do próprio usuário.
-10. O trigger PostgreSQL obtém `auth.uid()`, calcula o preço correspondente e define o estado `simulated_approved`.
+10. A API calcula o preço a partir do catálogo do servidor, cria o pedido `pending` por credencial administrativa e solicita a sessão Stripe com o mesmo valor.
 11. A política RLS restringe o pedido ao usuário autenticado.
-12. O Supabase persiste o pedido e retorna seu recibo.
-13. A aplicação exibe confirmação, estado simulado e histórico de pedidos do usuário.
+12. A API retorna a URL hospedada da Stripe e o navegador redireciona o usuário.
+13. A Stripe comunica o resultado à API por webhook com assinatura verificada; somente então o estado passa a `paid`, `failed` ou `expired`.
 14. Se a URL de release estiver configurada, a interface apresenta o download; sem artefato publicado, informa que ele está pendente.
 
 **Pós-condições (sucesso)**
 
-- O pedido simulado é persistido com edição, preço, forma escolhida, estado e horário definidos conforme as regras do sistema.
+- O pedido é persistido com edição, valor, método, estado e horário; somente eventos verificados confirmam pagamento.
 - O pedido aparece no histórico do titular e não fica visível para outras contas.
-- Nenhum valor é cobrado e nenhum dado de cartão é coletado ou armazenado.
+- Nenhuma cobrança real é realizada. O site não coleta nem persiste dados financeiros; o Supabase não recebe dados de cartão, Pix ou boleto.
 
 **Pós-condições (falha)**
 
@@ -215,9 +217,9 @@ Não há ator de provedor de pagamento: o escopo é simulado e não existe trans
 | RN-01 | Somente usuários autenticados podem registrar pedidos. |
 | RN-02 | `standard` tem preço simulado fixo de R$ 20,00. |
 | RN-03 | `plus` tem preço simulado fixo de R$ 40,00. |
-| RN-04 | Edição e forma de pagamento simulada são as únicas escolhas do checkout enviadas pelo navegador; usuário, preço, estado e horário são determinados no banco. |
+| RN-04 | A interface e o banco usam `credito`, `debito`, `pix` ou `boleto`. A API traduz crédito e débito para o método `card` exigido pela Stripe, sem armazenar `card` como forma de pagamento. O servidor calcula o valor e o webhook verificado determina o estado final. |
 | RN-05 | Um usuário pode consultar somente os próprios pedidos. |
-| RN-06 | O estado criado é `simulated_approved`; o registro não representa pagamento real e não pode ser alterado/apagado pelo cliente. |
+| RN-06 | Todo novo pedido inicia como `pending`; somente webhook assinado pode alterar seu estado para `paid`, `failed` ou `expired`. O cliente não pode atualizar/excluir pedidos. |
 | RN-07 | O pedido não libera arquivo inexistente; download real depende de release publicada e URL configurada. |
 
 ### Requisitos não funcionais
@@ -357,17 +359,17 @@ O CSS muda as edições para uma coluna até 600 px e reduz os espaçamentos do 
 ### Estados do protótipo
 
 1. **Inicial/vazio:** sem pedidos na conta.
-2. **Seleção:** escolha Standard/Plus, uma forma entre boleto/crédito/débito/Pix e confira o total correspondente.
-3. **Processando:** botão bloqueado enquanto grava.
-4. **Erro:** sessão inválida, falha de rede ou banco não configurado.
-5. **Sucesso:** pedido simulado persistido e recibo exibido.
-6. **Download pendente:** estado de sucesso sem link do jogo ainda publicado.
+2. **Seleção:** escolha Standard/Plus, cartão, Pix ou boleto e confira o total.
+3. **Processando:** botão bloqueado enquanto o servidor cria o pedido e a sessão Stripe.
+4. **Pendente:** pedido criado, aguardando confirmação do webhook.
+5. **Pago/falhou/expirou:** estado confirmado pelo webhook assinado.
+6. **Download pendente:** pedido pago, mas sem link de release publicado.
 
 O schema atual do Supabase foi aplicado e a integração live foi testada com duas contas. A suíte validou preço, titularidade, estado, isolamento, forma de pagamento e autorização de download; o histórico foi confirmado na interface. A implantação e a validação inicial na Vercel também foram confirmadas. Ainda não há um pacote formal de evidências anexado a este requisito.
 
 ### Dado persistido
 
-`simulated_payments`: UUID do pedido, UUID do usuário autenticado, edição, valor em BRL, forma de pagamento simulada, estado `simulated_approved` e data/hora. `game_downloads` mantém a solicitação, a versão e o horário, vinculada a um pedido do mesmo usuário. A aplicação não grava número, nome ou código de cartão.
+`simulated_payments`: UUID do pedido, UUID do usuário, edição, valor em BRL, método (`credito`, `debito`, `pix` ou `boleto`), estado (`pending`, `paid`, `failed` ou `expired`) e data/hora. Registros legados `simulated_approved` são preservados. `game_downloads` mantém a solicitação, a versão e o horário, vinculada a um pedido do mesmo usuário. A aplicação não recebe nem grava dados financeiros.
 
 ## 5. Arquitetura e ADR (15%)
 
@@ -392,13 +394,13 @@ flowchart LR
 
 A funcionalidade usa camadas com responsabilidades separadas: a interface HTML/CSS coleta as escolhas; módulos JavaScript controlam sessão e apresentação; a API REST Node.js valida o token e encaminha a operação; Supabase Auth identifica o usuário e PostgreSQL aplica regras, RLS e persistência. A API do site é servida na mesma origem da aplicação pela configuração da Vercel.
 
-### ADR-004-01 — Simulação sem provedor financeiro
+### ADR-004-01 — Checkout hospedado em modo de teste
 
-- **Status:** Aceito para o protótipo acadêmico.
+- **Status:** Adotado para o protótipo acadêmico; falta configurar as chaves e o webhook no ambiente.
 - **Contexto:** o professor solicitou Gestão de Pagamentos; a equipe definiu que não haverá cobrança real.
-- **Decisão:** confirmar pedido simulado diretamente no Supabase, sem pedir dados de cartão.
-- **Alternativas:** integração com gateway real; formulários que coletam dados de cartão. Ambas fora do escopo atual.
-- **Consequências:** ✅ fluxo simples, sem cobrança ou armazenamento de dados financeiros; ✅ resultados determinísticos para demonstração; ⚠️ não valida pagamento real e não prova que o arquivo do jogo pode ser entregue.
+- **Decisão:** criar pedido pendente no servidor, redirecionar ao Stripe Checkout em modo de teste e confirmar o estado por webhook assinado. Dados financeiros não passam pela aplicação nem são persistidos no Supabase.
+- **Alternativas:** formulário próprio que coleta dados financeiros; confiar apenas no retorno do navegador. Ambas rejeitadas por risco e falta de confiabilidade.
+- **Consequências:** ✅ nenhuma cobrança real; ✅ dados financeiros não são persistidos pelo site; ⚠️ configuração da Stripe, webhook e migração do banco são pré-requisitos.
 
 ### ADR-004-02 — Preço calculado no PostgreSQL
 
@@ -519,7 +521,7 @@ payment_method text not null
     check (payment_method in ('boleto', 'credito', 'debito', 'pix'))
 ```
 
-**Verificação:** `npm.cmd run test:unit` passou com 33 testes; a verificação do schema confirma as tabelas novas e a lista permitida de métodos, e a inspeção do formulário confirma que ele não solicita número ou CVV. Não foi feita cobrança nem incluído cadastro de cartão. A solicitação de verificar se existe cartão continua adiada para decisão posterior, como combinado.
+**Verificação da implementação Stripe:** `npm.cmd run test:unit` passou com 34 testes e `npm.cmd run test:integration` passou com 19 testes. Os testes validam valor calculado no servidor, criação de pedido pendente, métodos permitidos, assinatura do webhook, eventos de pagamento atrasado e atualização exclusiva de pedidos pendentes. A compilação estática também passou. Nenhuma cobrança real foi feita e não foi executado teste live porque a migração e os segredos Stripe ainda precisam ser configurados.
 
 **Limites da evidência:** `npm.cmd run test:integration` passou com 18 testes usando um serviço Supabase simulado. O teste live anterior validou RLS com duas contas. Esses resultados verificam comportamentos delimitados; não constituem auditoria externa ou teste de penetração. Ainda falta anexar captura dos comandos cURL executados no deploy.
 
@@ -530,7 +532,8 @@ O contrato está descrito em [`Docs/api/openapi.yaml`](api/openapi.yaml), no for
 | Método e caminho | Operação | Respostas documentadas |
 | --- | --- | --- |
 | `GET /api/payments` | Consultar pedidos e solicitações de download do usuário autenticado. | `200`, `401`, `403`, `500`, `503` |
-| `POST /api/payments` | Criar pedido simulado com edição e forma de pagamento permitidas. | `201`, `400`, `401`, `403`, `500`, `503` |
+| `POST /api/payments` | Criar pedido pendente e sessão Stripe de teste. | `201`, `400`, `401`, `403`, `413`, `502`, `503` |
+| `POST /api/stripe/webhook` | Validar eventos Stripe e atualizar o estado do pedido. | `200`, `400`, `413`, `500`, `503` |
 | `POST /api/downloads` | Registrar solicitação de download de um pedido próprio. | `201`, `400`, `401`, `403`, `500` |
 
 O arquivo define autenticação Bearer, schemas de requisição e resposta, valores permitidos, exemplos e os códigos HTTP retornados pela API atual. Não há interface Swagger UI publicada; o arquivo YAML é o contrato versionado do requisito.

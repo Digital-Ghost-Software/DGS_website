@@ -22,7 +22,7 @@ test("prices are formatted in Brazilian reais", () => {
     assert.equal(formatBRL(getPurchasePlan("plus").value), "R$ 40,00");
 });
 
-test("the four supported simulated payment methods have Portuguese labels", () => {
+test("payment methods preserve credit and debit choices with Portuguese labels", () => {
     assert.deepEqual(paymentMethods, {
         boleto: "Boleto",
         credito: "Cartão de crédito",
@@ -30,5 +30,7 @@ test("the four supported simulated payment methods have Portuguese labels", () =
         pix: "Pix"
     });
     assert.equal(getPaymentMethodLabel("pix"), "Pix");
+    assert.equal(getPaymentMethodLabel("credito"), "Cartão de crédito");
+    assert.equal(getPaymentMethodLabel("debito"), "Cartão de débito");
     assert.equal(getPaymentMethodLabel("unknown"), null);
 });

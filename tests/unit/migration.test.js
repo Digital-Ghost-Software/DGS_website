@@ -9,6 +9,8 @@ const freshSchemaPath = path.join(process.cwd(), "database", "ddl", "new-project
 const freshSchema = (await readFile(freshSchemaPath, "utf8")).toLowerCase();
 const defaultProfilePhotoMigrationPath = path.join(process.cwd(), "database", "ddl", "default-profile-photo.sql");
 const defaultProfilePhotoMigration = (await readFile(defaultProfilePhotoMigrationPath, "utf8")).toLowerCase();
+const stripeCheckoutMigrationPath = path.join(process.cwd(), "database", "ddl", "stripe-test-checkout.sql");
+const stripeCheckoutMigration = (await readFile(stripeCheckoutMigrationPath, "utf8")).toLowerCase();
 
 test("RF-004 migration defines payment and download records with database constraints", () => {
     assert.match(sql, /create table if not exists public\.simulated_payments/);
@@ -28,6 +30,7 @@ test("novo schema cria somente as tabelas novas com perfil associado ao Supabase
     assert.match(freshSchema, /create table if not exists public\.admin/);
     assert.match(freshSchema, /create table if not exists public\.simulated_payments/);
     assert.match(freshSchema, /payment_method text not null check \(payment_method in \('boleto', 'credito', 'debito', 'pix'\)\)/);
+    assert.match(freshSchema, /status text not null check \(status in \('pending', 'paid', 'failed', 'expired'\)\)/);
     assert.match(freshSchema, /create table if not exists public\.game_downloads/);
     for (const legacyTable of ["usuario", "cartao", "administrador"]) {
         assert.doesNotMatch(freshSchema, new RegExp(`create\\s+table[^;]*public\\.${legacyTable}\\b`));
@@ -39,13 +42,30 @@ test("novo schema protege nível, pedidos, downloads e administração com trigg
     assert.match(freshSchema, /grant update \(user_name, user_foto\) on table public\.profiles to authenticated/);
     assert.doesNotMatch(freshSchema, /grant update \([^)]*user_level[^)]*\) to authenticated/);
     assert.match(freshSchema, /grant select on table public\.admin to service_role/);
+    assert.match(freshSchema, /grant select, insert, update on table public\.simulated_payments to service_role/);
+    assert.match(freshSchema, /grant select on table public\.simulated_payments to authenticated/);
+    assert.doesNotMatch(freshSchema, /grant select, insert on table public\.simulated_payments to authenticated/);
     assert.doesNotMatch(freshSchema, /grant\s+(?:select|insert|update|delete|all)[^;]*public\.admin[^;]*to authenticated/);
     assert.match(freshSchema, /new\.user_id := \(select auth\.uid\(\)\)/);
     assert.match(freshSchema, /where id = new\.payment_id[\s\S]*user_id = \(select auth\.uid\(\)\)/);
-    assert.match(freshSchema, /user_level = case[\s\S]*user_level = 'plus' or new\.edition = 'plus' then 'plus'/);
+    assert.match(freshSchema, /new\.status not in \('paid', 'simulated_approved'\)[\s\S]*user_level = case[\s\S]*user_level = 'plus' or new\.edition = 'plus' then 'plus'/);
+    assert.match(freshSchema, /after update of status on public\.simulated_payments/);
     assert.match(freshSchema, /alter table public\.profiles enable row level security/);
     assert.match(freshSchema, /alter table public\.simulated_payments enable row level security/);
     assert.match(freshSchema, /alter table public\.game_downloads enable row level security/);
+});
+
+test("Stripe payment migration keeps old orders and limits confirmed statuses to verified payments", () => {
+    assert.match(stripeCheckoutMigration, /check \(status in \('pending', 'paid', 'failed', 'expired', 'simulated_approved'\)\)/);
+    assert.match(stripeCheckoutMigration, /payment_method in \('boleto', 'credito', 'debito', 'pix'\)/);
+    assert.match(stripeCheckoutMigration, /new\.status := 'pending'/);
+    assert.match(stripeCheckoutMigration, /current_user <> 'service_role'/);
+    assert.match(stripeCheckoutMigration, /new\.status not in \('paid', 'simulated_approved'\)/);
+    assert.match(stripeCheckoutMigration, /after update of status on public\.simulated_payments/);
+    assert.match(stripeCheckoutMigration, /status in \('paid', 'simulated_approved'\)/);
+    assert.match(stripeCheckoutMigration, /grant select on table public\.simulated_payments to authenticated/);
+    assert.match(stripeCheckoutMigration, /grant select, insert, update on table public\.simulated_payments to service_role/);
+    assert.doesNotMatch(stripeCheckoutMigration, /\b(?:drop\s+table|truncate\s+table|delete\s+from)\b/);
 });
 
 test("schema novo and additive migration assign the default photo to profiles", () => {

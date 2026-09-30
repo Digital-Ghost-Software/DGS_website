@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 import { createServer } from "node:http";
 import test, { after, before } from "node:test";
 
@@ -6,6 +8,14 @@ const capturedRequests = [];
 let apiServer;
 let supabaseServer;
 let apiBaseUrl;
+let stripeApiServer;
+let stripeApiBaseUrl;
+let stripeWebhookApi;
+let stripeVerifier;
+const stripeWebhookSecret = "whsec_integration_test_secret";
+const stripeCheckoutSessions = [];
+const stripeOrderRows = new Map();
+let stripeOrderSequence = 20;
 
 const userIds = {
     "valid-test-token": "00000000-0000-4000-8000-000000000001",
@@ -61,6 +71,15 @@ async function readBody(request) {
     return body ? JSON.parse(body) : {};
 }
 
+function signStripeEvent(event) {
+    const payload = JSON.stringify(event);
+    const signature = stripeVerifier.webhooks.generateTestHeaderString({
+        payload,
+        secret: stripeWebhookSecret
+    });
+    return { payload, signature };
+}
+
 before(async () => {
     supabaseServer = createServer(async (request, response) => {
         const requestUrl = new URL(request.url, "http://localhost");
@@ -111,34 +130,53 @@ before(async () => {
 
         if (requestUrl.pathname === "/rest/v1/simulated_payments" && request.method === "POST") {
             const payload = await readBody(request);
+            if (authorization !== "Bearer test-service-role") {
+                return sendJson(response, 403, { message: "Service role required" });
+            }
+            const id = `00000000-0000-4000-8000-${String(stripeOrderSequence++).padStart(12, "0")}`;
             const row = {
-                id: "00000000-0000-4000-8000-000000000002",
-                user_id: userIds[authorization?.replace(/^Bearer\s+/i, "")],
+                id,
+                user_id: payload.user_id,
                 edition: payload.edition,
                 amount_brl: payload.edition === "plus" ? 40 : 20,
                 payment_method: payload.payment_method,
-                status: "simulated_approved",
-                created_at: "2026-09-24T12:00:00.000Z"
+                status: "pending",
+                created_at: "2026-09-29T12:00:00.000Z"
             };
+            stripeOrderRows.set(id, row);
             capturedRequests.at(-1).body = payload;
             return sendJson(response, 201, row);
         }
 
+        if (requestUrl.pathname === "/rest/v1/simulated_payments" && request.method === "PATCH") {
+            const payload = await readBody(request);
+            capturedRequests.at(-1).body = payload;
+            const id = requestUrl.searchParams.get("id")?.replace(/^eq\./, "");
+            const expectedStatus = requestUrl.searchParams.get("status")?.replace(/^eq\./, "");
+            const row = stripeOrderRows.get(id);
+            if (authorization !== "Bearer test-service-role") {
+                return sendJson(response, 403, { message: "Service role required" });
+            }
+            if (row && (!expectedStatus || row.status === expectedStatus)) Object.assign(row, payload);
+            response.writeHead(204);
+            return response.end();
+        }
+
         if (requestUrl.pathname === "/rest/v1/simulated_payments" && request.method === "GET") {
             const userId = userIds[authorization?.replace(/^Bearer\s+/i, "")];
-            return sendJson(response, 200, mockPayments.filter((payment) => payment.user_id === userId));
+            return sendJson(response, 200, [...mockPayments, ...stripeOrderRows.values()].filter((payment) => payment.user_id === userId));
         }
 
         if (requestUrl.pathname === "/rest/v1/game_downloads" && request.method === "GET") {
             const userId = userIds[authorization?.replace(/^Bearer\s+/i, "")];
-            const paymentIds = new Set(mockPayments.filter((payment) => payment.user_id === userId).map((payment) => payment.id));
+            const paymentIds = new Set([...mockPayments, ...stripeOrderRows.values()].filter((payment) => payment.user_id === userId).map((payment) => payment.id));
             return sendJson(response, 200, mockDownloads.filter((item) => paymentIds.has(item.payment_id)));
         }
 
         if (requestUrl.pathname === "/rest/v1/game_downloads" && request.method === "POST") {
             const payload = await readBody(request);
             const userId = userIds[authorization?.replace(/^Bearer\s+/i, "")];
-            const ownedPayment = mockPayments.find((payment) => payment.id === payload.payment_id && payment.user_id === userId);
+            const ownedPayment = [...mockPayments, ...stripeOrderRows.values()].find((payment) => payment.id === payload.payment_id && payment.user_id === userId && ["paid", "simulated_approved"].includes(payment.status));
             capturedRequests.at(-1).body = payload;
             if (!ownedPayment) return sendJson(response, 403, { message: "Order does not belong to user", code: "42501" });
             return sendJson(response, 201, {
@@ -156,16 +194,46 @@ before(async () => {
     process.env.SUPABASE_PUBLISHABLE_KEY = "test-publishable-key";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
     process.env.ALLOWED_ORIGINS = "";
+    process.env.STRIPE_SECRET_KEY = "";
+    process.env.STRIPE_WEBHOOK_SECRET = "";
+    process.env.PUBLIC_APP_URL = "";
 
     const { createLocalHandler } = await import("../../server/local.js");
     apiServer = createServer(createLocalHandler());
     const apiPort = await listen(apiServer);
     apiBaseUrl = `http://127.0.0.1:${apiPort}`;
+
+    stripeVerifier = new Stripe("sk_test_integration_placeholder");
+    const { createHandler } = await import(`../../server/index.js?stripe-integration=${Date.now()}`);
+    const adminClient = createClient(process.env.SUPABASE_URL, "test-service-role", {
+        auth: { persistSession: false, autoRefreshToken: false }
+    });
+    const stripeClient = {
+        checkout: {
+            sessions: {
+                create: async (params) => {
+                    stripeCheckoutSessions.push(params);
+                    const id = `cs_test_${stripeCheckoutSessions.length}`;
+                    return { id, url: `https://checkout.stripe.com/c/pay/${id}` };
+                }
+            }
+        },
+        webhooks: stripeVerifier.webhooks
+    };
+    stripeWebhookApi = createHandler({
+        stripeClient,
+        adminClient,
+        webhookSecret: stripeWebhookSecret,
+        publicAppUrl: "http://localhost:3000"
+    });
+    stripeApiServer = createServer(createLocalHandler(process.cwd(), stripeWebhookApi));
+    const stripePort = await listen(stripeApiServer);
+    stripeApiBaseUrl = `http://127.0.0.1:${stripePort}`;
 });
 
 after(async () => {
-    await Promise.all([apiServer, supabaseServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
-    for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "ALLOWED_ORIGINS"]) {
+    await Promise.all([apiServer, stripeApiServer, supabaseServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
+    for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "ALLOWED_ORIGINS", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "PUBLIC_APP_URL"]) {
         delete process.env[key];
     }
 });
@@ -207,7 +275,7 @@ test("local server serves the site and blocks private project files", async () =
     assert.match(defaultProfilePhoto.headers.get("content-type"), /image\/jpeg/);
     assert.ok(Number(defaultProfilePhoto.headers.get("content-length")) > 0);
     assert.match(page.headers.get("content-type"), /text\/html/);
-    assert.match(await page.text(), /Forma de pagamento simulada/);
+    assert.match(await page.text(), /Forma de pagamento/);
 
     const loginPage = await fetch(`${apiBaseUrl}/paginas/login.html`);
     assert.equal(loginPage.status, 200);
@@ -378,8 +446,8 @@ test("order history and download history stay scoped to the authenticated token"
     assert.equal(databaseReads.at(-1).authorization, "Bearer second-test-token");
 });
 
-test("payment creation validates edition and method and forwards only those choices", async () => {
-    const invalid = await fetch(`${apiBaseUrl}/api/payments`, {
+test("payment creation validates choices and creates a Stripe test session with server-calculated amounts", async () => {
+    const invalid = await fetch(`${stripeApiBaseUrl}/api/payments`, {
         method: "POST",
         headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
         body: JSON.stringify({ edition: "premium" })
@@ -387,7 +455,7 @@ test("payment creation validates edition and method and forwards only those choi
     assert.equal(invalid.status, 400);
     assert.equal((await invalid.json()).error, "Edição inválida. Escolha Standard ou Plus.");
 
-    const invalidMethod = await fetch(`${apiBaseUrl}/api/payments`, {
+    const invalidMethod = await fetch(`${stripeApiBaseUrl}/api/payments`, {
         method: "POST",
         headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
         body: JSON.stringify({ edition: "standard", payment_method: "cash" })
@@ -395,25 +463,124 @@ test("payment creation validates edition and method and forwards only those choi
     assert.equal(invalidMethod.status, 400);
     assert.equal((await invalidMethod.json()).error, "Escolha uma forma de pagamento válida.");
 
-    const response = await fetch(`${apiBaseUrl}/api/payments`, {
+    const response = await fetch(`${stripeApiBaseUrl}/api/payments`, {
         method: "POST",
         headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
         body: JSON.stringify({
             edition: "plus",
-            payment_method: "debito",
+            payment_method: "credito",
             amount_brl: 0,
             user_id: "attacker-controlled-user",
-            status: "paid"
+            status: "paid",
+            card_number: "4242424242424242",
+            cvc: "123"
         })
     });
 
     assert.equal(response.status, 201);
-    const order = await response.json();
+    const result = await response.json();
+    const order = stripeOrderRows.get(result.id);
     assert.equal(order.amount_brl, 40);
-    assert.equal(order.payment_method, "debito");
-    assert.equal(order.status, "simulated_approved");
+    assert.equal(order.payment_method, "credito");
+    assert.equal(order.status, "pending");
+    assert.equal(result.checkout_url, "https://checkout.stripe.com/c/pay/cs_test_1");
     const insertRequest = capturedRequests.findLast((entry) => entry.path === "/rest/v1/simulated_payments" && entry.method === "POST");
-    assert.deepEqual(insertRequest.body, { edition: "plus", payment_method: "debito" });
+    assert.deepEqual(insertRequest.body, {
+        user_id: userIds["valid-test-token"],
+        edition: "plus",
+        payment_method: "credito",
+        status: "pending"
+    });
+    assert.equal(insertRequest.authorization, "Bearer test-service-role");
+    const checkoutSession = stripeCheckoutSessions.at(-1);
+    assert.deepEqual(checkoutSession.payment_method_types, ["card"]);
+    assert.equal(checkoutSession.mode, "payment");
+    assert.equal(checkoutSession.line_items[0].price_data.currency, "brl");
+    assert.equal(checkoutSession.line_items[0].price_data.unit_amount, 4000);
+    assert.equal(checkoutSession.client_reference_id, result.id);
+    assert.deepEqual(checkoutSession.metadata, { order_id: result.id });
+    assert.match(checkoutSession.success_url, /session_id=\{CHECKOUT_SESSION_ID\}/);
+    assert.match(checkoutSession.success_url, /order_id=/);
+    assert.equal("customer_email" in checkoutSession, false);
+    assert.equal("card_number" in insertRequest.body, false);
+    assert.equal("cvc" in insertRequest.body, false);
+
+    const legacyCredit = await fetch(`${stripeApiBaseUrl}/api/payments`, {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ edition: "standard", payment_method: "credito" })
+    });
+    assert.equal(legacyCredit.status, 201);
+    const legacyOrder = await legacyCredit.json();
+    assert.equal(stripeOrderRows.get(legacyOrder.id).payment_method, "credito");
+    assert.deepEqual(stripeCheckoutSessions.at(-1).payment_method_types, ["card"]);
+});
+
+test("Stripe webhook signature is checked and delayed payments update only the pending order", async () => {
+    const orderId = [...stripeOrderRows.keys()].at(-1);
+    const session = {
+        id: "cs_test_async_pix",
+        object: "checkout.session",
+        client_reference_id: orderId,
+        metadata: { order_id: orderId },
+        payment_status: "unpaid"
+    };
+    const completed = signStripeEvent({ id: "evt_test_completed", object: "event", type: "checkout.session.completed", data: { object: session } });
+    const invalidSignature = await fetch(`${stripeApiBaseUrl}/api/stripe/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Stripe-Signature": "invalid" },
+        body: completed.payload
+    });
+    assert.equal(invalidSignature.status, 400);
+    assert.equal(stripeOrderRows.get(orderId).status, "pending");
+
+    const completedResponse = await fetch(`${stripeApiBaseUrl}/api/stripe/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Stripe-Signature": completed.signature },
+        body: completed.payload
+    });
+    assert.equal(completedResponse.status, 200);
+    assert.equal(stripeOrderRows.get(orderId).status, "pending");
+
+    const succeeded = signStripeEvent({
+        id: "evt_test_async_succeeded",
+        object: "event",
+        type: "checkout.session.async_payment_succeeded",
+        data: { object: session }
+    });
+    const succeededResponse = await fetch(`${stripeApiBaseUrl}/api/stripe/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Stripe-Signature": succeeded.signature },
+        body: succeeded.payload
+    });
+    assert.equal(succeededResponse.status, 200);
+    assert.equal(stripeOrderRows.get(orderId).status, "paid");
+    const updateRequest = capturedRequests.findLast((entry) => entry.path === "/rest/v1/simulated_payments" && entry.method === "PATCH");
+    assert.deepEqual(updateRequest.body, { status: "paid" });
+    assert.equal(updateRequest.authorization, "Bearer test-service-role");
+
+    const failed = signStripeEvent({
+        id: "evt_test_async_failed",
+        object: "event",
+        type: "checkout.session.async_payment_failed",
+        data: { object: { ...session, payment_status: "unpaid" } }
+    });
+    const secondOrderResponse = await fetch(`${stripeApiBaseUrl}/api/payments`, {
+        method: "POST",
+        headers: { Authorization: "Bearer second-test-token", "Content-Type": "application/json" },
+        body: JSON.stringify({ edition: "standard", payment_method: "boleto" })
+    });
+    assert.equal(secondOrderResponse.status, 201);
+    const secondOrder = await secondOrderResponse.json();
+    const failedEvent = { ...JSON.parse(failed.payload), data: { object: { ...JSON.parse(failed.payload).data.object, client_reference_id: secondOrder.id, metadata: { order_id: secondOrder.id } } } };
+    const failedSigned = signStripeEvent(failedEvent);
+    const failedResponse = await fetch(`${stripeApiBaseUrl}/api/stripe/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Stripe-Signature": failedSigned.signature },
+        body: failedSigned.payload
+    });
+    assert.equal(failedResponse.status, 200);
+    assert.equal(stripeOrderRows.get(secondOrder.id).status, "failed");
 });
 
 test("the API rejects requests from a foreign origin", async () => {
