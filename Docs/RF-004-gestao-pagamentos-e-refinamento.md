@@ -434,14 +434,91 @@ A funcionalidade usa camadas com responsabilidades separadas: a interface HTML/C
 
 ## 6. Segurança OWASP (10%)
 
-| Risco | Implementação no protótipo | Teste/evidência necessário |
-| --- | --- | --- |
-| A01 — Broken Access Control: leitura de pedido/download alheio | Políticas RLS limitam pedidos e solicitações a `auth.uid()`; trigger exige pedido aprovado do próprio usuário. | Teste live com duas contas passou: isolamento de histórico e rejeição de download cruzado. |
-| A04 — Insecure Design / exposição de dados de cartão | Checkout simulado não solicita nem persiste PAN, CVV ou nome de titular. | Inspeção do formulário/schema e suíte de testes; não inserir cartões reais. Screenshot formal não anexado. |
-| A05 — Authentication Failures / preço adulterado | Supabase Auth; trigger sobrescreve titular, preço, estado e horário. | Teste live enviou valores adulterados e confirmou os valores calculados no banco. |
-| A03 — Injection | Edição e forma de pagamento são validadas na API e no banco; acesso usa cliente Supabase estruturado. | Teste live rejeitou forma de pagamento inválida; teste unitário/API cobre edição inválida. |
+Esta seção documenta três controles implementados. Os comandos de reprodução usam placeholders para URL e token; não inclua credenciais nos arquivos ou capturas entregues.
 
-Os controles acima têm evidência de testes automatizados e integração real. Isso não equivale a auditoria externa ou teste de penetração. Screenshots formais ainda são necessários para a entrega acadêmica completa; a responsividade foi confirmada pelo usuário.
+### A01 — Broken Access Control: isolamento de pedidos e downloads
+
+**Vulnerabilidade e risco:** uma conta poderia tentar consultar pedidos de outra pessoa ou solicitar o download de um pedido alheio.
+
+**Implementação — RLS no PostgreSQL:**
+
+```sql
+create policy "Users can read their own simulated orders"
+    on public.simulated_payments for select to authenticated
+    using (user_id = (select auth.uid()));
+
+create policy "Users can create their own download requests"
+    on public.game_downloads for insert to authenticated
+    with check (user_id = (select auth.uid()));
+```
+
+A API também exige sessão autenticada e encaminha as operações usando o token do usuário (`server/index.js`). A função que cria pedidos obtém `user_id` de `auth.uid()`.
+
+**Reprodução por cURL:** tentar usar o ID de um pedido da conta A com o token da conta B:
+
+```powershell
+$BaseUrl = "https://<dominio-do-deploy>"
+$TokenB = "<token-de-acesso-da-conta-B>"
+$PedidoA = "<uuid-do-pedido-da-conta-A>"
+curl.exe -i -X POST "$BaseUrl/api/downloads" `
+  -H "Authorization: Bearer $TokenB" `
+  -H "Content-Type: application/json" `
+  --data-raw "{`"payment_id`":`"$PedidoA`"}"
+```
+
+**Resposta esperada do endpoint:** `HTTP 403` e `{"error":"O download não está disponível para este pedido."}`. Os testes de integração local cobrem a tentativa cruzada; o teste live anterior com duas contas também confirmou o isolamento e a rejeição. Uma captura cURL do deploy ainda precisa ser anexada como evidência da apresentação.
+
+### A03 — Injection: valores enviados pelo cliente
+
+**Vulnerabilidade e risco:** entradas manipuladas poderiam chegar ao banco como valores não previstos ou alterar os dados do pedido.
+
+**Implementação — lista permitida e cliente Supabase estruturado (`server/index.js`):**
+
+```js
+if (!["standard", "plus"].includes(payload.edition)) {
+    return sendJson(response, 400, { error: "Edição inválida. Escolha Standard ou Plus." }, origin);
+}
+if (!Object.hasOwn(paymentMethods, payload.payment_method)) {
+    return sendJson(response, 400, { error: "Escolha uma forma de pagamento válida." }, origin);
+}
+const { data, error } = await auth.client
+    .from("simulated_payments")
+    .insert({ edition: payload.edition, payment_method: payload.payment_method })
+    .select("id, edition, amount_brl, payment_method, status, created_at")
+    .single();
+```
+
+**Reprodução por cURL:** enviar uma edição fora da lista permitida:
+
+```powershell
+$BaseUrl = "https://<dominio-do-deploy>"
+$TokenTeste = "<token-de-acesso-de-uma-conta-de-teste>"
+curl.exe -i -X POST "$BaseUrl/api/payments" `
+  -H "Authorization: Bearer $TokenTeste" `
+  -H "Content-Type: application/json" `
+  --data-raw '{"edition":"standard UNION SELECT","payment_method":"pix"}'
+```
+
+**Resposta do teste de integração local:** `HTTP 400` e `{"error":"Edição inválida. Escolha Standard ou Plus."}`. O teste passa pelo handler real da API com o serviço Auth simulado; esse resultado não é uma captura do ambiente publicado. `tests/integration/api.test.js` também verifica que a API encaminha somente edição e forma de pagamento, ignorando preço, titular e estado enviados pelo cliente.
+
+### A04 — Insecure Design: coleta desnecessária de dados financeiros
+
+**Vulnerabilidade e risco:** coletar ou armazenar dados completos de cartão em uma simulação criaria exposição financeira sem necessidade funcional.
+
+**Implementação:** o checkout informa que não deve receber dados de cartão e o schema armazena apenas a forma simulada (`boleto`, `credito`, `debito` ou `pix`), sem campos de número, CVV ou titular:
+
+```html
+<p class="simulation-notice">Simulação acadêmica: nenhum pagamento será processado e não informe dados de cartão.</p>
+```
+
+```sql
+payment_method text not null
+    check (payment_method in ('boleto', 'credito', 'debito', 'pix'))
+```
+
+**Verificação:** `npm.cmd run test:unit` passou com 33 testes; a verificação do schema confirma as tabelas novas e a lista permitida de métodos, e a inspeção do formulário confirma que ele não solicita número ou CVV. Não foi feita cobrança nem incluído cadastro de cartão. A solicitação de verificar se existe cartão continua adiada para decisão posterior, como combinado.
+
+**Limites da evidência:** `npm.cmd run test:integration` passou com 18 testes usando um serviço Supabase simulado. O teste live anterior validou RLS com duas contas. Esses resultados verificam comportamentos delimitados; não constituem auditoria externa ou teste de penetração. Ainda falta anexar captura dos comandos cURL executados no deploy.
 
 ## 7. Checklist de atendimento e pendências
 
