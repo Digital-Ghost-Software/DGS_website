@@ -1,6 +1,6 @@
 # RF-004 — Gestão de pedidos e pagamentos simulados
 
-> **Natureza:** protótipo acadêmico com Stripe Checkout em modo de teste. Não há cobrança real. A aplicação não coleta nem persiste dados financeiros; o Checkout hospedado da Stripe recebe os dados do método de pagamento. O Supabase guarda somente os dados mínimos do pedido e seu estado.
+> **Natureza:** protótipo acadêmico com Stripe Checkout em modo de teste. Não há cobrança real. O checkout hospedado da Stripe recebe os dados do método de pagamento. Em compras com cartão, o usuário informa os dados novamente a cada compra; o projeto não mantém cartões associados ao perfil nem persiste dados financeiros. O Supabase guarda somente os dados mínimos do pedido e seu estado.
 
 ## 1. Metadados do requisito (2%)
 
@@ -116,7 +116,7 @@ Digital-Web-Site/
 
 ### Descrição detalhada
 
-O usuário acessa a página de compra, escolhe uma edição e uma forma de pagamento (cartão, Pix ou boleto) e inicia o checkout de teste hospedado pela Stripe. A aplicação exige autenticação, cria um pedido pendente no Supabase e redireciona ao Checkout. Um webhook assinado atualiza o pedido após a confirmação do provedor. Nenhuma cobrança real ocorre e dados financeiros não passam pela aplicação nem são gravados no Supabase. O download só fica disponível após o pedido estar pago e quando o arquivo estiver publicado.
+O usuário acessa a página de compra, escolhe uma edição e uma forma de pagamento (cartão, Pix ou boleto) e inicia o checkout de teste hospedado pela Stripe. A aplicação exige autenticação, cria um pedido pendente no Supabase e redireciona ao Checkout. Quando escolhe cartão, o usuário informa os dados novamente a cada compra, diretamente na página hospedada da Stripe. Um webhook assinado atualiza o pedido após a confirmação do provedor. Nenhuma cobrança real ocorre; os dados financeiros não passam pelo servidor do projeto nem são gravados no Supabase. O download só fica disponível após o pedido estar pago e quando o arquivo estiver publicado.
 
 O requisito atende a três objetivos: (1) demonstrar o fluxo de compra simulado do jogo; (2) manter um histórico de pedidos associado ao usuário autenticado; (3) apresentar com clareza as diferenças de conteúdo e preço entre as edições.
 
@@ -156,7 +156,7 @@ O provedor é ator externo somente em modo de teste; nenhuma transação finance
 2. A interface apresenta Standard por R$ 20,00 e Plus por R$ 40,00.
 3. O usuário seleciona uma edição.
 4. A interface atualiza o total exibido.
-5. A página informa que o checkout usa Stripe em modo de teste e que o site não armazena dados financeiros.
+5. A página informa que o checkout usa Stripe em modo de teste, que os dados do cartão são informados novamente a cada compra no ambiente hospedado e que o projeto não os armazena.
 6. O usuário inicia o checkout.
 7. A aplicação obtém a sessão autenticada do Supabase.
 8. A aplicação envia edição e método (`credito`, `debito`, `pix` ou `boleto`) para `POST /api/payments` com o token de sessão. A API encaminha crédito e débito à Stripe como tipo `card`.
@@ -171,7 +171,7 @@ O provedor é ator externo somente em modo de teste; nenhuma transação finance
 
 - O pedido é persistido com edição, valor, método, estado e horário; somente eventos verificados confirmam pagamento.
 - O pedido aparece no histórico do titular e não fica visível para outras contas.
-- Nenhuma cobrança real é realizada. O site não coleta nem persiste dados financeiros; o Supabase não recebe dados de cartão, Pix ou boleto.
+- Nenhuma cobrança real é realizada. O servidor do projeto não recebe nem persiste dados financeiros; nas compras com cartão, a Stripe solicita os dados a cada checkout. O Supabase não recebe dados de cartão, Pix ou boleto.
 
 **Pós-condições (falha)**
 
@@ -208,7 +208,7 @@ O provedor é ator externo somente em modo de teste; nenhuma transação finance
 2. A aplicação verifica que não há arquivo de release disponível.
 3. A interface informa que o download está pendente e não apresenta um link funcional.
 
-**Ponto pendente de escopo — verificação de cartão:** o feedback recebido menciona uma verificação de cartão antes da compra, mas esse comportamento não existe no sistema atual. O checkout não coleta dados de cartão e o schema atual não possui cadastro de cartões. A inclusão deste fluxo depende de decisão da equipe e não está descrita como funcionalidade implementada.
+**Decisão sobre cartão salvo:** a verificação de um cartão previamente associado à conta não faz parte do fluxo. Não existe cadastro de cartão no projeto. A cada compra com cartão, o usuário preenche os dados diretamente no Checkout hospedado da Stripe; o projeto não os salva nem os associa ao perfil.
 
 ### Regras de negócio
 
@@ -265,8 +265,9 @@ Os esboços abaixo representam estados da mesma página `paginas/download.html`;
 | Forma de pagamento simulada                      |
 | [ Selecione uma forma de pagamento          v ]  |
 | Total: R$ 20,00                                  |
-| Simulação acadêmica: nenhum pagamento será       |
-| processado e não informe dados de cartão.        |
+| Pagamento de teste hospedado pela Stripe.        |
+| Informe os dados financeiros diretamente no     |
+| checkout; o projeto não os armazena.             |
 | [ CONFIRMAR PEDIDO ]                             |
 |                                                  |
 | Seus pedidos                                     |
@@ -284,8 +285,9 @@ Os esboços abaixo representam estados da mesma página `paginas/download.html`;
 | Forma de pagamento simulada                      |
 | [ Pix                                      v ]   |
 | Total: R$ 40,00                                  |
-| Simulação acadêmica: nenhum pagamento será       |
-| processado e não informe dados de cartão.        |
+| Pagamento de teste hospedado pela Stripe.        |
+| Informe os dados financeiros diretamente no     |
+| checkout; o projeto não os armazena.             |
 | [ CONFIRMAR PEDIDO ]                             |
 +--------------------------------------------------+
 ```
@@ -510,10 +512,10 @@ curl.exe -i -X POST "$BaseUrl/api/payments" `
 
 **Vulnerabilidade e risco:** coletar ou armazenar dados completos de cartão em uma simulação criaria exposição financeira sem necessidade funcional.
 
-**Implementação:** o checkout informa que não deve receber dados de cartão e o schema armazena apenas a forma simulada (`boleto`, `credito`, `debito` ou `pix`), sem campos de número, CVV ou titular:
+**Implementação:** a aplicação redireciona para o Checkout hospedado da Stripe, que recebe os dados financeiros diretamente. Em cada compra com cartão, o usuário os informa novamente; o projeto não mantém cartão salvo. O schema armazena apenas a forma de pagamento selecionada (`boleto`, `credito`, `debito` ou `pix`), sem campos de número, CVV ou titular:
 
 ```html
-<p class="simulation-notice">Simulação acadêmica: nenhum pagamento será processado e não informe dados de cartão.</p>
+<p class="simulation-notice">Pagamento de teste pela Stripe. Os dados do cartão são informados novamente a cada compra no checkout hospedado e não são armazenados pelo projeto.</p>
 ```
 
 ```sql
@@ -521,9 +523,9 @@ payment_method text not null
     check (payment_method in ('boleto', 'credito', 'debito', 'pix'))
 ```
 
-**Verificação da implementação Stripe:** `npm.cmd run test:unit` passou com 34 testes e `npm.cmd run test:integration` passou com 19 testes. Os testes validam valor calculado no servidor, criação de pedido pendente, métodos permitidos, assinatura do webhook, eventos de pagamento atrasado e atualização exclusiva de pedidos pendentes. A compilação estática também passou. Nenhuma cobrança real foi feita e não foi executado teste live porque a migração e os segredos Stripe ainda precisam ser configurados.
+**Verificação da implementação Stripe:** `npm.cmd test` passou com 53 testes, sem falhas e com o teste live ignorado na execução padrão; `npm.cmd run build` também passou. `npm.cmd run test:integration:supabase` passou com uma integração live contra o Supabase real, usando sessão Stripe e eventos assinados simulados localmente. Essa verificação validou pedidos, estados, RLS, perfil e downloads, mas não concluiu uma compra pela Stripe publicada. Nenhuma cobrança real foi feita.
 
-**Limites da evidência:** `npm.cmd run test:integration` passou com 18 testes usando um serviço Supabase simulado. O teste live anterior validou RLS com duas contas. Esses resultados verificam comportamentos delimitados; não constituem auditoria externa ou teste de penetração. Ainda falta anexar captura dos comandos cURL executados no deploy.
+**Limites da evidência:** os testes verificam comportamentos delimitados; não constituem auditoria externa ou teste de penetração. A validação do Checkout no deploy continua pendente após a publicação do build atualizado. Ainda falta anexar captura dos comandos cURL executados no deploy.
 
 ## 7. Documentação da API (OpenAPI) (3%)
 

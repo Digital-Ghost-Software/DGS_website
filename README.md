@@ -58,4 +58,4 @@ O repositório inclui a configuração para publicar site estático e API Node.j
 
 ## Limites desta versão
 
-O banco Supabase precisa receber a migração SQL e ser configurado no painel. A migração bloqueia acesso web às tabelas legadas `Usuario`, `Cartao` e `Administrador`, caso existam, mas preserva os registros atuais sem os apagar. O deploy da aplicação não foi realizado e o arquivo do jogo ainda não está publicado; portanto, a integração remota e o download real seguem pendentes. A simulação não representa uma transação financeira.
+O site está publicado na Vercel. O checkout Stripe mais recente foi enviado para publicação e sua validação no deploy está pendente. No projeto Supabase usado pela aplicação, o schema e a migração de checkout foram aplicados; em uma instalação nova, aplique os arquivos SQL documentados acima. A migração bloqueia acesso web às tabelas legadas `Usuario`, `Cartao` e `Administrador`, caso existam, sem apagar os registros. O arquivo do jogo ainda não está publicado, então o download real segue pendente. A simulação não representa uma transação financeira.
