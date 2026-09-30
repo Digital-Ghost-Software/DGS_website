@@ -1,0 +1,278 @@
+openapi: 3.0.3
+info:
+  title: Yokai Tales — API do RF-004
+  version: 1.0.0
+  description: >-
+    Contrato dos endpoints de pedidos simulados e solicitações de download do
+    RF-004. Os pedidos são acadêmicos: nenhum pagamento real é processado.
+servers:
+  - url: /
+    description: Mesma origem do site, local ou publicada
+tags:
+  - name: Pedidos
+    description: Consulta e criação de pedidos simulados do usuário autenticado
+  - name: Downloads
+    description: Registro de solicitação de download vinculada ao próprio pedido
+security:
+  - bearerAuth: []
+paths:
+  /api/payments:
+    get:
+      tags: [Pedidos]
+      summary: Consultar pedidos e solicitações de download do usuário
+      operationId: listarPedidos
+      responses:
+        '200':
+          description: Histórico visível para o usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentHistory'
+              example:
+                payments: []
+                downloads: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/OriginForbidden'
+        '503':
+          description: Não foi possível carregar pedidos ou histórico de downloads
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Não foi possível carregar os pedidos.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Pedidos]
+      summary: Registrar um pedido simulado
+      operationId: criarPedidoSimulado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+            example:
+              edition: standard
+              payment_method: pix
+      responses:
+        '201':
+          description: Pedido simulado criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatedPayment'
+              example:
+                id: 6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b
+                edition: standard
+                amount_brl: 20.00
+                payment_method: pix
+                status: simulated_approved
+                created_at: '2026-09-29T12:00:00Z'
+        '400':
+          description: JSON inválido ou edição ou forma de pagamento fora dos valores permitidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                edicaoInvalida:
+                  value:
+                    error: Edição inválida. Escolha Standard ou Plus.
+                formaInvalida:
+                  value:
+                    error: Escolha uma forma de pagamento válida.
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/OriginForbidden'
+        '503':
+          description: Não foi possível registrar o pedido no Supabase
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Não foi possível registrar o pedido simulado.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/downloads:
+    post:
+      tags: [Downloads]
+      summary: Registrar solicitação de download de um pedido próprio
+      operationId: solicitarDownload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDownloadRequest'
+            example:
+              payment_id: 6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b
+      responses:
+        '201':
+          description: Solicitação de download registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadRequestRecord'
+              example:
+                payment_id: 6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b
+                release_version: '1.0'
+                requested_at: '2026-09-29T12:01:00Z'
+        '400':
+          description: JSON inválido ou identificador do pedido ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Pedido inválido para solicitar o download.
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Origem não autorizada ou pedido inexistente/alheio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                origem:
+                  value:
+                    error: Origem não autorizada.
+                pedidoIndisponivel:
+                  value:
+                    error: O download não está disponível para este pedido.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token de acesso emitido pelo Supabase Auth
+  responses:
+    Unauthorized:
+      description: Sessão ausente ou inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            semToken:
+              value:
+                error: Autenticação necessária.
+                code: missing_bearer_token
+            tokenInvalido:
+              value:
+                error: Sessão inválida. Entre novamente.
+    OriginForbidden:
+      description: Origem da requisição não autorizada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Origem não autorizada.
+    PayloadTooLarge:
+      description: O corpo da solicitação excede o limite de 4 KiB
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: A solicitação excede o tamanho permitido.
+    InternalServerError:
+      description: Erro inesperado ao processar a solicitação
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Não foi possível processar a solicitação.
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        tokenDiagnostic:
+          type: string
+        authStatus:
+          type: integer
+          nullable: true
+    CreatePaymentRequest:
+      type: object
+      required: [edition, payment_method]
+      properties:
+        edition:
+          type: string
+          enum: [standard, plus]
+        payment_method:
+          type: string
+          enum: [boleto, credito, debito, pix]
+    SimulatedPayment:
+      type: object
+      required: [id, edition, amount_brl, payment_method, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        edition:
+          type: string
+          enum: [standard, plus]
+        amount_brl:
+          type: number
+          enum: [20, 40]
+          description: Valor calculado no banco para a edição escolhida
+        payment_method:
+          type: string
+          enum: [boleto, credito, debito, pix]
+        status:
+          type: string
+          enum: [simulated_approved]
+        created_at:
+          type: string
+          format: date-time
+    PaymentHistory:
+      type: object
+      required: [payments, downloads]
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimulatedPayment'
+        downloads:
+          type: array
+          items:
+            $ref: '#/components/schemas/DownloadRequestRecord'
+    CreateDownloadRequest:
+      type: object
+      required: [payment_id]
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+    DownloadRequestRecord:
+      type: object
+      required: [payment_id, release_version, requested_at]
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        release_version:
+          type: string
+        requested_at:
+          type: string
+          format: date-time

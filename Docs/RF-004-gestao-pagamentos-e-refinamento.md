@@ -14,6 +14,7 @@
 | Status | Pedidos simulados implementados e validados com Supabase. O download real depende da publicação da release. |
 | Criação / atualização | 23/09/2026 / 29/09/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
+| Contrato OpenAPI | [Docs/api/openapi.yaml](api/openapi.yaml) |
 
 ### Metadados do projeto/equipe
 
@@ -53,6 +54,8 @@ Digital-Web-Site/
 │       ├── new-project-schema.sql
 │       └── rf-004-simulated-payments.sql
 ├── Docs/
+│   ├── api/
+│   │   └── openapi.yaml
 │   ├── RF - 01 - Login.md
 │   ├── RF-001-login.md
 │   ├── RF-002-cadastro-usuario.md
@@ -520,28 +523,14 @@ payment_method text not null
 
 **Limites da evidência:** `npm.cmd run test:integration` passou com 18 testes usando um serviço Supabase simulado. O teste live anterior validou RLS com duas contas. Esses resultados verificam comportamentos delimitados; não constituem auditoria externa ou teste de penetração. Ainda falta anexar captura dos comandos cURL executados no deploy.
 
-## 7. Checklist de atendimento e pendências
+## 7. Documentação da API (OpenAPI) (3%)
 
-| Tópico | Estado |
-| --- | --- |
-| T1 — Identificação (2%) | Preenchido; estimativa de complexidade deve ser validada pela equipe. |
-| T2 — Descrição e atores (6%) | Objetivo, três atores e CRUD definidos. |
-| T3 — Casos de uso/RNF (15%) | Pré/pós-condições, 12 passos, quatro alternativos, sete regras e quatro RNF. |
-| T4 — Protótipo (50%) | HTML/JS e schema aplicados; integração Supabase e histórico foram testados; site e API estão publicados na Vercel e passaram pela validação inicial. |
-| T5 — Arquitetura/ADR (15%) | Diagrama, fluxo e quatro ADRs descritos. |
-| T6 — OWASP (12%) | RLS, tentativa de forjar preço/titular, método inválido e solicitação cruzada de download foram testados. A revisão não equivale a uma auditoria externa. |
+O contrato está descrito em [`Docs/api/openapi.yaml`](api/openapi.yaml), no formato OpenAPI 3.0.3. O servidor usa a mesma origem do site e os endpoints deste requisito exigem token Bearer emitido pelo Supabase Auth.
 
-**Nota:** não foi atribuída pontuação. O critério de protótipo exige execução funcional, deploy e evidência; documentação isolada não prova esses itens.
+| Método e caminho | Operação | Respostas documentadas |
+| --- | --- | --- |
+| `GET /api/payments` | Consultar pedidos e solicitações de download do usuário autenticado. | `200`, `401`, `403`, `500`, `503` |
+| `POST /api/payments` | Criar pedido simulado com edição e forma de pagamento permitidas. | `201`, `400`, `401`, `403`, `500`, `503` |
+| `POST /api/downloads` | Registrar solicitação de download de um pedido próprio. | `201`, `400`, `401`, `403`, `500` |
 
-## 8. Critérios de aceite
-
-- [x] O schema do projeto Supabase do sistema foi executado; a migração incremental da foto padrão também foi aplicada.
-- [x] Duas contas criaram pedidos e cada conta consultou apenas seu histórico; download cruzado foi rejeitado.
-- [x] Standard persiste R$ 20,00 e Plus R$ 40,00, inclusive com tentativa de adulteração.
-- [x] Formulário e tabela não solicitam nem guardam dados reais de cartão.
-- [x] Os estados de interface são demonstrados em tela pequena e desktop.
-- [x] Publicar site/API integrados na Vercel e concluir a validação inicial.
-- [ ] Release do jogo é publicada e `GAME_DOWNLOAD_URL` recebe o endereço real antes de prometer download.
-- [ ] Anexar evidências formais dos testes e da demonstração.
-
-**Fontes usadas:** feedback do professor, documentações RF-001/RF-002 fornecidas, `requisitos.md` v15, código e estrutura local do projeto, além das decisões informadas pelo usuário. Nenhuma fonte externa foi usada.
+O arquivo define autenticação Bearer, schemas de requisição e resposta, valores permitidos, exemplos e os códigos HTTP retornados pela API atual. Não há interface Swagger UI publicada; o arquivo YAML é o contrato versionado do requisito.
