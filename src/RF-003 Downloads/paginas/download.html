@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         CONFIGURAÇÕES DA PÁGINA
+    =================================================== -->
+
+    <!-- Define a codificação dos caracteres -->
+    <meta charset="UTF-8">
+
+    <!-- Faz o site funcionar corretamente em celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Ícone que aparece na aba do navegador -->
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+
+    <!-- Título que aparece na aba do navegador -->
+    <title>Yokai Tales | Digital Ghost</title>
+
+    <!-- Arquivo CSS principal -->
+    <link rel="stylesheet" href="../css/style.css">
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         MENU PRINCIPAL
+    =================================================== -->
+
+    <header class="navbar">
+
+
+        <!-- Logo da empresa -->
+
+        <a href="../index.html" class="logo">
+            DIGITAL <span>GHOST</span>
+        </a>
+
+
+        <!-- Links de navegação -->
+
+        <nav>
+
+
+            <!-- Volta para a página inicial -->
+
+            <a href="../index.html">
+                Início
+            </a>
+
+
+            <!-- Página Yokai Tales -->
+
+            <a href="tales.html">
+                Yokai Tales
+            </a>
+
+
+            <!-- Página atual: Download -->
+
+            <a href="download.html" class="active">
+                Download
+            </a>
+
+
+            <!-- Página de perfil -->
+
+            <a href="perfil.html">
+                Perfil
+            </a>
+
+
+            <!-- Página de cadastro -->
+
+            <a href="cadastro.html">
+                Cadastro
+            </a>
+
+
+            <!-- Página de login -->
+
+            <a href="login.html" class="btn-login">
+                Login
+            </a>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- ==================================================
+         CONTEÚDO PRINCIPAL
+    =================================================== -->
+
+    <main>
+
+
+        <!-- ==================================================
+             DOWNLOAD DO JOGO
+        =================================================== -->
+
+        <section class="game-hero">
+
+            <div>
+
+                <button type="button" id="downloadButton" class="btn-primary">
+                    <h2 class="orange-text-grande">
+                    DOWNLOAD
+                    </h2>
+                </button>
+
+                <p>
+                    Somente para usuários cadastrados.
+                </p>
+
+
+                <!-- Descrição curta -->
+                <!--
+                <p>
+                    Uma aventura inspirada no folclore japonês.
+                </p>
+                -->
+            </div>
+
+        </section>
+
+        <div id="downloadModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="downloadModalTitle" hidden>
+            <div class="modal-content">
+                <button type="button" id="closeDownloadModal" class="modal-close" aria-label="Fechar janela">&times;</button>
+
+                <p class="orange-text">DOWNLOAD</p>
+                <h2 id="downloadModalTitle">CONFIRME SEU LOGIN</h2>
+                <p>Entre na sua conta para continuar o download.</p>
+
+                <form id="formDownloadLogin">
+                    <label for="downloadLoginEmail">E-mail</label>
+                    <input type="email" id="downloadLoginEmail" placeholder="Digite seu e-mail" required>
+
+                    <label for="downloadLoginSenha">Senha</label>
+                    <input type="password" id="downloadLoginSenha" placeholder="Digite sua senha" required>
+
+                    <button type="submit" class="btn-primary">CONFIRMAR E BAIXAR</button>
+                    <p id="mensagemDownload" aria-live="polite"></p>
+                </form>
+            </div>
+        </div>
+
+
+    <!-- ==================================================
+         RODAPÉ
+    =================================================== -->
+
+    <footer>
+
+
+        <!-- Nome da empresa -->
+
+        <h3>
+            DIGITAL <span>GHOST</span>
+        </h3>
+
+
+        <!-- Informação sobre o projeto -->
+
+        <p>
+            Projeto acadêmico desenvolvido para fins educacionais.
+        </p>
+
+
+        <!-- Copyright -->
+
+        <p class="copyright">
+            © 2026 Digital Ghost Software
+        </p>
+
+    </footer>
+
+
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <!--
+        Como esta página está dentro da pasta "paginas",
+        usamos ../ para voltar à pasta principal.
+    -->
+
+    <script type="module" src="../js/script.js"></script>
+
+
+</body>
+
+</html>

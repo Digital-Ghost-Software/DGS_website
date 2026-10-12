@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+    <title>Recuperar senha | Digital Ghost</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a href="../index.html" class="logo">DIGITAL <span>GHOST</span></a>
+        <nav aria-label="Navegação principal">
+            <a href="../index.html">Início</a>
+            <a href="tales.html">Yokai Tales</a>
+            <a href="download.html">Comprar</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="cadastro.html">Cadastro</a>
+            <a href="login.html" class="btn-login">Entrar</a>
+            <button type="button" id="logoutButton" class="btn-logout" hidden>Sair</button>
+        </nav>
+    </header>
+    <main class="form-page">
+        <div class="form-container">
+            <p class="orange-text">ACESSO À CONTA</p>
+            <h1 id="tituloRecuperacao">RECUPERAR <span>SENHA</span></h1>
+            <p id="descricaoRecuperacao">Informe seu e-mail para receber um link seguro de redefinição.</p>
+            <form id="formRecuperacaoSenha">
+                <label for="emailRecuperacao">E-mail</label>
+                <input type="email" id="emailRecuperacao" autocomplete="email" required placeholder="Digite seu e-mail">
+                <button type="submit" class="btn-primary">ENVIAR LINK</button>
+                <p id="mensagemRecuperacao" aria-live="polite"></p>
+            </form>
+            <form id="formRedefinirSenha" hidden>
+                <label for="novaSenha">Nova senha</label>
+                <input type="password" id="novaSenha" autocomplete="new-password" required minlength="8" placeholder="Digite a nova senha">
+                <label for="confirmarNovaSenha">Confirmar nova senha</label>
+                <input type="password" id="confirmarNovaSenha" autocomplete="new-password" required minlength="8" placeholder="Confirme a nova senha">
+                <button type="submit" class="btn-primary">SALVAR NOVA SENHA</button>
+                <p id="mensagemRedefinirSenha" aria-live="polite"></p>
+            </form>
+            <p class="form-link"><a href="login.html">Voltar ao login</a></p>
+        </div>
+    </main>
+    <footer>
+        <h3>DIGITAL <span>GHOST</span></h3>
+        <p>Projeto acadêmico desenvolvido para fins educacionais.</p>
+    </footer>
+    <script type="module" src="../js/script.js"></script>
+</body>
+</html>

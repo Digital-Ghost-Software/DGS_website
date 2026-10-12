@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         CONFIGURAÇÕES DA PÁGINA
+    =================================================== -->
+
+    <!-- Define a codificação dos caracteres -->
+    <meta charset="UTF-8">
+
+    <!-- Faz o site funcionar corretamente em celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Ícone que aparece na aba do navegador -->
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+
+    <!-- Título que aparece na aba do navegador -->
+    <title>Perfil | Digital Ghost</title>
+
+    <!-- Arquivo CSS principal -->
+    <link rel="stylesheet" href="../css/style.css">
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         MENU PRINCIPAL
+    =================================================== -->
+
+    <header class="navbar">
+
+
+        <!-- Logo da empresa -->
+
+        <a href="../index.html" class="logo">
+            DIGITAL <span>GHOST</span>
+        </a>
+
+
+        <!-- Links de navegação -->
+        <nav>
+
+            <!-- Página inicial -->
+            <a href="../index.html">
+                Início
+            </a>
+
+
+            <!-- Página do jogo -->
+            <a href="tales.html">
+                Yokai Tales
+            </a>
+
+
+            <!-- Página de download -->
+            <a href="download.html">
+                Comprar
+            </a>
+
+
+            <!-- Página atual -->
+            <a href="perfil.html" class="active">
+                Perfil
+            </a>
+
+
+            <!-- Página de cadastro -->
+            <a href="cadastro.html">
+                Cadastro
+            </a>
+
+
+            <!-- Página de login -->
+            <a href="login.html" class="btn-login">
+                Entrar
+            </a>
+
+            <button type="button" id="logoutButton" class="btn-logout" hidden>
+                Sair
+            </button>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- ==================================================
+         PERFIL
+    =================================================== -->
+
+    <main class="profile-page">
+
+        <section class="profile-card">
+
+
+            <!-- ==================================================
+                 FOTO DO PERFIL
+            =================================================== -->
+
+            <div class="profile-avatar">
+
+                <!--
+                    Foto atual do usuário.
+
+                    O JavaScript utiliza o ID
+                    "fotoPerfilUsuario" para alterar
+                    a imagem quando o usuário escolher
+                    uma nova foto.
+                -->
+
+                <img
+                    id="fotoPerfilUsuario"
+                    src="/imagens/user-img-default.jpg"
+                    alt="Foto de perfil do jogador"
+                >
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 TÍTULO DO PERFIL + ALTERAR FOTO
+            =================================================== -->
+
+            <div class="profile-title">
+
+                <!-- Nome da seção -->
+                <p class="orange-text">
+                    PERFIL DO USUÁRIO
+                </p>
+
+
+            </div>
+
+
+
+
+
+            <!-- ==================================================
+                 NOME DO USUÁRIO
+            =================================================== -->
+
+            <h1>
+                JOGADOR
+            </h1>
+
+
+            <p>
+                Bem-vindo ao seu perfil da Digital Ghost Software.
+            </p>
+
+            <p id="mensagemPerfil" aria-live="polite" role="status"></p>
+
+
+
+            <!-- ==================================================
+                 INFORMAÇÕES DO USUÁRIO
+            =================================================== -->
+
+            <div class="profile-info">
+
+
+                <!-- Nome -->
+                <div>
+
+                    <strong>
+                        NOME
+                    </strong>
+
+                    <span>
+                        Usuário
+                    </span>
+
+                </div>
+
+
+                <!-- E-mail -->
+                <div>
+
+                    <strong>
+                        E-MAIL
+                    </strong>
+
+                    <span>
+                        usuario@email.com
+                    </span>
+
+                </div>
+
+                <!-- Edição adquirida -->
+                <div>
+                    <strong>EDIÇÃO ADQUIRIDA</strong>
+                    <span>Nenhuma edição adquirida</span>
+                </div>
+
+
+                <!-- Jogo favorito -->
+                <div>
+
+                    <strong>
+                        JOGO FAVORITO
+                    </strong>
+
+                    <span>
+                        Yokai Tales
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 AÇÕES DA CONTA
+            =================================================== -->
+
+            <div class="account-buttons">
+
+                <button type="button" class="btn-secondary" id="abrirModalNome">EDITAR NOME</button>
+
+
+                <!-- Redefinir senha -->
+                <button
+                    type="button"
+                    class="btn-secondary"
+                    id="abrirModalSenha"
+                >
+                    REDEFINIR SENHA
+                </button>
+
+                <button type="button" class="btn-danger" id="abrirModalExclusao">DELETAR CONTA</button>
+
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 BOTÕES DE NAVEGAÇÃO
+            =================================================== -->
+
+            <div class="profile-buttons">
+
+
+                <!-- Ir para a página do jogo -->
+                <a
+                    href="tales.html"
+                    class="btn-primary"
+                >
+                    YOKAI TALES
+                </a>
+
+                <a href="download.html" class="btn-secondary">PEDIDOS E COMPRAS</a>
+
+
+                <!-- Voltar para a página inicial -->
+                <a
+                    href="../index.html"
+                    class="btn-secondary"
+                >
+                    INÍCIO
+                </a>
+
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <div id="modalSenha" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalSenha" hidden>
+        <div class="modal-content">
+            <button type="button" id="fecharModalSenha" class="modal-close" aria-label="Fechar janela">&times;</button>
+
+            <p class="orange-text">SEGURANÇA</p>
+            <h2 id="tituloModalSenha">ALTERAR SENHA</h2>
+            <p>Digite sua nova senha para atualizar sua conta.</p>
+
+            <form id="formAlterarSenha">
+                <label for="novaSenha">Nova senha</label>
+                <input type="password" id="novaSenha" placeholder="Digite sua nova senha" required>
+
+                <label for="confirmarNovaSenha">Confirmar Nova Senha</label>
+                <input type="password" id="confirmarNovaSenha" placeholder="Digite a nova senha novamente" required>
+
+                <button type="submit" class="btn-primary">SALVAR NOVA SENHA</button>
+                <p id="mensagemSenha" aria-live="polite"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalNome" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalNome" hidden>
+        <div class="modal-content">
+            <button type="button" id="fecharModalNome" class="modal-close" aria-label="Fechar janela">&times;</button>
+            <p class="orange-text">CONTA</p>
+            <h2 id="tituloModalNome">EDITAR NOME</h2>
+            <form id="formNome">
+                <label for="novoNome">Nome de exibição</label>
+                <input type="text" id="novoNome" minlength="2" maxlength="80" required>
+                <button type="submit" class="btn-primary">SALVAR NOME</button>
+                <p id="mensagemNome" aria-live="polite" role="status"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalExclusao" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalExclusao" hidden>
+        <div class="modal-content">
+            <button type="button" id="fecharModalExclusao" class="modal-close" aria-label="Fechar janela">&times;</button>
+            <p class="orange-text">AÇÃO PERMANENTE</p>
+            <h2 id="tituloModalExclusao">EXCLUIR CONTA</h2>
+            <p>A exclusão remove sua identidade Supabase e os pedidos vinculados. Digite EXCLUIR para confirmar.</p>
+            <form id="formExclusaoConta">
+                <label for="confirmarExclusao">Confirmação</label>
+                <input type="text" id="confirmarExclusao" autocomplete="off" required>
+                <label for="senhaConfirmarExclusao">Senha atual</label>
+                <input type="password" id="senhaConfirmarExclusao" autocomplete="current-password" required>
+                <button type="submit" class="btn-danger">EXCLUIR MINHA CONTA</button>
+                <p id="mensagemExclusao" aria-live="polite" role="status"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================================================
+         RODAPÉ
+    =================================================== -->
+
+    <footer>
+
+        <!-- Nome da empresa -->
+        <h3>
+            DIGITAL <span>GHOST</span>
+        </h3>
+
+
+        <!-- Informação sobre o projeto -->
+        <p>
+            Projeto acadêmico desenvolvido para fins educacionais.
+        </p>
+
+    </footer>
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <!--
+        O JavaScript está na pasta "js".
+
+        Como o perfil está dentro da pasta "paginas",
+        usamos ../ para voltar para a pasta principal.
+    -->
+
+    <script type="module" src="../js/script.js"></script>
+
+
+</body>
+
+</html>
