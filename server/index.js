@@ -135,6 +135,7 @@ async function authenticate(request) {
 export function createHandler(overrides = {}) {
     const stripe = overrides.stripeClient ?? stripeClient;
     const admin = overrides.adminClient ?? adminClient;
+    const catarseFetch = overrides.catarseFetch ?? fetch;
     const webhookSecret = overrides.webhookSecret ?? stripeWebhookSecret;
     const checkoutBaseUrl = getCheckoutBaseUrl(overrides.publicAppUrl ?? publicAppUrl);
 
@@ -179,6 +180,58 @@ export function createHandler(overrides = {}) {
     }
 
     try {
+        if (path === "/api/catarse/yokai-tales" && request.method === "GET") {
+            let catarseResponse;
+            try {
+                catarseResponse = await catarseFetch(
+                    "https://www.catarse.com.br/api/projects/yokai-tales/rewards?page=1&limit=5",
+                    { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(10000) }
+                );
+            } catch (error) {
+                console.error("Could not reach the Catarse project API.", error);
+                return sendJson(response, 502, { error: "Não foi possível consultar a campanha no Catarse." }, origin);
+            }
+
+            if (!catarseResponse.ok) {
+                console.error("Catarse project API returned an error.", { status: catarseResponse.status });
+                return sendJson(response, 502, { error: "Não foi possível consultar a campanha no Catarse." }, origin);
+            }
+
+            let catarseResult;
+            try {
+                catarseResult = await catarseResponse.json();
+            } catch (error) {
+                console.error("Catarse project API returned invalid JSON.", error);
+                return sendJson(response, 502, { error: "A resposta do Catarse está indisponível." }, origin);
+            }
+
+            const campaign = catarseResult?.data;
+            if (catarseResult?.execStatus !== true
+                || campaign?.slug !== "yokai-tales"
+                || typeof campaign.status !== "string"
+                || !Array.isArray(campaign.rewards)) {
+                console.error("Catarse project API returned an unexpected response.");
+                return sendJson(response, 502, { error: "A resposta do Catarse está indisponível." }, origin);
+            }
+
+            const rewards = campaign.rewards
+                .filter((reward) => typeof reward.name === "string"
+                    && Number.isFinite(reward.value)
+                    && typeof reward.description === "string")
+                .map((reward) => ({
+                    name: reward.name,
+                    value: reward.value,
+                    description: reward.description
+                }));
+
+            return sendJson(response, 200, {
+                slug: campaign.slug,
+                status: campaign.status,
+                endDate: typeof campaign.endDate === "string" ? campaign.endDate : null,
+                rewards
+            }, origin);
+        }
+
         if (path === "/api/stripe/webhook" && request.method === "POST") {
             if (!stripe || !webhookSecret || !admin) {
                 return sendJson(response, 503, { error: "A confirmação de pagamentos não está configurada no servidor." }, origin);

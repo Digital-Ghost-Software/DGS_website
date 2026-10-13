@@ -12,10 +12,27 @@ let stripeApiServer;
 let stripeApiBaseUrl;
 let stripeWebhookApi;
 let stripeVerifier;
+let catarseApiStatus = 200;
+const catarseApiCalls = [];
 const stripeWebhookSecret = "whsec_integration_test_secret";
 const stripeCheckoutSessions = [];
 const stripeOrderRows = new Map();
 let stripeOrderSequence = 20;
+const catarseApiPayload = {
+    execStatus: true,
+    data: {
+        slug: "yokai-tales",
+        status: "Launch",
+        endDate: "2026-11-20T03:00:00.470Z",
+        rewards: [
+            {
+                name: "Agradecimento",
+                value: 2000,
+                description: "Seu nome nos créditos do jogo."
+            }
+        ]
+    }
+};
 
 const userIds = {
     "valid-test-token": "00000000-0000-4000-8000-000000000001",
@@ -225,7 +242,14 @@ before(async () => {
         stripeClient,
         adminClient,
         webhookSecret: stripeWebhookSecret,
-        publicAppUrl: "http://localhost:3000"
+        publicAppUrl: "http://localhost:3000",
+        catarseFetch: async (url, options) => {
+            catarseApiCalls.push({ url: String(url), options });
+            return new Response(JSON.stringify(catarseApiPayload), {
+                status: catarseApiStatus,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
     });
     stripeApiServer = createServer(createLocalHandler(process.cwd(), stripeWebhookApi));
     const stripePort = await listen(stripeApiServer);
@@ -254,6 +278,36 @@ test("public config returns only the Supabase URL and publishable key", async ()
     });
 });
 
+test("Catarse widget endpoint returns safe campaign data and reports upstream failures", async () => {
+    const response = await fetch(`${stripeApiBaseUrl}/api/catarse/yokai-tales`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+        slug: "yokai-tales",
+        status: "Launch",
+        endDate: "2026-11-20T03:00:00.470Z",
+        rewards: [
+            {
+                name: "Agradecimento",
+                value: 2000,
+                description: "Seu nome nos créditos do jogo."
+            }
+        ]
+    });
+    assert.equal(catarseApiCalls.at(-1).url, "https://www.catarse.com.br/api/projects/yokai-tales/rewards?page=1&limit=5");
+    assert.equal(catarseApiCalls.at(-1).options.headers.Accept, "application/json");
+
+    catarseApiStatus = 503;
+    try {
+        const failedResponse = await fetch(`${stripeApiBaseUrl}/api/catarse/yokai-tales`);
+        assert.equal(failedResponse.status, 502);
+        assert.deepEqual(await failedResponse.json(), {
+            error: "Não foi possível consultar a campanha no Catarse."
+        });
+    } finally {
+        catarseApiStatus = 200;
+    }
+});
+
 test("local server serves the site and blocks private project files", async () => {
     const page = await fetch(`${apiBaseUrl}/paginas/download.html`);
     assert.equal(page.status, 200);
@@ -277,6 +331,12 @@ test("local server serves the site and blocks private project files", async () =
     assert.ok(Number(defaultProfilePhoto.headers.get("content-length")) > 0);
     assert.match(page.headers.get("content-type"), /text\/html/);
     assert.match(await page.text(), /Forma de pagamento/);
+
+    const donationsPage = await fetch(`${apiBaseUrl}/paginas/doacoes.html`);
+    assert.equal(donationsPage.status, 200);
+    assert.match(await donationsPage.text(), /id="catarseWidget"/);
+    const catarseWidgetScript = await fetch(`${apiBaseUrl}/js/catarse-widget.js`);
+    assert.equal(catarseWidgetScript.status, 200);
 
     const loginPage = await fetch(`${apiBaseUrl}/paginas/login.html`);
     assert.equal(loginPage.status, 200);

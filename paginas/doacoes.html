@@ -108,6 +108,29 @@
 
     <main>
 
+        <section class="donation-page" aria-labelledby="donationTitle">
+            <div class="donation-intro">
+                <p class="orange-text">APOIE UM PROJETO INDEPENDENTE</p>
+                <h1 id="donationTitle">Apoie <span>Yokai Tales</span></h1>
+                <p>
+                    Confira as recompensas e as informações atualizadas da campanha no Catarse.
+                </p>
+            </div>
+
+            <div class="catarse-widget" id="catarseWidget">
+                <p class="catarse-widget__message" id="catarseWidgetMessage" role="status" aria-live="polite">
+                    Carregando informações da campanha…
+                </p>
+            </div>
+
+            <noscript>
+                <p class="catarse-widget__fallback">
+                    Ative o JavaScript para consultar a campanha ou
+                    <a href="https://www.catarse.com.br/yokai-tales?ref=ctrse_profile_campaigns_live_project_card"
+                       target="_blank" rel="noopener noreferrer">acesse o Yokai Tales no Catarse</a>.
+                </p>
+            </noscript>
+        </section>
 
     </main>
 
@@ -154,6 +177,7 @@
     -->
 
     <script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/catarse-widget.js"></script>
 
 
 </body>
