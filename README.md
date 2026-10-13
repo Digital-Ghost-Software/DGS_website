@@ -13,7 +13,7 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 
 ## API Node.js
 
-`server/index.js` verifica o bearer token do Supabase Auth. Rotas públicas: `GET /api/config`, `GET /api/health` e `POST /api/stripe/webhook`. Rotas autenticadas: `GET/PATCH /api/profile`, `GET/POST /api/payments`, `POST /api/downloads` e `POST /api/account/delete`. A criação do pedido usa uma chave administrativa exclusivamente no servidor; leitura de histórico usa o JWT do usuário e políticas RLS. O webhook valida a assinatura Stripe e atualiza o estado do pedido. `server/local.js` inicia o servidor HTTP local.
+`server/index.js` verifica o bearer token do Supabase Auth. Rotas públicas: `GET /api/config`, `GET /api/health`, `GET /api/catarse/yokai-tales` e `POST /api/stripe/webhook`. A rota Catarse consulta as recompensas públicas da campanha no Catarse; o widget usa a API do mesmo site para contornar a ausência de CORS no Catarse. Rotas autenticadas: `GET/PATCH /api/profile`, `GET/POST /api/payments`, `POST /api/downloads` e `POST /api/account/delete`. A criação do pedido usa uma chave administrativa exclusivamente no servidor; leitura de histórico usa o JWT do usuário e políticas RLS. O webhook valida a assinatura Stripe e atualiza o estado do pedido. `server/local.js` inicia o servidor HTTP local.
 
 ## Publicação
 
@@ -43,7 +43,7 @@ O repositório inclui a configuração para publicar site estático e API Node.j
 ├── paginas/
 ├── server/index.js        # Handler compartilhado pela Vercel e execução local
 ├── server/local.js        # Servidor HTTP para desenvolvimento local
-├── api/[...path].js       # Adaptador da API para Vercel Functions
+├── api/                   # Funções da API na Vercel (inclui Catarse e webhook Stripe)
 ├── scripts/build-static.js # Gera os arquivos estáticos da Vercel em dist/
 ├── vercel.json            # Build e diretório estático Vercel
 └── index.html
