@@ -2085,7 +2085,7 @@ footer p {
     color: #ffb4a6;
 }
 
-.catarse-widget a {
+.catarse-widget a:not(.btn-primary) {
     color: #ff6600;
     text-decoration: underline;
     text-underline-offset: 3px;
