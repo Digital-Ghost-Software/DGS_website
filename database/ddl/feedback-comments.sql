@@ -42,14 +42,24 @@ begin
     end if;
 
     new.user_id := (select auth.uid());
-    select user_name
-    into new.author_name
-    from public.profiles
-    where user_id = new.user_id;
-
-    if new.author_name is null then
-        raise exception 'A profile is required to post a comment';
-    end if;
+    select coalesce(
+        (
+            select user_name
+            from public.profiles
+            where user_id = new.user_id
+        ),
+        (
+            select coalesce(
+                nullif(btrim(raw_user_meta_data ->> 'user_name'), ''),
+                nullif(btrim(raw_user_meta_data ->> 'full_name'), ''),
+                nullif(split_part(coalesce(email, ''), '@', 1), '')
+            )
+            from auth.users
+            where id = new.user_id
+        ),
+        'Usuário'
+    )
+    into new.author_name;
 
     new.created_at := now();
     new.updated_at := now();

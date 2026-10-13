@@ -14,6 +14,16 @@ function showMessage(element, message, state = "info") {
     element.dataset.state = state;
 }
 
+function getPublishErrorMessage(error) {
+    if (error.code === "PGRST205" || error.code === "42P01") {
+        return "A tabela de comentários não está configurada. Aplique a migração feedback-comments.sql no Supabase.";
+    }
+    if (error.code === "42501") {
+        return "O banco recusou a publicação. Confira se a migração feedback-comments.sql foi aplicada no Supabase.";
+    }
+    return "Não foi possível publicar o comentário. Tente novamente ou contate o administrador do site.";
+}
+
 function formatDate(date) {
     return new Intl.DateTimeFormat("pt-BR", {
         dateStyle: "medium",
@@ -155,7 +165,7 @@ async function initializeFeedback() {
 
         if (error) {
             console.error("Não foi possível publicar o comentário.", error);
-            showMessage(feedbackAuthMessage, "Não foi possível publicar o comentário. Tente novamente.", "error");
+            showMessage(feedbackAuthMessage, getPublishErrorMessage(error), "error");
             return;
         }
 

@@ -110,9 +110,13 @@ test("feedback migration restricts comment creation and moderation with RLS", ()
     assert.match(feedbackMigration, /create table if not exists public\.feedback_comments/);
     assert.match(feedbackMigration, /content text not null check \(char_length\(btrim\(content\)\) between 1 and 2000\)/);
     assert.match(feedbackMigration, /new\.user_id := \(select auth\.uid\(\)\)/);
+    assert.match(feedbackMigration, /raw_user_meta_data[\s\S]*from auth\.users[\s\S]*'usuário'/);
     assert.match(feedbackMigration, /alter table public\.feedback_comments enable row level security/);
     assert.match(feedbackMigration, /for select to anon, authenticated\s+using \(true\)/);
     assert.match(feedbackMigration, /for insert to authenticated\s+with check \(user_id = \(select auth\.uid\(\)\)\)/);
+    const insertPolicy = feedbackMigration.match(/create policy "authenticated users can post feedback comments"[\s\S]*?;/)?.[0];
+    assert.ok(insertPolicy, "Expected a policy for authenticated comment authors");
+    assert.doesNotMatch(insertPolicy, /is_feedback_admin/);
     assert.match(feedbackMigration, /for update to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
     assert.match(feedbackMigration, /for delete to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
     assert.match(feedbackMigration, /security definer\s+set search_path = ''[\s\S]*from public\.admin/);
