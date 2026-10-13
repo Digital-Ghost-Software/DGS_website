@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         CONFIGURAÇÕES DA PÁGINA
+    =================================================== -->
+
+    <!-- Define a codificação dos caracteres -->
+    <meta charset="UTF-8">
+
+    <!-- Faz o site funcionar corretamente em celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Ícone que aparece na aba do navegador -->
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+
+    <!-- Título que aparece na aba do navegador -->
+    <title>Yokai Tales | Digital Ghost</title>
+
+    <!-- Arquivo CSS principal -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/feedback.css">
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         MENU PRINCIPAL
+    =================================================== -->
+
+    <header class="navbar">
+
+
+        <!-- Logo da empresa -->
+
+        <a href="../index.html" class="logo">
+            DIGITAL <span>GHOST</span>
+        </a>
+
+
+        <!-- Links de navegação -->
+
+        <nav>
+
+
+            <!-- Volta para a página inicial -->
+
+            <a href="../index.html">
+                Início
+            </a>
+
+
+            <!-- Página Yokai Tales -->
+
+            <a href="tales.html">
+                Yokai Tales
+            </a>
+
+
+            <!-- Página de download -->
+
+            <a href="download.html">
+                Comprar
+            </a>
+
+            <!-- Página atual de feedback -->
+            <a href="feedback.html" class="active">
+                Feedback
+            </a>
+
+            <!-- Página de doações -->
+            <a href="doacoes.html">
+                Doações
+            </a>
+
+            <!-- Página de perfil -->
+
+            <a href="perfil.html">
+                Perfil
+            </a>
+
+
+            <!-- Página de cadastro -->
+
+            <a href="cadastro.html">
+                Cadastro
+            </a>
+
+
+            <!-- Página de login -->
+
+            <a href="login.html" class="btn-login">
+                Entrar
+            </a>
+
+            <button type="button" id="logoutButton" class="btn-logout" hidden>
+                Sair
+            </button>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- ==================================================
+         CONTEÚDO PRINCIPAL
+    =================================================== -->
+
+    <main>
+        <section class="feedback-page" aria-labelledby="feedbackTitle">
+            <div class="feedback-heading">
+                <p class="orange-text">SUA OPINIÃO IMPORTA</p>
+                <h1 id="feedbackTitle">FEEDBACK <span>DA COMUNIDADE</span></h1>
+                <p>Compartilhe sua experiência e acompanhe os comentários da comunidade.</p>
+            </div>
+
+            <section class="feedback-compose" aria-labelledby="commentFormTitle">
+                <h2 id="commentFormTitle">Deixe seu comentário</h2>
+                <p id="feedbackAuthMessage" class="feedback-message" aria-live="polite" role="status">
+                    Verificando sua conta...
+                </p>
+                <form id="feedbackForm" hidden>
+                    <label for="feedbackContent">Comentário</label>
+                    <textarea
+                        id="feedbackContent"
+                        name="content"
+                        rows="5"
+                        minlength="1"
+                        maxlength="2000"
+                        placeholder="Escreva aqui o que você achou..."
+                        required
+                    ></textarea>
+                    <div class="feedback-form-footer">
+                        <span>Máximo de 2.000 caracteres</span>
+                        <button type="submit" class="btn-primary">PUBLICAR COMENTÁRIO</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="feedback-list-section" aria-labelledby="commentsTitle">
+                <h2 id="commentsTitle">Comentários</h2>
+                <p id="feedbackListMessage" class="feedback-message" aria-live="polite" role="status">
+                    Carregando comentários...
+                </p>
+                <div id="feedbackList" class="feedback-list" aria-busy="true"></div>
+            </section>
+        </section>
+
+    </main>
+
+
+
+    <!-- ==================================================
+         RODAPÉ
+    =================================================== -->
+
+    <footer>
+
+
+        <!-- Nome da empresa -->
+
+        <h3>
+            DIGITAL <span>GHOST</span>
+        </h3>
+
+
+        <!-- Informação sobre o projeto -->
+
+        <p>
+            Projeto acadêmico desenvolvido para fins educacionais.
+        </p>
+
+
+        <!-- Copyright -->
+
+        <p class="copyright">
+            © 2026 Digital Ghost Software
+        </p>
+
+    </footer>
+
+
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <!--
+        Como esta página está dentro da pasta "paginas",
+        usamos ../ para voltar à pasta principal.
+    -->
+
+    <script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/catarse-widget.js"></script>
+    <script type="module" src="../js/feedback.js"></script>
+
+
+</body>
+
+</html>
