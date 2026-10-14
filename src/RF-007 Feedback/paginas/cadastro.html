@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         CONFIGURAÇÕES DA PÁGINA
+    =================================================== -->
+
+    <!-- Define a codificação dos caracteres -->
+    <meta charset="UTF-8">
+
+    <!-- Faz o site funcionar corretamente em celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Ícone que aparece na aba do navegador -->
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+
+    <!-- Título que aparece na aba do navegador -->
+    <title>Cadastro | Digital Ghost</title>
+
+    <!-- Arquivo CSS principal -->
+    <link rel="stylesheet" href="../css/style.css">
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         MENU PRINCIPAL
+    =================================================== -->
+
+    <header class="navbar">
+
+
+        <!-- Logo da empresa -->
+
+        <a href="../index.html" class="logo">
+            DIGITAL <span>GHOST</span>
+        </a>
+
+
+        <!-- Links de navegação -->
+
+        <nav>
+
+
+            <!-- Volta para a página inicial -->
+
+            <a href="../index.html">
+                Início
+            </a>
+
+
+            <!-- Página do jogo -->
+
+            <a href="tales.html">
+                Yokai Tales
+            </a>
+
+            <!-- Página de download -->
+
+            <a href="download.html">
+                Comprar
+            </a>
+
+            <!-- Página de feedback -->
+            <a href="feedback.html">
+                Feedback
+            </a>
+
+            <!-- Página de doações -->
+            <a href="doacoes.html">
+                Doações
+            </a>
+
+            <!-- Página de perfil -->
+
+            <a href="perfil.html">
+                Perfil
+            </a>
+
+
+            <!-- Página atual: Cadastro -->
+
+            <a href="cadastro.html" class="active">
+                Cadastro
+            </a>
+
+
+            <!-- Página de login -->
+
+            <a href="login.html" class="btn-login">
+                Entrar
+            </a>
+
+            <button type="button" id="logoutButton" class="btn-logout" hidden>
+                Sair
+            </button>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- ==================================================
+         FORMULÁRIO DE CADASTRO
+    =================================================== -->
+
+    <main class="form-page">
+
+
+        <!-- Container principal do formulário -->
+
+        <div class="form-container">
+
+
+            <!-- Nome da empresa -->
+
+            <p class="orange-text">
+                DIGITAL GHOST
+            </p>
+
+
+            <!-- Título -->
+
+            <h1>
+                CRIAR <span>CONTA</span>
+            </h1>
+
+
+            <!-- Descrição -->
+
+            <p>
+                Crie seu perfil para fazer parte
+                da comunidade Digital Ghost.
+            </p>
+
+
+
+            <!-- ==================================================
+                 FORMULÁRIO
+            =================================================== -->
+
+            <form id="formCadastro" novalidate>
+
+
+                <!-- ==================================================
+                     CAMPO NOME
+                =================================================== -->
+
+                <label for="nome_usuario">
+                    Nome completo
+                </label>
+
+
+                <input
+                    type="text"
+                    id="nome_usuario"
+                    name="nome_usuario"
+                    placeholder="Digite seu nome"
+                    required
+                >
+
+
+
+                <!-- ==================================================
+                     CAMPO E-MAIL
+                =================================================== -->
+
+                <label for="email_usuario">
+                    E-mail
+                </label>
+
+
+                <input
+                    type="email"
+                    id="email_usuario"
+                    name="email_usuario"
+                    placeholder="Digite seu e-mail"
+                    required
+                >
+
+
+
+                <!-- ==================================================
+                     CAMPO SENHA
+                =================================================== -->
+
+                <label for="senha_usuario">
+                    Senha
+                </label>
+
+
+                <input
+                    type="password"
+                    id="senha_usuario"
+                    name="senha_usuario"
+                    placeholder="Digite sua senha"
+                    required
+                >
+
+
+
+                <!-- ==================================================
+                     CONFIRMAÇÃO DE SENHA
+                =================================================== -->
+
+                <label for="confirmar">
+                    Confirmar senha
+                </label>
+
+
+                <input
+                    type="password"
+                    id="confirmar"
+                    name="confirmar"
+                    placeholder="Confirme sua senha"
+                    required
+                >
+
+
+
+                <!-- ==================================================
+                     BOTÃO DE CADASTRO
+                =================================================== -->
+
+                <button type="submit" class="btn-primary">
+                    CRIAR CONTA
+                </button>
+
+                <p id="mensagemCadastro" aria-live="polite"></p>
+
+            </form>
+
+
+
+            <!-- ==================================================
+                 LINK PARA LOGIN
+            =================================================== -->
+
+            <p class="form-link">
+
+                Já possui uma conta?
+
+                <a href="login.html">
+                    Fazer login
+                </a>
+
+            </p>
+
+        </div>
+
+    </main>
+
+
+
+    <!-- ==================================================
+         RODAPÉ
+    =================================================== -->
+
+    <footer>
+
+
+        <!-- Nome da empresa -->
+
+        <h3>
+            DIGITAL <span>GHOST</span>
+        </h3>
+
+
+        <!-- Informação sobre o projeto -->
+
+        <p>
+            Projeto acadêmico desenvolvido para fins educacionais.
+        </p>
+
+
+    </footer>
+
+
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <!--
+        Como esta página está dentro da pasta "paginas",
+        usamos ../ para voltar à pasta principal.
+    -->
+
+    <script type="module" src="../js/script.js"></script>
+
+
+</body>
+
+</html>
