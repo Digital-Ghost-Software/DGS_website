@@ -1,0 +1,181 @@
+.feedback-page {
+    width: min(100% - 40px, 900px);
+    margin: 0 auto;
+    padding: 72px 0 96px;
+}
+
+.feedback-heading {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.feedback-heading .orange-text {
+    color: #ff6600;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.feedback-heading h1 {
+    margin: 8px 0 12px;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.15;
+}
+
+.feedback-heading h1 span {
+    color: #ff6600;
+}
+
+.feedback-heading > p:last-child,
+.feedback-message {
+    color: #b8b8b8;
+}
+
+.feedback-compose,
+.feedback-comment {
+    padding: 24px;
+    border: 1px solid #333;
+    border-radius: 10px;
+    background: #111;
+}
+
+.feedback-compose h2,
+.feedback-list-section > h2 {
+    margin-bottom: 16px;
+    font-size: 1.4rem;
+}
+
+.feedback-compose form {
+    margin-top: 16px;
+}
+
+.feedback-compose label,
+.feedback-edit-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.feedback-compose textarea,
+.feedback-edit-form textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #080808;
+    color: #fff;
+    font: inherit;
+    resize: vertical;
+}
+
+.feedback-compose textarea:focus,
+.feedback-edit-form textarea:focus {
+    border-color: #ff6600;
+    outline: 2px solid #ff6600;
+    outline-offset: 2px;
+}
+
+.feedback-form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+}
+
+.feedback-form-footer > span,
+.feedback-comment time {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.feedback-list-section {
+    margin-top: 48px;
+}
+
+.feedback-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.feedback-comment header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.feedback-comment h3 {
+    font-size: 1rem;
+}
+
+.feedback-comment-body {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.feedback-comment-actions,
+.feedback-edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.feedback-comment-actions button,
+.feedback-edit-actions button {
+    padding: 8px 12px;
+    border: 1px solid #666;
+    border-radius: 5px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+}
+
+.feedback-comment-actions button:hover,
+.feedback-edit-actions button:hover {
+    border-color: #ff6600;
+    color: #ff9b55;
+}
+
+.feedback-message[data-state="error"] {
+    color: #ff9a9a;
+}
+
+.feedback-message[data-state="success"] {
+    color: #9be2aa;
+}
+
+.feedback-edit-form {
+    margin-top: 14px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    .feedback-page {
+        width: min(100% - 28px, 900px);
+        padding: 48px 0 64px;
+    }
+
+    .feedback-compose,
+    .feedback-comment {
+        padding: 18px;
+    }
+
+    .feedback-form-footer,
+    .feedback-comment header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .feedback-form-footer .btn-primary {
+        width: 100%;
+        text-align: center;
+    }
+}

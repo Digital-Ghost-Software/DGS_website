@@ -8,19 +8,16 @@
 
 ### 1.1 Composição da Equipe
 
-| ID  | Nome Completo                                    | Papel Primário | Papel Secundário | E-mail / Contato                  |
-|:---:|:------------------------------------------------:|:--------------:|:----------------:|:---------------------------------:|
-| 1   | Andre Luis Macedo Nascimento                     | Back-end       | Analista         | andreblackdragon@gmail.com        |
-| 2   | Jonas Santos Barbosa | História       | Marketing        | jonas59300436@edu.df.senac.br     |
-| 3   | Calebe Bezerra Feitosa                           | Marketing      |                  | <calebe58107886@edu.df.senac.br>  |
-| 4   | Douglas Rocha Vasco                              | Back-end       | Modelagem        | <douglas58129016@edu.df.senac.br> |
-| 5   | Jonas Santos Barbosa                             | História       | Marketing        | <jonas59300436@edu.df.senac.br>   |
-| 6   | Letícia Lacerda Domingues                        | Dubladora      |                  | <leticia49518826@edu.df.senac.br> |
-| 7   | Pedro Henrique Coelho Lima                       | Marketing      |                  | <pedro57951426@edu.df.senac.br>   |
-| 8   | Raphael Alves Mendes                             | Marketing      | Modelagem        | <raphael59068396@edu.df.senac.br> |
-| 9   | Tiago de Andrade Lima                            | full-Stack     |                  | <tiago59068726@edu.df.senac.br>   |
-
-*(Nota: Todos os integrantes devem ser capazes de explicar a arquitetura, o código desenvolvido e as decisões estruturais durante as apresentações técnicas).*
+| Integrante | Papel registrado nas entregas | Contato registrado |
+| --- | --- | --- |
+| Andre Luis Macedo Nascimento | Back-end | <andre58212086@edu.df.senac.br> |
+| Calebe Bezerra Feitosa | Marketing | <calebe58107886@edu.df.senac.br> |
+| Douglas Rocha Vasco | Back-end / Modelagem | <douglas58129016@edu.df.senac.br> |
+| Jonas Santos Barbosa | História / Marketing | <jonas59300436@edu.df.senac.br> |
+| Letícia Lacerda Domingues | Dubladora | <leticia49518826@edu.df.senac.br> |
+| Pedro Henrique Coelho Lima | Marketing | <pedro57951426@edu.df.senac.br> |
+| Raphael Alves Mendes | Marketing / Modelagem | <raphael59068396@edu.df.senac.br> |
+| Tiago de Andrade Lima | full-Stack | <tiago59068726@edu.df.senac.br> |
 
 ### 1.2 Identificação
 
@@ -53,11 +50,11 @@ DGS_website/
 │   └── api/
 │       └── feedback.js
 └── README.md
-```
 
---------------------------------
+
 
 🎯 3. IDENTIFICAÇÃO DO REQUISITO
+--------------------------------
 
 * **ID:** RF-007
 
@@ -72,8 +69,8 @@ DGS_website/
 * **Status:** EM DESENVOLVIMENTO
 
 **Breve Descrição:**
-O site deverá possuir uma seção para que o cliente envie mensagens com críticas construtivas ou bugs encontrados em _Yokai Tales_. O sistema deve recepcionar essa requisição, validar a sanitização dos campos e inserir o registro em um banco de dados relacional para consulta da equipe.
 
+O site deverá possuir uma seção para que o cliente envie mensagens com críticas construtivas ou bugs encontrados em _Yokai Tales_. O sistema deve recepcionar essa requisição, validar a sanitização dos campos e inserir o registro em um banco de dados relacional para consulta da equipe.
 ------------------------
 
 📋 4. DESCRIÇÃO E ATORES

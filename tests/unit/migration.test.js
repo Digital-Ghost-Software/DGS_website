@@ -11,6 +11,8 @@ const defaultProfilePhotoMigrationPath = path.join(process.cwd(), "database", "d
 const defaultProfilePhotoMigration = (await readFile(defaultProfilePhotoMigrationPath, "utf8")).toLowerCase();
 const stripeCheckoutMigrationPath = path.join(process.cwd(), "database", "ddl", "stripe-test-checkout.sql");
 const stripeCheckoutMigration = (await readFile(stripeCheckoutMigrationPath, "utf8")).toLowerCase();
+const feedbackMigrationPath = path.join(process.cwd(), "database", "ddl", "feedback-comments.sql");
+const feedbackMigration = (await readFile(feedbackMigrationPath, "utf8")).toLowerCase();
 
 test("RF-004 migration defines payment and download records with database constraints", () => {
     assert.match(sql, /create table if not exists public\.simulated_payments/);
@@ -102,4 +104,23 @@ test("RF-004 migration preserves legacy rows while blocking browser-role access"
     assert.match(sql, /alter table public\.%i enable row level security/);
     assert.match(sql, /revoke all on table public\.%i from public, anon, authenticated/);
     assert.doesNotMatch(sql, /\b(?:drop\s+table|truncate\s+table|delete\s+from)\b/);
+});
+
+test("feedback migration restricts comment creation and moderation with RLS", () => {
+    assert.match(feedbackMigration, /create table if not exists public\.feedback_comments/);
+    assert.match(feedbackMigration, /content text not null check \(char_length\(btrim\(content\)\) between 1 and 2000\)/);
+    assert.match(feedbackMigration, /new\.user_id := \(select auth\.uid\(\)\)/);
+    assert.match(feedbackMigration, /raw_user_meta_data[\s\S]*from auth\.users[\s\S]*'usuário'/);
+    assert.match(feedbackMigration, /alter table public\.feedback_comments enable row level security/);
+    assert.match(feedbackMigration, /for select to anon, authenticated\s+using \(true\)/);
+    assert.match(feedbackMigration, /for insert to authenticated\s+with check \(user_id = \(select auth\.uid\(\)\)\)/);
+    const insertPolicy = feedbackMigration.match(/create policy "authenticated users can post feedback comments"[\s\S]*?;/)?.[0];
+    assert.ok(insertPolicy, "Expected a policy for authenticated comment authors");
+    assert.doesNotMatch(insertPolicy, /is_feedback_admin/);
+    assert.match(feedbackMigration, /for update to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(feedbackMigration, /for delete to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(feedbackMigration, /security definer\s+set search_path = ''[\s\S]*from public\.admin/);
+    assert.match(feedbackMigration, /grant insert \(content\) on table public\.feedback_comments to authenticated/);
+    assert.match(feedbackMigration, /grant update \(content\) on table public\.feedback_comments to authenticated/);
+    assert.doesNotMatch(feedbackMigration, /grant\s+(?:all|update|delete)[^;]*to anon/);
 });
