@@ -10,6 +10,7 @@ Site acadêmico de apresentação do estúdio fictício Digital Ghost Software e
 - Pedidos das edições Standard (R$ 20,00) e Plus (R$ 40,00) pelo Stripe Checkout em modo de teste, com cartão, Pix ou boleto.
 - Registro/histórico de pedidos e solicitações de download no Supabase, limitados ao usuário autenticado por RLS.
 - Troca de senha pela sessão autenticada.
+- Notas de atualização de Yokai Tales consultadas no Supabase e gerenciadas por administradores verificados pelo banco.
 
 ## API Node.js
 
@@ -22,6 +23,7 @@ O repositório inclui a configuração para publicar site estático e API Node.j
 ## Configuração
 
 1. Use o projeto Supabase `DGS_Web_Site` configurado para o trabalho em grupo. Para criar uma instalação nova aprovada pela equipe, aplique [`database/ddl/new-project-schema.sql`](database/ddl/new-project-schema.sql) no SQL Editor; não use a migração RF-004 do banco legado neste schema. Para atualizar a instalação atual, aplique [`database/ddl/stripe-test-checkout.sql`](database/ddl/stripe-test-checkout.sql) para permitir estados pendentes e atualizações administrativas verificadas; ela preserva os pedidos antigos. A migração incremental [`database/ddl/default-profile-photo.sql`](database/ddl/default-profile-photo.sql) cobre a foto padrão dos perfis.
+   Para habilitar as notas do jogo, confirme que [`database/ddl/feedback-comments.sql`](database/ddl/feedback-comments.sql) já foi aplicada (ela fornece `public.is_feedback_admin()`) e execute [`database/ddl/supabase_atualizacoes.sql`](database/ddl/supabase_atualizacoes.sql) manualmente no SQL Editor. A migração das notas não altera quem é administrador.
 2. Na raiz do projeto, crie um `.env` local (o arquivo é ignorado pelo Git) com `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`. Use a URL base do projeto, sem `/rest/v1/`, e a chave publicável/anon. O servidor Node 22 carrega o arquivo local e `/api/config` entrega ao navegador somente esses valores públicos. Nunca coloque senha do banco, chave `service_role` ou chave secreta no frontend, repositório ou chat.
 3. Instale dependências com Node.js 22.x usando `npm ci`. Execute `npm test` para a suíte completa ou `npm run test:unit` e `npm run test:integration` separadamente.
 4. Habilite autenticação por e-mail no Supabase e defina confirmação de e-mail conforme a política do projeto. Em Authentication → URL Configuration, inclua `http://localhost:3000/paginas/login.html` e `http://localhost:3000/paginas/recuperar-senha.html` em Redirect URLs. A recuperação por e-mail usa a segunda rota para retornar ao estado de nova senha.

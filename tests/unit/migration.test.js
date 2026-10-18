@@ -13,6 +13,8 @@ const stripeCheckoutMigrationPath = path.join(process.cwd(), "database", "ddl", 
 const stripeCheckoutMigration = (await readFile(stripeCheckoutMigrationPath, "utf8")).toLowerCase();
 const feedbackMigrationPath = path.join(process.cwd(), "database", "ddl", "feedback-comments.sql");
 const feedbackMigration = (await readFile(feedbackMigrationPath, "utf8")).toLowerCase();
+const gameUpdatesMigrationPath = path.join(process.cwd(), "database", "ddl", "supabase_atualizacoes.sql");
+const gameUpdatesMigration = (await readFile(gameUpdatesMigrationPath, "utf8")).toLowerCase();
 
 test("RF-004 migration defines payment and download records with database constraints", () => {
     assert.match(sql, /create table if not exists public\.simulated_payments/);
@@ -123,4 +125,20 @@ test("feedback migration restricts comment creation and moderation with RLS", ()
     assert.match(feedbackMigration, /grant insert \(content\) on table public\.feedback_comments to authenticated/);
     assert.match(feedbackMigration, /grant update \(content\) on table public\.feedback_comments to authenticated/);
     assert.doesNotMatch(feedbackMigration, /grant\s+(?:all|update|delete)[^;]*to anon/);
+});
+
+test("game updates migration uses the existing admin verifier and protects mutations with RLS", () => {
+    assert.match(gameUpdatesMigration, /to_regprocedure\('public\.is_feedback_admin\(\)'\)/);
+    assert.match(gameUpdatesMigration, /create table if not exists public\.game_updates/);
+    assert.match(gameUpdatesMigration, /id uuid primary key default gen_random_uuid\(\)/);
+    assert.match(gameUpdatesMigration, /release_date date not null/);
+    assert.match(gameUpdatesMigration, /description text not null check/);
+    assert.match(gameUpdatesMigration, /alter table public\.game_updates enable row level security/);
+    assert.match(gameUpdatesMigration, /for select to anon, authenticated\s+using \(true\)/);
+    assert.match(gameUpdatesMigration, /for insert to authenticated\s+with check \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(gameUpdatesMigration, /for delete to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(gameUpdatesMigration, /grant insert \(title, version, release_date, category, description\)[\s\S]*to authenticated/);
+    assert.match(gameUpdatesMigration, /grant delete on table public\.game_updates to authenticated/);
+    assert.doesNotMatch(gameUpdatesMigration, /grant\s+(?:all|update)[^;]*to anon/);
+    assert.doesNotMatch(gameUpdatesMigration, /\b(?:drop\s+table|truncate\s+table|delete\s+from)\b/);
 });

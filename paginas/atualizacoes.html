@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- Metadados, ícone e estilos compartilhados com uma folha específica da página. -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Acompanhe as atualizações e novidades de Yokai Tales.">
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/atualizacoes.css">
+    <title>Atualizações | Yokai Tales | Digital Ghost</title>
+</head>
+<body>
+    <!-- Menu compartilhado: mantém a navegação existente e marca a página atual. -->
+    <header class="navbar">
+        <a href="../index.html" class="logo">DIGITAL <span>GHOST</span></a>
+        <nav aria-label="Navegação principal">
+            <a href="../index.html">Início</a>
+            <a href="tales.html">Yokai Tales</a>
+            <a href="atualizacoes.html" class="active" aria-current="page">Atualizações</a>
+            <a href="download.html">Comprar</a>
+            <a href="feedback.html">Feedback</a>
+            <a href="doacoes.html">Doações</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="cadastro.html">Cadastro</a>
+            <a href="login.html" class="btn-login">Entrar</a>
+            <button type="button" id="logoutButton" class="btn-logout" hidden>Sair</button>
+        </nav>
+    </header>
+
+    <main class="updates-page">
+        <section class="updates-heading" aria-labelledby="updatesTitle">
+            <p class="orange-text">YOKAI TALES</p>
+            <h1 id="updatesTitle">ATUALIZAÇÕES <span>DO JOGO</span></h1>
+            <p>Acompanhe novidades, melhorias e correções de cada versão.</p>
+        </section>
+
+        <!-- Os controles administrativos só são revelados após verificar a sessão e o papel no banco. -->
+        <p id="updatesAdminMessage" class="updates-message" aria-live="polite" role="status" hidden></p>
+        <section class="updates-management" aria-label="Gerenciamento de atualizações" hidden>
+            <div>
+                <h2>Gerenciar atualizações</h2>
+                <p>Esta área está disponível somente para administradores.</p>
+            </div>
+            <button id="newUpdateButton" class="btn-primary" type="button">Nova atualização</button>
+        </section>
+
+        <!-- Formulário de cadastro para administradores. -->
+        <section class="updates-compose" aria-labelledby="updateFormTitle" hidden>
+            <h2 id="updateFormTitle">Nova atualização</h2>
+            <form id="updateForm">
+                <div class="updates-form-grid">
+                    <label>Título<input name="title" type="text" maxlength="160" required></label>
+                    <label>Versão<input name="version" type="text" maxlength="40" placeholder="1.2.0" required></label>
+                    <label>Data da atualização<input name="release_date" type="date" required></label>
+                    <label>Categoria <span>(opcional)</span>
+                        <select name="category">
+                            <option value="">Sem categoria</option>
+                            <option value="Novidades">Novidades</option>
+                            <option value="Melhorias">Melhorias</option>
+                            <option value="Correções de bugs">Correções de bugs</option>
+                            <option value="Balanceamento">Balanceamento</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </label>
+                    <label class="updates-description-field">Descrição
+                        <textarea name="description" rows="7" maxlength="10000" required></textarea>
+                    </label>
+                </div>
+                <p id="updateFormMessage" class="updates-message" aria-live="polite" role="status"></p>
+                <div class="updates-form-actions">
+                    <button class="btn-primary" type="submit">Salvar atualização</button>
+                    <button id="cancelUpdateButton" class="btn-secondary" type="button">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- As notas são carregadas dinamicamente do Supabase. -->
+        <section class="updates-list-section" aria-labelledby="updatesListTitle">
+            <h2 id="updatesListTitle">Notas de atualização</h2>
+            <p id="updatesListMessage" class="updates-message" aria-live="polite" role="status">Carregando atualizações...</p>
+            <div id="updatesList" class="updates-list" aria-busy="true"></div>
+        </section>
+    </main>
+
+    <footer>
+        <h3>DIGITAL <span>GHOST</span></h3>
+        <p>Projeto acadêmico desenvolvido para fins educacionais.</p>
+        <p class="copyright">© 2026 Digital Ghost Software</p>
+    </footer>
+
+    <!-- script.js cuida da sessão/menu; atualizacoes.js gerencia as notas. -->
+    <script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/atualizacoes.js"></script>
+</body>
+</html>
