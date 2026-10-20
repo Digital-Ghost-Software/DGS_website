@@ -35,7 +35,7 @@
             <p>Acompanhe novidades, melhorias e correções de cada versão.</p>
         </section>
 
-        <!-- Os controles administrativos só são revelados após verificar a sessão e o papel no banco. -->
+        <!-- Os controles administrativos só são revelados após verificação pela API. -->
         <p id="updatesAdminMessage" class="updates-message" aria-live="polite" role="status" hidden></p>
         <section class="updates-management" aria-label="Gerenciamento de atualizações" hidden>
             <div>
@@ -76,7 +76,7 @@
             </form>
         </section>
 
-        <!-- As notas são carregadas dinamicamente do Supabase. -->
+        <!-- As notas são carregadas dinamicamente pela API do servidor. -->
         <section class="updates-list-section" aria-labelledby="updatesListTitle">
             <h2 id="updatesListTitle">Notas de atualização</h2>
             <p id="updatesListMessage" class="updates-message" aria-live="polite" role="status">Carregando atualizações...</p>

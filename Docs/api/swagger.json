@@ -1,0 +1,392 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Yokai Tales - API de atualizações",
+    "version": "1.0.0",
+    "description": "API para listar e gerenciar notas de atualização. A leitura é pública; criação, edição e exclusão exigem uma sessão de administrador."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Mesma origem do site"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Atualizações",
+      "description": "Notas de atualização do jogo"
+    }
+  ],
+  "paths": {
+    "/api/updates": {
+      "get": {
+        "tags": ["Atualizações"],
+        "summary": "Listar notas de atualização",
+        "operationId": "listarAtualizacoes",
+        "description": "A resposta informa também se a sessão autenticada pertence a um administrador. Sem token, as notas são listadas publicamente e is_admin é false.",
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notas ordenadas por data de lançamento e data de criação, ambas decrescentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateList"
+                },
+                "example": {
+                  "updates": [
+                    {
+                      "id": "6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b",
+                      "title": "Novas áreas exploráveis",
+                      "version": "1.2.0",
+                      "release_date": "2026-10-20",
+                      "category": "Novidades",
+                      "description": "Adicionamos novas áreas ao jogo.",
+                      "created_at": "2026-10-20T12:00:00Z"
+                    }
+                  ],
+                  "is_admin": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Atualizações"],
+        "summary": "Criar nota de atualização",
+        "operationId": "criarAtualizacao",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInput"
+              },
+              "example": {
+                "title": "Novas áreas exploráveis",
+                "version": "1.2.0",
+                "release_date": "2026-10-20",
+                "category": "Novidades",
+                "description": "Adicionamos novas áreas ao jogo."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Nota criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Update"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/updates/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "UUID da nota de atualização",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "put": {
+        "tags": ["Atualizações"],
+        "summary": "Substituir nota de atualização",
+        "operationId": "atualizarAtualizacao",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInput"
+              },
+              "example": {
+                "title": "Novas áreas exploráveis",
+                "version": "1.2.1",
+                "release_date": "2026-10-21",
+                "category": "Melhorias",
+                "description": "Ajustes adicionais nas novas áreas."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nota atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Update"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Atualizações"],
+        "summary": "Excluir nota de atualização",
+        "operationId": "excluirAtualizacao",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nota excluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["deleted"],
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token de acesso emitido pelo Supabase Auth"
+      }
+    },
+    "schemas": {
+      "UpdateInput": {
+        "type": "object",
+        "required": ["title", "version", "release_date", "description"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "release_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["Novidades", "Melhorias", "Correções de bugs", "Balanceamento", "Eventos", "Outros"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          }
+        }
+      },
+      "Update": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UpdateInput"
+          },
+          {
+            "type": "object",
+            "required": ["id", "created_at"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "UpdateList": {
+        "type": "object",
+        "required": ["updates", "is_admin"],
+        "properties": {
+          "updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Update"
+            }
+          },
+          "is_admin": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "JSON inválido ou campos fora dos limites e valores permitidos",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token ausente ou sessão inválida",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Origem não autorizada ou usuário sem permissão administrativa",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Nota não encontrada",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "O corpo da solicitação excede 48 KiB",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Não foi possível acessar ou alterar as notas no Supabase",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

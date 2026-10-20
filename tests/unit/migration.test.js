@@ -91,6 +91,11 @@ test("RF-004 migration derives payment and download ownership and values from th
     assert.match(sql, /where id = new\.payment_id[\s\S]*and user_id = auth\.uid\(\)[\s\S]*and status = 'simulated_approved'/);
 });
 
+test("notas de atualização permitem edição somente por administradores", () => {
+    assert.match(gameUpdatesMigration, /for update to authenticated[\s\S]*using \(\(select public\.is_feedback_admin\(\)\)\)[\s\S]*with check \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(gameUpdatesMigration, /grant update \(title, version, release_date, category, description\)\s+on public\.game_updates to authenticated/);
+});
+
 test("RF-004 migration enables owner-scoped RLS and prevents client updates or deletes", () => {
     assert.equal((sql.match(/alter table public\.(?:simulated_payments|game_downloads) enable row level security/g) || []).length, 2);
     assert.match(sql, /for select to authenticated[\s\S]*using \(user_id = \(select auth\.uid\(\)\)\)/);

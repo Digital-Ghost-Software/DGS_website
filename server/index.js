@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { paymentMethods, purchasePlans } from "../js/purchase-rules.js";
+import { createUpdatesHandler } from "./routes/updates.js";
 
 try {
     process.loadEnvFile();
@@ -43,18 +44,20 @@ function sendJson(response, status, body, corsOrigin) {
     };
     if (corsOrigin) {
         headers["Access-Control-Allow-Origin"] = corsOrigin;
-        headers["Access-Control-Allow-Methods"] = "GET, PATCH, POST, OPTIONS";
+        headers["Access-Control-Allow-Methods"] = "GET, PATCH, POST, PUT, DELETE, OPTIONS";
         headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type";
     }
     response.writeHead(status, headers);
     response.end(JSON.stringify(body));
 }
 
-async function readJson(request) {
+async function readJson(request, limit = 4096) {
     let body = "";
     for await (const chunk of request) {
         body += chunk.toString("utf8");
-        if (body.length > 4096) throw Object.assign(new Error("A solicitação excede o tamanho permitido."), { status: 413 });
+        if (Buffer.byteLength(body, "utf8") > limit) {
+            throw Object.assign(new Error("A solicitação excede o tamanho permitido."), { status: 413 });
+        }
     }
     if (!body) return {};
     try {
@@ -138,6 +141,7 @@ export function createHandler(overrides = {}) {
     const catarseFetch = overrides.catarseFetch ?? fetch;
     const webhookSecret = overrides.webhookSecret ?? stripeWebhookSecret;
     const checkoutBaseUrl = getCheckoutBaseUrl(overrides.publicAppUrl ?? publicAppUrl);
+    const updatesHandler = createUpdatesHandler({ authenticate, publicClient: authClient, readJson, sendJson });
 
     return async function handler(request, response) {
     const origin = request.headers.origin;
@@ -155,7 +159,7 @@ export function createHandler(overrides = {}) {
             "Vary": "Origin",
             ...(origin ? {
                 "Access-Control-Allow-Origin": origin,
-                "Access-Control-Allow-Methods": "GET, PATCH, POST, OPTIONS",
+                "Access-Control-Allow-Methods": "GET, PATCH, POST, PUT, DELETE, OPTIONS",
                 "Access-Control-Allow-Headers": "Authorization, Content-Type",
                 "Access-Control-Max-Age": "600"
             } : {})
@@ -166,6 +170,18 @@ export function createHandler(overrides = {}) {
 
     const requestUrl = new URL(request.url || "/", "http://localhost");
     const path = requestUrl.pathname;
+    if (path === "/api/updates" || path.startsWith("/api/updates/")) {
+        try {
+            await updatesHandler(request, response, origin);
+        } catch (error) {
+            const status = Number.isInteger(error.status) ? error.status : 500;
+            if (status === 500) console.error("Updates API request failed", error);
+            sendJson(response, status, {
+                error: status === 500 ? "Não foi possível processar a solicitação." : error.message
+            }, origin);
+        }
+        return;
+    }
     if (request.method === "GET" && path === "/api/config") {
         sendJson(response, 200, {
             supabaseUrl: projectUrl,

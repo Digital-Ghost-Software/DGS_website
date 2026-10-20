@@ -33,7 +33,7 @@ create index if not exists game_updates_release_date_created_at_idx
 
 alter table public.game_updates enable row level security;
 
--- Leitura pública; a criação e exclusão continuam limitadas a administradores.
+-- Leitura pública; criação, edição e exclusão continuam limitadas a administradores.
 drop policy if exists "Anyone can read game updates" on public.game_updates;
 create policy "Anyone can read game updates"
     on public.game_updates for select to anon, authenticated
@@ -49,10 +49,18 @@ create policy "Admins can delete game updates"
     on public.game_updates for delete to authenticated
     using ((select public.is_feedback_admin()));
 
+drop policy if exists "Admins can update game updates" on public.game_updates;
+create policy "Admins can update game updates"
+    on public.game_updates for update to authenticated
+    using ((select public.is_feedback_admin()))
+    with check ((select public.is_feedback_admin()));
+
 -- Concede somente as operações necessárias à aplicação no navegador.
 revoke all on table public.game_updates from public, anon, authenticated, service_role;
 grant select on table public.game_updates to anon, authenticated;
 grant insert (title, version, release_date, category, description)
+    on public.game_updates to authenticated;
+grant update (title, version, release_date, category, description)
     on public.game_updates to authenticated;
 grant delete on table public.game_updates to authenticated;
 

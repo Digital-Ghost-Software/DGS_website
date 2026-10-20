@@ -11,7 +11,6 @@ const updateFormMessage = document.querySelector("#updateFormMessage");
 const updatesList = document.querySelector("#updatesList");
 const updatesListMessage = document.querySelector("#updatesListMessage");
 const cancelUpdateButton = document.querySelector("#cancelUpdateButton");
-const tableName = "game_updates";
 
 // Valores aceitos também são impostos por uma restrição na tabela SQL.
 const categories = new Set([
@@ -28,16 +27,34 @@ function showMessage(element, message, state = "info") {
     element.dataset.state = state;
 }
 
-// Traduz erros conhecidos do banco em mensagens acionáveis, sem esconder diagnósticos do console.
-function getDatabaseErrorMessage(error, operation) {
-    if (error.code === "PGRST205" || error.code === "42P01") {
-        return "A tabela de atualizações ainda não está configurada. Execute database/ddl/supabase_atualizacoes.sql no SQL Editor do Supabase.";
+async function requestUpdates(path, { method = "GET", token, payload } = {}) {
+    const headers = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (payload) headers["Content-Type"] = "application/json";
+    const response = await fetch(path, {
+        method,
+        headers,
+        ...(payload ? { body: JSON.stringify(payload) } : {})
+    });
+    let result;
+    try {
+        result = await response.json();
+    } catch (error) {
+        throw new Error(`O serviço de atualizações retornou uma resposta inválida (${response.status}).`, { cause: error });
     }
-    if (error.code === "42501" || error.code === "PGRST301") {
-        return operation === "read"
-            ? "O banco recusou a consulta das atualizações. Confira as permissões de leitura."
-            : "Você não tem autorização para realizar esta operação. Somente administradores podem gerenciar atualizações.";
+    if (!response.ok) {
+        const error = new Error(result.error || "Não foi possível processar a solicitação.");
+        error.status = response.status;
+        throw error;
     }
+    return result;
+}
+
+function getApiErrorMessage(error, operation) {
+    if (error.status === 401) return "Sua sessão expirou. Entre novamente para gerenciar atualizações.";
+    if (error.status === 403) return "Você não tem autorização para realizar esta operação. Somente administradores podem gerenciar atualizações.";
+    if (error.status === 503 && error.message.includes("tabela de atualizações")) return error.message;
+    if (error.status && error.message) return error.message;
     return operation === "read"
         ? "Não foi possível carregar as atualizações. Verifique a conexão e tente novamente."
         : "Não foi possível salvar a alteração. Verifique a conexão e tente novamente.";
@@ -111,25 +128,31 @@ function insertUpdateInOrder(update, isAdmin) {
     updatesList.insertBefore(card, insertionPoint || null);
 }
 
-// Recupera e renderiza a listagem do Supabase.
-async function loadUpdates(supabase, isAdmin) {
+// Recupera a listagem pela API do servidor.
+async function loadUpdates(token) {
     updatesList.setAttribute("aria-busy", "true");
     showMessage(updatesListMessage, "Carregando atualizações...");
-    const { data, error } = await supabase
-        .from(tableName)
-        .select("id, title, version, release_date, category, description, created_at")
-        .order("release_date", { ascending: false })
-        .order("created_at", { ascending: false });
-
-    updatesList.setAttribute("aria-busy", "false");
-    if (error) {
+    try {
+        let response;
+        try {
+            response = await requestUpdates("/api/updates", { token });
+        } catch (error) {
+            if (error.status !== 401 || !token) throw error;
+            console.error("A sessão não pôde ser verificada; carregando atualizações sem acesso administrativo.", error);
+            adminMessage.hidden = false;
+            showMessage(adminMessage, "Sua sessão expirou. Entre novamente para gerenciar atualizações.", "error");
+            response = await requestUpdates("/api/updates");
+        }
+        const { updates, is_admin: isAdmin } = response;
+        updatesList.replaceChildren(...updates.map((update) => renderUpdate(update, isAdmin)));
+        management.hidden = !isAdmin;
+        showMessage(updatesListMessage, updates.length ? "" : "Ainda não há atualizações publicadas.");
+    } catch (error) {
         console.error("Não foi possível carregar as atualizações.", error);
-        showMessage(updatesListMessage, getDatabaseErrorMessage(error, "read"), "error");
-        return;
+        showMessage(updatesListMessage, getApiErrorMessage(error, "read"), "error");
+    } finally {
+        updatesList.setAttribute("aria-busy", "false");
     }
-
-    updatesList.replaceChildren(...data.map((update) => renderUpdate(update, isAdmin)));
-    showMessage(updatesListMessage, data.length ? "" : "Ainda não há atualizações publicadas.");
 }
 
 // Confere que a data existe no calendário e segue o formato esperado pelo campo date.
@@ -139,36 +162,21 @@ function isValidCalendarDate(value) {
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-// Obtém a sessão, consulta o verificador administrativo do banco e conecta o formulário.
+// Obtém a sessão do navegador e deixa a API verificar as permissões administrativas.
 async function initializeUpdates() {
     const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = await loadSupabaseConfig();
     const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-    let user = null;
-    let isAdmin = false;
-
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError && authError.name !== "AuthSessionMissingError") {
+    let token = null;
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError) {
         console.error("Não foi possível carregar a sessão para verificar permissões.", authError);
         adminMessage.hidden = false;
-        showMessage(adminMessage, "Não foi possível verificar sua sessão; as ações administrativas ficam indisponíveis.");
+        showMessage(adminMessage, "Não foi possível verificar sua sessão; as ações administrativas ficam indisponíveis.", "error");
     } else {
-        user = authData.user;
+        token = authData.session?.access_token || null;
     }
 
-    if (user) {
-        // A função confiável consulta public.admin; a interface não deriva privilégios de dados locais.
-        const { data, error } = await supabase.rpc("is_feedback_admin");
-        if (error) {
-            console.error("Não foi possível verificar as permissões administrativas.", error);
-            adminMessage.hidden = false;
-            showMessage(adminMessage, "Não foi possível verificar as permissões administrativas.", "error");
-        } else {
-            isAdmin = data === true;
-        }
-    }
-
-    if (isAdmin) management.hidden = false;
-    await loadUpdates(supabase, isAdmin);
+    await loadUpdates(token);
 
     newUpdateButton.addEventListener("click", () => {
         updatePanel.hidden = false;
@@ -204,24 +212,17 @@ async function initializeUpdates() {
         submitButton.textContent = "Salvando...";
         showMessage(updateFormMessage, "Salvando atualização...");
         try {
-            // Identificador e data de criação são gerados pelo banco, não pelo navegador.
-            const { data: createdUpdate, error } = await supabase
-                .from(tableName)
-                .insert({
+            const createdUpdate = await requestUpdates("/api/updates", {
+                method: "POST",
+                token,
+                payload: {
                     title,
                     version,
                     release_date: releaseDate,
                     category: category || null,
                     description
-                })
-                .select("id, title, version, release_date, category, description, created_at")
-                .single();
-
-            if (error) {
-                console.error("Não foi possível salvar a atualização.", error);
-                showMessage(updateFormMessage, getDatabaseErrorMessage(error, "write"), "error");
-                return;
-            }
+                }
+            });
 
             const alreadyListed = [...updatesList.querySelectorAll(".update-card")]
                 .some((card) => card.dataset.updateId === createdUpdate.id);
@@ -231,7 +232,7 @@ async function initializeUpdates() {
             showMessage(updatesListMessage, "Atualização publicada com sucesso.", "success");
         } catch (error) {
             console.error("Falha de conexão ao salvar a atualização.", error);
-            showMessage(updateFormMessage, getDatabaseErrorMessage(error, "write"), "error");
+            showMessage(updateFormMessage, getApiErrorMessage(error, "write"), "error");
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = "Salvar atualização";
@@ -247,22 +248,10 @@ async function initializeUpdates() {
         button.disabled = true;
         button.textContent = "Excluindo...";
         try {
-            // O card só é removido depois da confirmação do Supabase.
-            const { data, error } = await supabase
-                .from(tableName)
-                .delete()
-                .eq("id", card.dataset.updateId)
-                .select("id")
-                .maybeSingle();
-            if (error) {
-                console.error("Não foi possível excluir a atualização.", error);
-                showMessage(updatesListMessage, getDatabaseErrorMessage(error, "write"), "error");
-                return;
-            }
-            if (!data) {
-                showMessage(updatesListMessage, "A nota não foi excluída: não existe ou sua conta não tem autorização.", "error");
-                return;
-            }
+            await requestUpdates(`/api/updates/${encodeURIComponent(card.dataset.updateId)}`, {
+                method: "DELETE",
+                token
+            });
 
             card.remove();
             showMessage(
@@ -274,7 +263,7 @@ async function initializeUpdates() {
             );
         } catch (error) {
             console.error("Falha de conexão ao excluir a atualização.", error);
-            showMessage(updatesListMessage, getDatabaseErrorMessage(error, "write"), "error");
+            showMessage(updatesListMessage, getApiErrorMessage(error, "write"), "error");
         } finally {
             button.disabled = false;
             button.textContent = "Excluir atualização";
