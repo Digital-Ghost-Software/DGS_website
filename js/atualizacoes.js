@@ -31,11 +31,17 @@ async function requestUpdates(path, { method = "GET", token, payload } = {}) {
     const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
     if (payload) headers["Content-Type"] = "application/json";
-    const response = await fetch(path, {
-        method,
-        headers,
-        ...(payload ? { body: JSON.stringify(payload) } : {})
-    });
+    let response;
+    try {
+        response = await fetch(path, {
+            method,
+            headers,
+            ...(payload ? { body: JSON.stringify(payload) } : {})
+        });
+    } catch (error) {
+        console.error(`Falha de rede ao chamar ${method} ${path}.`, error);
+        throw new Error("Não foi possível conectar à API de atualizações. Confira se a versão mais recente do servidor foi publicada e tente novamente.", { cause: error });
+    }
     let result;
     try {
         result = await response.json();
@@ -54,7 +60,7 @@ function getApiErrorMessage(error, operation) {
     if (error.status === 401) return "Sua sessão expirou. Entre novamente para gerenciar atualizações.";
     if (error.status === 403) return "Você não tem autorização para realizar esta operação. Somente administradores podem gerenciar atualizações.";
     if (error.status === 503 && error.message.includes("tabela de atualizações")) return error.message;
-    if (error.status && error.message) return error.message;
+    if (error.message) return error.message;
     return operation === "read"
         ? "Não foi possível carregar as atualizações. Verifique a conexão e tente novamente."
         : "Não foi possível salvar a alteração. Verifique a conexão e tente novamente.";
