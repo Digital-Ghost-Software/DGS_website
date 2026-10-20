@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         CONFIGURAÇÕES DA PÁGINA
+    =================================================== -->
+
+    <!-- Define a codificação dos caracteres -->
+    <meta charset="UTF-8">
+
+    <!-- Faz o site funcionar corretamente em celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Ícone que aparece na aba do navegador -->
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+
+    <!-- Título que aparece na aba do navegador -->
+    <title>Yokai Tales | Digital Ghost</title>
+
+    <!-- Arquivo CSS principal -->
+    <link rel="stylesheet" href="../css/style.css">
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         MENU PRINCIPAL
+    =================================================== -->
+
+    <header class="navbar">
+
+
+        <!-- Logo da empresa -->
+
+        <a href="../index.html" class="logo">
+            DIGITAL <span>GHOST</span>
+        </a>
+
+
+        <!-- Links de navegação -->
+
+        <nav>
+
+
+            <!-- Volta para a página inicial -->
+
+            <a href="../index.html">
+                Início
+            </a>
+
+
+            <!-- Página Yokai Tales -->
+
+            <a href="tales.html">
+                Yokai Tales
+            </a>
+
+
+            <!-- Página de download -->
+
+            <a href="download.html">
+                Comprar
+            </a>
+
+            <!-- Página de atualizações -->
+            <a href="atualizacoes.html">
+                Atualizações
+            </a>
+
+            <!-- Página de feedback -->
+            <a href="feedback.html">
+                Feedback
+            </a>
+
+            <!-- Página atual de doações -->
+            <a href="doacoes.html" class="active">
+                Doações
+            </a>
+
+            <!-- Página de perfil -->
+
+            <a href="perfil.html">
+                Perfil
+            </a>
+
+
+            <!-- Página de cadastro -->
+
+            <a href="cadastro.html">
+                Cadastro
+            </a>
+
+
+            <!-- Página de login -->
+
+            <a href="login.html" class="btn-login">
+                Entrar
+            </a>
+
+            <button type="button" id="logoutButton" class="btn-logout" hidden>
+                Sair
+            </button>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- ==================================================
+         CONTEÚDO PRINCIPAL
+    =================================================== -->
+
+    <main>
+
+        <section class="donation-page" aria-labelledby="donationTitle">
+            <div class="donation-intro">
+                <p class="orange-text">APOIE UM PROJETO INDEPENDENTE</p>
+                <h1 id="donationTitle">Apoie <span>Yokai Tales</span></h1>
+                <p>
+                    Confira as recompensas e as informações atualizadas da campanha no Catarse.
+                </p>
+            </div>
+
+            <div class="catarse-widget" id="catarseWidget">
+                <p class="catarse-widget__message" id="catarseWidgetMessage" role="status" aria-live="polite">
+                    Carregando informações da campanha…
+                </p>
+            </div>
+
+            <noscript>
+                <p class="catarse-widget__fallback">
+                    Ative o JavaScript para consultar a campanha ou
+                    <a href="https://www.catarse.com.br/yokai-tales?ref=ctrse_profile_campaigns_live_project_card"
+                       target="_blank" rel="noopener noreferrer">acesse o Yokai Tales no Catarse</a>.
+                </p>
+            </noscript>
+        </section>
+
+    </main>
+
+
+
+    <!-- ==================================================
+         RODAPÉ
+    =================================================== -->
+
+    <footer>
+
+
+        <!-- Nome da empresa -->
+
+        <h3>
+            DIGITAL <span>GHOST</span>
+        </h3>
+
+
+        <!-- Informação sobre o projeto -->
+
+        <p>
+            Projeto acadêmico desenvolvido para fins educacionais.
+        </p>
+
+
+        <!-- Copyright -->
+
+        <p class="copyright">
+            © 2026 Digital Ghost Software
+        </p>
+
+    </footer>
+
+
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <!--
+        Como esta página está dentro da pasta "paginas",
+        usamos ../ para voltar à pasta principal.
+    -->
+
+    <script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/catarse-widget.js"></script>
+
+
+</body>
+
+</html>
