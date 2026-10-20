@@ -185,9 +185,13 @@
 }
 
 .update-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-top: 16px;
 }
 
+.update-edit-button,
 .update-delete-button {
     padding: 8px 12px;
     border: 1px solid #666;
@@ -199,11 +203,13 @@
     transition: 0.3s;
 }
 
+.update-edit-button:hover:not(:disabled),
 .update-delete-button:hover:not(:disabled) {
     border-color: #ff6600;
     color: #ff9b55;
 }
 
+.update-edit-button:disabled,
 .update-delete-button:disabled {
     cursor: wait;
     opacity: 0.65;

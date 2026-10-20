@@ -11,6 +11,7 @@ const updateFormMessage = document.querySelector("#updateFormMessage");
 const updatesList = document.querySelector("#updatesList");
 const updatesListMessage = document.querySelector("#updatesListMessage");
 const cancelUpdateButton = document.querySelector("#cancelUpdateButton");
+let editingUpdateId = null;
 
 // Valores aceitos também são impostos por uma restrição na tabela SQL.
 const categories = new Set([
@@ -109,12 +110,17 @@ function renderUpdate(update, isAdmin) {
     if (isAdmin) {
         const actions = document.createElement("div");
         actions.className = "update-actions";
+        const editButton = document.createElement("button");
+        editButton.className = "update-edit-button";
+        editButton.type = "button";
+        editButton.dataset.action = "edit";
+        editButton.textContent = "Editar atualização";
         const deleteButton = document.createElement("button");
         deleteButton.className = "update-delete-button";
         deleteButton.type = "button";
         deleteButton.dataset.action = "delete";
         deleteButton.textContent = "Excluir atualização";
-        actions.append(deleteButton);
+        actions.append(editButton, deleteButton);
         article.append(actions);
     }
 
@@ -132,6 +138,14 @@ function insertUpdateInOrder(update, isAdmin) {
         )
     ));
     updatesList.insertBefore(card, insertionPoint || null);
+}
+
+function resetUpdateForm() {
+    editingUpdateId = null;
+    updateForm.reset();
+    updatePanel.querySelector("h2").textContent = "Nova atualização";
+    updateForm.querySelector('[type="submit"]').textContent = "Salvar atualização";
+    showMessage(updateFormMessage, "");
 }
 
 // Recupera a listagem pela API do servidor.
@@ -187,14 +201,14 @@ async function initializeUpdates() {
     const isAdmin = await loadUpdates(token);
 
     newUpdateButton.addEventListener("click", () => {
+        resetUpdateForm();
         updatePanel.hidden = false;
         updateForm.elements.title.focus();
     });
 
     cancelUpdateButton.addEventListener("click", () => {
-        updateForm.reset();
+        resetUpdateForm();
         updatePanel.hidden = true;
-        showMessage(updateFormMessage, "");
     });
 
     updateForm.addEventListener("submit", async (event) => {
@@ -216,42 +230,76 @@ async function initializeUpdates() {
         }
 
         const submitButton = updateForm.querySelector('[type="submit"]');
+        const updateId = editingUpdateId;
+        const payload = {
+            title,
+            version,
+            release_date: releaseDate,
+            category: category || null,
+            description
+        };
         submitButton.disabled = true;
-        submitButton.textContent = "Salvando...";
-        showMessage(updateFormMessage, "Salvando atualização...");
+        submitButton.textContent = updateId ? "Salvando alterações..." : "Salvando...";
+        showMessage(updateFormMessage, updateId ? "Salvando alterações..." : "Salvando atualização...");
         try {
-            const createdUpdate = await requestUpdates("/api/updates", {
-                method: "POST",
-                token,
-                payload: {
-                    title,
-                    version,
-                    release_date: releaseDate,
-                    category: category || null,
-                    description
+            const savedUpdate = await requestUpdates(
+                updateId ? `/api/updates?id=${encodeURIComponent(updateId)}` : "/api/updates",
+                {
+                    method: updateId ? "PUT" : "POST",
+                    token,
+                    payload
                 }
-            });
+            );
 
-            const alreadyListed = [...updatesList.querySelectorAll(".update-card")]
-                .some((card) => card.dataset.updateId === createdUpdate.id);
-            if (!alreadyListed) insertUpdateInOrder(createdUpdate, isAdmin);
-            updateForm.reset();
+            if (updateId) {
+                [...updatesList.querySelectorAll(".update-card")]
+                    .find((card) => card.dataset.updateId === updateId)
+                    ?.remove();
+                insertUpdateInOrder(savedUpdate, isAdmin);
+            } else {
+                const alreadyListed = [...updatesList.querySelectorAll(".update-card")]
+                    .some((card) => card.dataset.updateId === savedUpdate.id);
+                if (!alreadyListed) insertUpdateInOrder(savedUpdate, isAdmin);
+            }
+            resetUpdateForm();
             updatePanel.hidden = true;
-            showMessage(updatesListMessage, "Atualização publicada com sucesso.", "success");
+            showMessage(
+                updatesListMessage,
+                updateId ? "Atualização editada com sucesso." : "Atualização publicada com sucesso.",
+                "success"
+            );
         } catch (error) {
-            console.error("Falha de conexão ao salvar a atualização.", error);
+            console.error("Falha ao salvar a atualização.", error);
             showMessage(updateFormMessage, getApiErrorMessage(error, "write"), "error");
         } finally {
             submitButton.disabled = false;
-            submitButton.textContent = "Salvar atualização";
+            submitButton.textContent = editingUpdateId ? "Salvar alterações" : "Salvar atualização";
         }
     });
 
     updatesList.addEventListener("click", async (event) => {
-        const button = event.target.closest('button[data-action="delete"]');
+        const button = event.target.closest("button[data-action]");
         if (!button || !isAdmin) return;
         const card = button.closest(".update-card");
-        if (!card || !window.confirm("Tem certeza de que deseja excluir esta atualização?")) return;
+        if (!card) return;
+
+        if (button.dataset.action === "edit") {
+            const category = card.querySelector(".update-category")?.textContent || "";
+            editingUpdateId = card.dataset.updateId;
+            updateForm.elements.title.value = card.querySelector("h3").textContent;
+            updateForm.elements.version.value = card.querySelector(".update-version").textContent.replace(/^Versão\s+/, "");
+            updateForm.elements.release_date.value = card.dataset.releaseDate;
+            updateForm.elements.category.value = category;
+            updateForm.elements.description.value = card.querySelector(".update-description").textContent;
+            updatePanel.querySelector("h2").textContent = "Editar atualização";
+            updateForm.querySelector('[type="submit"]').textContent = "Salvar alterações";
+            showMessage(updateFormMessage, "");
+            updatePanel.hidden = false;
+            updateForm.elements.title.focus();
+            return;
+        }
+
+        if (button.dataset.action !== "delete" || !window.confirm("Tem certeza de que deseja excluir esta atualização?")) return;
 
         button.disabled = true;
         button.textContent = "Excluindo...";
