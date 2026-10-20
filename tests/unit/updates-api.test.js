@@ -148,7 +148,7 @@ test("PUT updates a note by UUID", async () => {
     const { handler, capture } = setup();
     const response = {};
 
-    await handler(request("PUT", `/api/updates/${update.id}`, update), response);
+    await handler(request("PUT", `/api/updates?id=${update.id}`, update), response);
 
     assert.equal(response.status, 200);
     assert.equal(response.body, update);
@@ -160,7 +160,7 @@ test("DELETE removes a note by UUID", async () => {
     const { handler, capture } = setup({ result: { data: { id: update.id }, error: null } });
     const response = {};
 
-    await handler(request("DELETE", `/api/updates/${update.id}`), response);
+    await handler(request("DELETE", `/api/updates?id=${update.id}`), response);
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, { deleted: true });

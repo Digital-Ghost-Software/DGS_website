@@ -256,7 +256,7 @@ async function initializeUpdates() {
         button.disabled = true;
         button.textContent = "Excluindo...";
         try {
-            await requestUpdates(`/api/updates/${encodeURIComponent(card.dataset.updateId)}`, {
+            await requestUpdates(`/api/updates?id=${encodeURIComponent(card.dataset.updateId)}`, {
                 method: "DELETE",
                 token
             });

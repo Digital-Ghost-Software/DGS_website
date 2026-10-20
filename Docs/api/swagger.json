@@ -119,25 +119,23 @@
             "$ref": "#/components/responses/ServiceUnavailable"
           }
         }
-      }
-    },
-    "/api/updates/{id}": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "description": "UUID da nota de atualização",
-          "schema": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      ],
+      },
       "put": {
         "tags": ["Atualizações"],
-        "summary": "Substituir nota de atualização",
+        "summary": "Atualizar nota de atualização",
         "operationId": "atualizarAtualizacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "description": "UUID da nota de atualização",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -195,6 +193,18 @@
         "tags": ["Atualizações"],
         "summary": "Excluir nota de atualização",
         "operationId": "excluirAtualizacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "description": "UUID da nota de atualização",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "security": [
           {
             "bearerAuth": []

@@ -67,9 +67,9 @@ export function createUpdatesHandler({ authenticate, publicClient, readJson, sen
         const path = new URL(request.url || "/", "http://localhost").pathname;
         const basePath = "/api/updates";
         const isBasePath = path === basePath;
-        const updateId = isBasePath ? null : path.startsWith(`${basePath}/`) ? path.slice(basePath.length + 1) : null;
-        if (!isBasePath && updateId === null) return false;
-
+        if (!isBasePath) return false;
+        const requestUrl = new URL(request.url || "/", "http://localhost");
+        const updateId = requestUrl.searchParams.get("id");
         const method = request.method;
         if (isBasePath && method === "GET") {
             let client = publicClient;
@@ -130,8 +130,8 @@ export function createUpdatesHandler({ authenticate, publicClient, readJson, sen
             return true;
         }
 
-        if (updateId !== null && ["PUT", "DELETE"].includes(method)) {
-            if (!uuidPattern.test(updateId)) {
+        if (["PUT", "DELETE"].includes(method)) {
+            if (!updateId || !uuidPattern.test(updateId)) {
                 sendJson(response, 400, { error: "Identificador de atualização inválido." }, origin);
                 return true;
             }
