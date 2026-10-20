@@ -153,9 +153,11 @@ async function loadUpdates(token) {
         updatesList.replaceChildren(...updates.map((update) => renderUpdate(update, isAdmin)));
         management.hidden = !isAdmin;
         showMessage(updatesListMessage, updates.length ? "" : "Ainda não há atualizações publicadas.");
+        return isAdmin;
     } catch (error) {
         console.error("Não foi possível carregar as atualizações.", error);
         showMessage(updatesListMessage, getApiErrorMessage(error, "read"), "error");
+        return false;
     } finally {
         updatesList.setAttribute("aria-busy", "false");
     }
@@ -182,7 +184,7 @@ async function initializeUpdates() {
         token = authData.session?.access_token || null;
     }
 
-    await loadUpdates(token);
+    const isAdmin = await loadUpdates(token);
 
     newUpdateButton.addEventListener("click", () => {
         updatePanel.hidden = false;
