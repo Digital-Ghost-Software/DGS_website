@@ -1,11 +1,19 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Yokai Tales - API de atualizações",
-    "version": "1.0.0",
-    "description": "API para listar e gerenciar notas de atualização. A leitura é pública; criação, edição e exclusão exigem uma sessão de administrador."
+    "title": "Yokai Tales — API do site Digital Ghost Software",
+    "version": "2.0.0",
+    "description": "Contrato de todas as rotas registradas em server/index.js e server/routes/updates.js. O CRUD completo está em /api/updates (notas de atualização do jogo). Rotas autenticadas exigem Bearer JWT emitido pelo Supabase Auth. Requisições com cabeçalho Origin fora da lista permitida recebem 403. Pagamentos ocorrem somente em modo de teste da Stripe.",
+    "contact": {
+      "name": "Digital Ghost Software",
+      "url": "https://github.com/Digital-Ghost-Software/DGS_website"
+    }
   },
   "servers": [
+    {
+      "url": "https://dgs-website-omega.vercel.app",
+      "description": "Aplicação publicada (Vercel)"
+    },
     {
       "url": "/",
       "description": "Mesma origem do site"
@@ -14,25 +22,529 @@
   "tags": [
     {
       "name": "Atualizações",
-      "description": "Notas de atualização do jogo"
+      "description": "CRUD das notas de atualização do jogo"
+    },
+    {
+      "name": "Perfil",
+      "description": "Dados do usuário autenticado"
+    },
+    {
+      "name": "Pedidos",
+      "description": "Pedidos de teste e webhook Stripe"
+    },
+    {
+      "name": "Downloads",
+      "description": "Solicitações de download do jogo"
+    },
+    {
+      "name": "Conta",
+      "description": "Gestão da conta"
+    },
+    {
+      "name": "Campanha",
+      "description": "Integração com o Catarse"
+    },
+    {
+      "name": "Sistema",
+      "description": "Saúde e configuração pública"
     }
   ],
   "paths": {
-    "/api/updates": {
+    "/api/health": {
       "get": {
-        "tags": ["Atualizações"],
-        "summary": "Listar notas de atualização",
-        "operationId": "listarAtualizacoes",
-        "description": "A resposta informa também se a sessão autenticada pertence a um administrador. Sem token, as notas são listadas publicamente e is_admin é false.",
-        "security": [
-          {},
+        "tags": [
+          "Sistema"
+        ],
+        "summary": "Verificar disponibilidade da API",
+        "operationId": "verificarSaude",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API no ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                },
+                "example": {
+                  "status": "ok"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "tags": [
+          "Sistema"
+        ],
+        "summary": "Obter configuração pública do Supabase",
+        "operationId": "obterConfiguracao",
+        "security": [],
+        "description": "Entrega ao navegador somente a URL do projeto e a chave publicável. Nenhuma chave secreta é exposta.",
+        "responses": {
+          "200": {
+            "description": "Configuração pública",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicConfig"
+                },
+                "example": {
+                  "supabaseUrl": "https://projeto.supabase.co",
+                  "supabasePublishableKey": "sb_publishable_exemplo"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/catarse/yokai-tales": {
+      "get": {
+        "tags": [
+          "Campanha"
+        ],
+        "summary": "Consultar recompensas da campanha no Catarse",
+        "operationId": "consultarCampanhaCatarse",
+        "security": [],
+        "description": "Intermedia a API pública do Catarse (que não oferece CORS) e devolve apenas nome, valor e descrição das recompensas.",
+        "responses": {
+          "200": {
+            "description": "Campanha e recompensas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatarseCampaign"
+                },
+                "example": {
+                  "slug": "yokai-tales",
+                  "status": "online",
+                  "endDate": "2026-12-31T23:59:59Z",
+                  "rewards": [
+                    {
+                      "name": "Apoiador",
+                      "value": 20,
+                      "description": "Acesso ao jogo base."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
+        }
+      }
+    },
+    "/api/stripe/webhook": {
+      "post": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Receber evento assinado do Stripe Checkout",
+        "operationId": "receberEventoStripe",
+        "security": [],
+        "description": "Valida o corpo bruto com o cabeçalho Stripe-Signature e atualiza somente pedidos com status pending (paid, failed ou expired). Eventos não relacionados são aceitos e ignorados.",
+        "parameters": [
           {
-            "bearerAuth": []
+            "name": "Stripe-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Assinatura do evento calculada pela Stripe"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Evento Stripe; a API valida o corpo original."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Evento recebido ou ignorado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAck"
+                },
+                "example": {
+                  "received": true
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "Perfil"
+        ],
+        "summary": "Consultar perfil do usuário autenticado",
+        "operationId": "consultarPerfil",
+        "security": [
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Notas ordenadas por data de lançamento e data de criação, ambas decrescentes",
+            "description": "Perfil do usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                },
+                "example": {
+                  "id": "b1c2d3e4-0000-4000-8000-000000000001",
+                  "email": "usuario@exemplo.com",
+                  "user_name": "Kitsune",
+                  "user_foto": "/imagens/user-img-default.jpg",
+                  "user_level": "standard"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Perfil"
+        ],
+        "summary": "Atualizar nome do perfil",
+        "operationId": "atualizarPerfil",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              },
+              "example": {
+                "user_name": "Kitsune"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileData"
+                },
+                "example": {
+                  "user_name": "Kitsune",
+                  "user_foto": "/imagens/user-img-default.jpg",
+                  "user_level": "standard"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/payments": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Listar pedidos e downloads do usuário",
+        "operationId": "listarPedidos",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Retorna somente registros do próprio usuário (RLS). Pedidos ordenados do mais recente ao mais antigo.",
+        "responses": {
+          "200": {
+            "description": "Pedidos e histórico de downloads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentList"
+                },
+                "example": {
+                  "payments": [
+                    {
+                      "id": "7d3b9e0a-5c1f-4a8e-9b2d-3f6a1c8e4d70",
+                      "edition": "standard",
+                      "amount_brl": 20.0,
+                      "payment_method": "pix",
+                      "status": "pending",
+                      "created_at": "2026-10-20T12:00:00Z"
+                    }
+                  ],
+                  "downloads": [
+                    {
+                      "payment_id": "7d3b9e0a-5c1f-4a8e-9b2d-3f6a1c8e4d70",
+                      "release_version": "1.0",
+                      "requested_at": "2026-10-20T13:00:00Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Criar pedido e sessão de checkout de teste",
+        "operationId": "criarPedido",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Cria o pedido com status pending e uma sessão Stripe Checkout em modo de teste. O preço é definido pelo servidor/banco; nenhum dado financeiro trafega por esta API.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentCreate"
+              },
+              "example": {
+                "edition": "standard",
+                "payment_method": "pix"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentCreated"
+                },
+                "example": {
+                  "id": "7d3b9e0a-5c1f-4a8e-9b2d-3f6a1c8e4d70",
+                  "edition": "standard",
+                  "amount_brl": 20.0,
+                  "payment_method": "pix",
+                  "status": "pending",
+                  "created_at": "2026-10-20T12:00:00Z",
+                  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_exemplo"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/downloads": {
+      "post": {
+        "tags": [
+          "Downloads"
+        ],
+        "summary": "Registrar solicitação de download de um pedido",
+        "operationId": "solicitarDownload",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Só é aceito para pedido do próprio usuário com pagamento confirmado (regra aplicada por RLS). Caso contrário retorna 403.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadCreate"
+              },
+              "example": {
+                "payment_id": "7d3b9e0a-5c1f-4a8e-9b2d-3f6a1c8e4d70"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Solicitação registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Download"
+                },
+                "example": {
+                  "payment_id": "7d3b9e0a-5c1f-4a8e-9b2d-3f6a1c8e4d70",
+                  "release_version": "1.0",
+                  "requested_at": "2026-10-20T13:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          }
+        }
+      }
+    },
+    "/api/account/delete": {
+      "post": {
+        "tags": [
+          "Conta"
+        ],
+        "summary": "Excluir a conta do usuário autenticado",
+        "operationId": "excluirConta",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Remove o usuário no Supabase Auth; perfil, pedidos e downloads são apagados em cascata. Ação irreversível.",
+        "responses": {
+          "200": {
+            "description": "Conta excluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted"
+                },
+                "example": {
+                  "deleted": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/updates": {
+      "get": {
+        "tags": [
+          "Atualizações"
+        ],
+        "summary": "Listar notas de atualização (READ)",
+        "operationId": "listarAtualizacoes",
+        "security": [
+          {},
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Leitura pública. Com token válido, is_admin indica se a sessão pertence a um administrador. Ordenação: release_date desc, created_at desc.",
+        "responses": {
+          "200": {
+            "description": "Lista de notas",
             "content": {
               "application/json": {
                 "schema": {
@@ -67,14 +579,17 @@
         }
       },
       "post": {
-        "tags": ["Atualizações"],
-        "summary": "Criar nota de atualização",
+        "tags": [
+          "Atualizações"
+        ],
+        "summary": "Criar nota de atualização (CREATE)",
         "operationId": "criarAtualizacao",
         "security": [
           {
-            "bearerAuth": []
+            "BearerAuth": []
           }
         ],
+        "description": "Somente administradores. Corpo limitado a 48 KiB.",
         "requestBody": {
           "required": true,
           "content": {
@@ -99,6 +614,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Update"
+                },
+                "example": {
+                  "id": "6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b",
+                  "title": "Novas áreas exploráveis",
+                  "version": "1.2.0",
+                  "release_date": "2026-10-20",
+                  "category": "Novidades",
+                  "description": "Adicionamos novas áreas ao jogo.",
+                  "created_at": "2026-10-20T12:00:00Z"
                 }
               }
             }
@@ -121,9 +645,17 @@
         }
       },
       "put": {
-        "tags": ["Atualizações"],
-        "summary": "Atualizar nota de atualização",
+        "tags": [
+          "Atualizações"
+        ],
+        "summary": "Atualizar nota de atualização (UPDATE)",
         "operationId": "atualizarAtualizacao",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Somente administradores. Substitui os campos editáveis da nota. Corpo limitado a 48 KiB.",
         "parameters": [
           {
             "name": "id",
@@ -134,11 +666,6 @@
               "type": "string",
               "format": "uuid"
             }
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -165,6 +692,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Update"
+                },
+                "example": {
+                  "id": "6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b",
+                  "title": "Novas áreas exploráveis",
+                  "version": "1.2.1",
+                  "release_date": "2026-10-21",
+                  "category": "Melhorias",
+                  "description": "Ajustes adicionais nas novas áreas.",
+                  "created_at": "2026-10-20T12:00:00Z"
                 }
               }
             }
@@ -190,9 +726,17 @@
         }
       },
       "delete": {
-        "tags": ["Atualizações"],
-        "summary": "Excluir nota de atualização",
+        "tags": [
+          "Atualizações"
+        ],
+        "summary": "Excluir nota de atualização (DELETE)",
         "operationId": "excluirAtualizacao",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Somente administradores. A API responde 200 com {\"deleted\": true} (não usa 204).",
         "parameters": [
           {
             "name": "id",
@@ -205,25 +749,16 @@
             }
           }
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Nota excluída",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": ["deleted"],
-                  "properties": {
-                    "deleted": {
-                      "type": "boolean",
-                      "example": true
-                    }
-                  }
+                  "$ref": "#/components/schemas/Deleted"
+                },
+                "example": {
+                  "deleted": true
                 }
               }
             }
@@ -249,17 +784,321 @@
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
+      "BearerAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Token de acesso emitido pelo Supabase Auth"
+        "description": "Token de acesso (access_token) emitido pelo Supabase Auth"
       }
     },
     "schemas": {
+      "Health": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          }
+        }
+      },
+      "PublicConfig": {
+        "type": "object",
+        "required": [
+          "supabaseUrl",
+          "supabasePublishableKey"
+        ],
+        "properties": {
+          "supabaseUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "supabasePublishableKey": {
+            "type": "string"
+          }
+        }
+      },
+      "CatarseReward": {
+        "type": "object",
+        "required": [
+          "name",
+          "value",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "CatarseCampaign": {
+        "type": "object",
+        "required": [
+          "slug",
+          "status",
+          "rewards"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "yokai-tales"
+          },
+          "status": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "rewards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatarseReward"
+            }
+          }
+        }
+      },
+      "WebhookAck": {
+        "type": "object",
+        "required": [
+          "received"
+        ],
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ProfileData": {
+        "type": "object",
+        "required": [
+          "user_name",
+          "user_foto",
+          "user_level"
+        ],
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "user_foto": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "user_level": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "standard",
+              "plus"
+            ]
+          }
+        }
+      },
+      "Profile": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProfileData"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "email"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          }
+        ]
+      },
+      "ProfileUpdate": {
+        "type": "object",
+        "required": [
+          "user_name"
+        ],
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "required": [
+          "id",
+          "edition",
+          "amount_brl",
+          "payment_method",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "edition": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "plus"
+            ]
+          },
+          "amount_brl": {
+            "type": "number",
+            "description": "20.00 (standard) ou 40.00 (plus)"
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "boleto",
+              "credito",
+              "debito",
+              "pix"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "expired"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentCreate": {
+        "type": "object",
+        "required": [
+          "edition",
+          "payment_method"
+        ],
+        "properties": {
+          "edition": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "plus"
+            ]
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "boleto",
+              "credito",
+              "debito",
+              "pix"
+            ]
+          }
+        }
+      },
+      "PaymentCreated": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Payment"
+          },
+          {
+            "type": "object",
+            "required": [
+              "checkout_url"
+            ],
+            "properties": {
+              "checkout_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL https://checkout.stripe.com/… para concluir o pagamento de teste"
+              }
+            }
+          }
+        ]
+      },
+      "Download": {
+        "type": "object",
+        "required": [
+          "payment_id",
+          "release_version",
+          "requested_at"
+        ],
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "release_version": {
+            "type": "string"
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DownloadCreate": {
+        "type": "object",
+        "required": [
+          "payment_id"
+        ],
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PaymentList": {
+        "type": "object",
+        "required": [
+          "payments",
+          "downloads"
+        ],
+        "properties": {
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Payment"
+            }
+          },
+          "downloads": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Download"
+            }
+          }
+        }
+      },
       "UpdateInput": {
         "type": "object",
-        "required": ["title", "version", "release_date", "description"],
+        "required": [
+          "title",
+          "version",
+          "release_date",
+          "description"
+        ],
         "properties": {
           "title": {
             "type": "string",
@@ -278,7 +1117,15 @@
           "category": {
             "type": "string",
             "nullable": true,
-            "enum": ["Novidades", "Melhorias", "Correções de bugs", "Balanceamento", "Eventos", "Outros"]
+            "enum": [
+              "Novidades",
+              "Melhorias",
+              "Correções de bugs",
+              "Balanceamento",
+              "Eventos",
+              "Outros",
+              null
+            ]
           },
           "description": {
             "type": "string",
@@ -294,7 +1141,10 @@
           },
           {
             "type": "object",
-            "required": ["id", "created_at"],
+            "required": [
+              "id",
+              "created_at"
+            ],
             "properties": {
               "id": {
                 "type": "string",
@@ -310,7 +1160,10 @@
       },
       "UpdateList": {
         "type": "object",
-        "required": ["updates", "is_admin"],
+        "required": [
+          "updates",
+          "is_admin"
+        ],
         "properties": {
           "updates": {
             "type": "array",
@@ -323,14 +1176,36 @@
           }
         }
       },
+      "Deleted": {
+        "type": "object",
+        "required": [
+          "deleted"
+        ],
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
       "Error": {
         "type": "object",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
             "type": "string"
           },
           "code": {
+            "type": "string",
+            "description": "Código técnico (ex.: missing_bearer_token, session_expired)"
+          },
+          "authStatus": {
+            "type": "integer",
+            "nullable": true
+          },
+          "tokenDiagnostic": {
             "type": "string"
           }
         }
@@ -338,61 +1213,106 @@
     },
     "responses": {
       "BadRequest": {
-        "description": "JSON inválido ou campos fora dos limites e valores permitidos",
+        "description": "JSON inválido ou campos fora das regras de validação",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "O título deve ter entre 1 e 160 caracteres."
             }
           }
         }
       },
       "Unauthorized": {
-        "description": "Token ausente ou sessão inválida",
+        "description": "Token ausente, expirado ou sessão inválida",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Autenticação necessária.",
+              "code": "missing_bearer_token"
             }
           }
         }
       },
       "Forbidden": {
-        "description": "Origem não autorizada ou usuário sem permissão administrativa",
+        "description": "Origem não autorizada, usuário sem permissão ou operação negada pelo banco (RLS)",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Somente administradores podem gerenciar atualizações."
             }
           }
         }
       },
       "NotFound": {
-        "description": "Nota não encontrada",
+        "description": "Registro não encontrado",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Atualização não encontrada."
             }
           }
         }
       },
       "PayloadTooLarge": {
-        "description": "O corpo da solicitação excede 48 KiB",
+        "description": "Corpo da requisição acima do limite (4 KiB; 48 KiB em /api/updates; 1 MiB no webhook)",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "A solicitação excede o tamanho permitido."
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Falha em serviço externo (Stripe ou Catarse)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Não foi possível consultar a campanha no Catarse."
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Erro interno inesperado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Não foi possível processar a solicitação."
             }
           }
         }
       },
       "ServiceUnavailable": {
-        "description": "Não foi possível acessar ou alterar as notas no Supabase",
+        "description": "Banco de dados ou serviço não configurado/indisponível",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Não foi possível processar a atualização."
             }
           }
         }

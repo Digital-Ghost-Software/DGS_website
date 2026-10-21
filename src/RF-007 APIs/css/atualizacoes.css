@@ -1,0 +1,251 @@
+/* Layout e título seguem a paleta escura e laranja usada no restante do site. */
+.updates-page {
+    width: min(100% - 40px, 900px);
+    margin: 0 auto;
+    padding: 72px 0 96px;
+}
+
+.updates-heading {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.updates-heading .orange-text {
+    color: #ff6600;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.updates-heading h1 {
+    margin: 8px 0 12px;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.15;
+}
+
+.updates-heading h1 span {
+    color: #ff6600;
+}
+
+.updates-heading > p:last-child,
+.updates-management > div > p,
+.updates-message {
+    color: #b8b8b8;
+}
+
+/* Painéis, formulário e notas usam o mesmo acabamento escuro dos cards do site. */
+.updates-management,
+.updates-compose,
+.update-card {
+    padding: 24px;
+    border: 1px solid #333;
+    border-radius: 10px;
+    background: #111;
+}
+
+.updates-management {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.updates-management h2,
+.updates-compose h2,
+.updates-list-section > h2 {
+    margin-bottom: 8px;
+    font-size: 1.4rem;
+}
+
+.updates-compose {
+    margin-top: 20px;
+}
+
+/* Formulário em duas colunas; a descrição ocupa a largura completa. */
+.updates-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.updates-form-grid label {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    font-weight: 700;
+}
+
+.updates-form-grid label span {
+    color: #aaa;
+    font-size: 0.9em;
+    font-weight: 400;
+}
+
+.updates-form-grid input,
+.updates-form-grid select,
+.updates-form-grid textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #080808;
+    color: #fff;
+    font: inherit;
+}
+
+.updates-form-grid textarea {
+    min-height: 160px;
+    resize: vertical;
+}
+
+.updates-form-grid input:focus,
+.updates-form-grid select:focus,
+.updates-form-grid textarea:focus {
+    border-color: #ff6600;
+    outline: 2px solid #ff6600;
+    outline-offset: 2px;
+}
+
+.updates-description-field {
+    grid-column: 1 / -1;
+}
+
+.updates-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.updates-form-actions button {
+    font: inherit;
+}
+
+/* Mensagens de estado ficam escondidas quando vazias. */
+.updates-message:empty {
+    display: none;
+}
+
+.updates-message[data-state="error"] {
+    color: #ff9a9a;
+}
+
+.updates-message[data-state="success"] {
+    color: #9be2aa;
+}
+
+/* Lista e metadados das notas recuperadas do banco. */
+.updates-list-section {
+    margin-top: 48px;
+}
+
+.updates-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.update-card header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.update-card h3 {
+    font-size: 1.25rem;
+}
+
+.update-card time,
+.update-version {
+    color: #aaa;
+    font-size: 0.95rem;
+}
+
+.update-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0 16px;
+}
+
+.update-category {
+    padding: 3px 10px;
+    border: 1px solid #713400;
+    border-radius: 999px;
+    color: #ff9b55;
+    font-size: 0.85rem;
+}
+
+.update-description {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.update-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.update-edit-button,
+.update-delete-button {
+    padding: 8px 12px;
+    border: 1px solid #666;
+    border-radius: 5px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    transition: 0.3s;
+}
+
+.update-edit-button:hover:not(:disabled),
+.update-delete-button:hover:not(:disabled) {
+    border-color: #ff6600;
+    color: #ff9b55;
+}
+
+.update-edit-button:disabled,
+.update-delete-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+/* Garante que elementos hidden não sejam exibidos por estilos flex/grid. */
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    /* Em telas estreitas, os painéis e campos passam a uma coluna. */
+    .updates-page {
+        width: min(100% - 28px, 900px);
+        padding: 48px 0 64px;
+    }
+
+    .updates-management,
+    .updates-compose,
+    .update-card {
+        padding: 18px;
+    }
+
+    .updates-management,
+    .update-card header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .updates-management .btn-primary,
+    .updates-form-actions button {
+        width: 100%;
+        text-align: center;
+    }
+
+    .updates-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
