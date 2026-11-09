@@ -7,7 +7,7 @@
 | Campo | Valor |
 | --- | --- |
 | ID | RF-007 |
-| Título | Registrar, expor e documentar as APIs do site Yokai Tales (CRUD das notas de atualização + rotas de apoio) |
+| Título | Registrar, expor e documentar as APIs do site Yokai Tales (CRUD de atualizações e cards de outros jogos + rotas de apoio) |
 | Tipo | Requisito funcional |
 | Prioridade | Alta — a documentação OpenAPI é obrigatória na entrega do Tópico 4 |
 | Complexidade | Média (5 story points) |
@@ -53,10 +53,12 @@ DGS_website/
 │   ├── index.js                     # roteador principal e rotas de apoio
 │   ├── local.js                     # servidor HTTP de desenvolvimento
 │   └── routes/updates.js            # CRUD /api/updates
+│       games.js                     # CRUD /api/games e upload de imagens
 ├── database/ddl/
 │   ├── new-project-schema.sql       # profiles, admin, simulated_payments, game_downloads
 │   ├── feedback-comments.sql        # cria public.is_feedback_admin()
-│   └── supabase_atualizacoes.sql    # tabela public.game_updates (DDL do CRUD)
+│   ├── supabase_atualizacoes.sql    # tabela public.game_updates (DDL do CRUD)
+│   └── supabase_outros_jogos.sql    # tabela public.other_games e bucket de imagens
 ├── Docs/
 │   ├── RF-007-APIs.md               # ESTE ARQUIVO
 │   └── api/
@@ -70,7 +72,7 @@ DGS_website/
 
 ### 2.1 Descrição
 
-O servidor Node.js (`server/index.js`) registra um conjunto de rotas sob `/api`. O **CRUD completo** do requisito é o recurso **notas de atualização** (`/api/updates`), que alimenta a página de novidades do jogo: qualquer visitante lê; somente administradores criam, editam e excluem. As demais rotas dão suporte a perfil, pedidos de teste, downloads, conta, integração com o Catarse e configuração pública.
+O servidor Node.js (`server/index.js`) registra um conjunto de rotas sob `/api`. Os recursos com CRUD neste requisito são **notas de atualização** (`/api/updates`) e **outros jogos da equipe** (`/api/games`): qualquer visitante lê; somente administradores criam, editam e excluem. O upload das imagens é feito por `POST /api/games/image`, com validação do arquivo e políticas administrativas no Supabase Storage. As demais rotas dão suporte a perfil, pedidos de teste, downloads, conta, integração com o Catarse e configuração pública.
 
 O arquivo `Docs/api/swagger.json` descreve **todas** as rotas registradas, com método, parâmetros, corpo, códigos de resposta, segurança `BearerAuth` e exemplos.
 
@@ -158,6 +160,18 @@ Observações de contrato:
 - `DELETE` responde **`200` com `{"deleted": true}`** (a API não usa `204`); o Swagger reflete esse comportamento.
 - Não há rota de detalhe `GET /api/updates/{id}`; a leitura é pela listagem.
 - Autenticação: cabeçalho `Authorization: Bearer <access_token>` emitido pelo Supabase Auth, validado por `authClient.auth.getUser`.
+
+### Rotas de `/api/games`
+
+| Método | Rota | Acesso | Função | Sucesso |
+| --- | --- | --- | --- | --- |
+| GET | `/api/games` | Público; token opcional para consultar `is_admin` | Listar cards e URLs públicas das imagens | 200 |
+| POST | `/api/games/image` | Administrador | Receber `{ "content_type": "image/png", "image_data": "<base64>" }`; aceita PNG, JPEG ou WebP até 3 MiB | 201 |
+| POST | `/api/games` | Administrador | Criar card com `name`, `url` e `image_path` retornado pelo upload | 201 |
+| PUT | `/api/games?id=<uuid>` | Administrador | Editar card; uma nova imagem é opcional | 200 |
+| DELETE | `/api/games?id=<uuid>` | Administrador | Excluir card e imagem | 200 |
+
+O banco e o bucket de imagens são configurados por `database/ddl/supabase_outros_jogos.sql`, após `database/ddl/feedback-comments.sql`. O bucket `other-games` é público para leitura; envio e remoção exigem administrador.
 
 ## 5. Exemplos de uso (cURL)
 
@@ -249,7 +263,7 @@ Navegador ──HTTPS──► Vercel (site estático + api/[...path].js)
 
 ## 9. Documentação da API (OpenAPI)
 
-- **Arquivo:** `Docs/api/swagger.json` — OpenAPI **3.0.3**, 14 operações, 7 tags, esquema de segurança `BearerAuth` (HTTP bearer, JWT).
+- **Arquivo:** `Docs/api/swagger.json` — OpenAPI **3.0.3**, 19 operações, 8 tags, esquema de segurança `BearerAuth` (HTTP bearer, JWT).
 - **Servidores:** aplicação publicada na Vercel e mesma origem (`/`).
 - **Cada operação** traz `summary`, `operationId` único, `requestBody` quando há corpo, `responses` com exemplos e `security` (`[]` nas rotas públicas; `BearerAuth` nas protegidas; `GET /api/updates` aceita anônimo ou Bearer).
 - **Componentes reutilizáveis:** 19 esquemas e 8 respostas de erro (`BadRequest`, `Unauthorized`, `Forbidden`, `NotFound`, `PayloadTooLarge`, `BadGateway`, `InternalError`, `ServiceUnavailable`).

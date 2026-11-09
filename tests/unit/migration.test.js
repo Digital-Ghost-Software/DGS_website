@@ -15,6 +15,8 @@ const feedbackMigrationPath = path.join(process.cwd(), "database", "ddl", "feedb
 const feedbackMigration = (await readFile(feedbackMigrationPath, "utf8")).toLowerCase();
 const gameUpdatesMigrationPath = path.join(process.cwd(), "database", "ddl", "supabase_atualizacoes.sql");
 const gameUpdatesMigration = (await readFile(gameUpdatesMigrationPath, "utf8")).toLowerCase();
+const otherGamesMigrationPath = path.join(process.cwd(), "database", "ddl", "supabase_outros_jogos.sql");
+const otherGamesMigration = (await readFile(otherGamesMigrationPath, "utf8")).toLowerCase();
 
 test("RF-004 migration defines payment and download records with database constraints", () => {
     assert.match(sql, /create table if not exists public\.simulated_payments/);
@@ -146,4 +148,21 @@ test("game updates migration uses the existing admin verifier and protects mutat
     assert.match(gameUpdatesMigration, /grant delete on table public\.game_updates to authenticated/);
     assert.doesNotMatch(gameUpdatesMigration, /grant\s+(?:all|update)[^;]*to anon/);
     assert.doesNotMatch(gameUpdatesMigration, /\b(?:drop\s+table|truncate\s+table|delete\s+from)\b/);
+});
+
+test("other games migration restricts card mutations and image storage to administrators", () => {
+    assert.match(otherGamesMigration, /to_regprocedure\('public\.is_feedback_admin\(\)'\)/);
+    assert.match(otherGamesMigration, /create table if not exists public\.other_games/);
+    assert.match(otherGamesMigration, /name text not null check/);
+    assert.match(otherGamesMigration, /url text not null check/);
+    assert.match(otherGamesMigration, /image_path text not null check/);
+    assert.match(otherGamesMigration, /alter table public\.other_games enable row level security/);
+    assert.match(otherGamesMigration, /for select to anon, authenticated\s+using \(true\)/);
+    assert.match(otherGamesMigration, /for insert to authenticated\s+with check \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(otherGamesMigration, /for update to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(otherGamesMigration, /for delete to authenticated\s+using \(\(select public\.is_feedback_admin\(\)\)\)/);
+    assert.match(otherGamesMigration, /values \('other-games', 'other-games', true, 3145728/);
+    assert.match(otherGamesMigration, /for insert to authenticated[\s\S]*bucket_id = 'other-games'[\s\S]*public\.is_feedback_admin\(\)/);
+    assert.match(otherGamesMigration, /for delete to authenticated[\s\S]*bucket_id = 'other-games'[\s\S]*public\.is_feedback_admin\(\)/);
+    assert.doesNotMatch(otherGamesMigration, /\b(?:drop\s+table|truncate\s+table|delete\s+from)\b/);
 });

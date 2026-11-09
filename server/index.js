@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { paymentMethods, purchasePlans } from "../js/purchase-rules.js";
 import { createUpdatesHandler } from "./routes/updates.js";
+import { createGamesHandler } from "./routes/games.js";
 
 try {
     process.loadEnvFile();
@@ -142,6 +143,7 @@ export function createHandler(overrides = {}) {
     const webhookSecret = overrides.webhookSecret ?? stripeWebhookSecret;
     const checkoutBaseUrl = getCheckoutBaseUrl(overrides.publicAppUrl ?? publicAppUrl);
     const updatesHandler = createUpdatesHandler({ authenticate, publicClient: authClient, readJson, sendJson });
+    const gamesHandler = createGamesHandler({ authenticate, publicClient: authClient, readJson, sendJson });
 
     return async function handler(request, response) {
     const origin = request.headers.origin;
@@ -176,6 +178,18 @@ export function createHandler(overrides = {}) {
         } catch (error) {
             const status = Number.isInteger(error.status) ? error.status : 500;
             if (status === 500) console.error("Updates API request failed", error);
+            sendJson(response, status, {
+                error: status === 500 ? "Não foi possível processar a solicitação." : error.message
+            }, origin);
+        }
+        return;
+    }
+    if (path === "/api/games" || path.startsWith("/api/games/")) {
+        try {
+            await gamesHandler(request, response, origin);
+        } catch (error) {
+            const status = Number.isInteger(error.status) ? error.status : 500;
+            if (status === 500) console.error("Other games API request failed", error);
             sendJson(response, status, {
                 error: status === 500 ? "Não foi possível processar a solicitação." : error.message
             }, origin);

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Conheça outros jogos feitos pela equipe Digital Ghost.">
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/outros-jogos.css">
+    <title>Outros Jogos | Digital Ghost</title>
+</head>
+<body>
+    <header class="navbar">
+        <a href="../index.html" class="logo">DIGITAL <span>GHOST</span></a>
+        <nav aria-label="Navegação principal">
+            <a href="../index.html">Início</a>
+            <a href="tales.html">Yokai Tales</a>
+            <a href="outros_jogos.html" class="active" aria-current="page">Outros Jogos</a>
+            <a href="download.html">Comprar</a>
+            <a href="atualizacoes.html">Atualizações</a>
+            <a href="feedback.html">Feedback</a>
+            <a href="doacoes.html">Doações</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="cadastro.html">Cadastro</a>
+            <a href="login.html" class="btn-login">Entrar</a>
+            <button type="button" id="logoutButton" class="btn-logout" hidden>Sair</button>
+        </nav>
+    </header>
+
+    <main class="other-games-page">
+        <section class="other-games-heading" aria-labelledby="gamesTitle">
+            <h1 id="gamesTitle">OUTROS <span>JOGOS</span></h1>
+            <p>Conheça outros jogos feitos pela equipe Digital Ghost.</p>
+        </section>
+
+        <p id="gamesAdminMessage" class="games-message" aria-live="polite" role="status" hidden></p>
+        <section class="games-management" aria-label="Gerenciamento de outros jogos" hidden>
+            <div>
+                <h2>Gerenciar jogos</h2>
+                <p>Esta área está disponível somente para administradores.</p>
+            </div>
+            <button id="newGameButton" class="btn-primary" type="button">Adicionar jogo</button>
+        </section>
+
+        <section class="games-compose" aria-labelledby="gameFormTitle" hidden>
+            <h2 id="gameFormTitle">Adicionar jogo</h2>
+            <form id="gameForm">
+                <div class="games-form-grid">
+                    <label>Nome do jogo
+                        <input name="name" type="text" maxlength="120" required>
+                    </label>
+                    <label>Link de acesso do jogo
+                        <input name="url" type="url" maxlength="2048" placeholder="https://..." required>
+                    </label>
+                    <label class="game-image-field">Imagem do jogo
+                        <input name="image" type="file" accept="image/png,image/jpeg,image/webp">
+                        <span>PNG, JPEG ou WebP, até 3 MiB. Ao editar, selecione um arquivo somente se quiser trocar a imagem.</span>
+                    </label>
+                    <img id="gameImagePreview" class="game-image-preview" alt="Prévia da imagem do jogo" hidden>
+                </div>
+                <p id="gameFormMessage" class="games-message" aria-live="polite" role="status"></p>
+                <div class="games-form-actions">
+                    <button class="btn-primary" type="submit">Salvar jogo</button>
+                    <button id="cancelGameButton" class="btn-secondary" type="button">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="games-list-section" aria-labelledby="gamesListTitle">
+            <h2 id="gamesListTitle">Jogos da equipe</h2>
+            <p id="gamesListMessage" class="games-message" aria-live="polite" role="status">Carregando jogos...</p>
+            <div id="gamesList" class="games-list" aria-busy="true"></div>
+        </section>
+    </main>
+
+    <footer>
+        <h3>DIGITAL <span>GHOST</span></h3>
+        <p>Projeto acadêmico desenvolvido para fins educacionais.</p>
+        <p class="copyright">© 2026 Digital Ghost Software</p>
+    </footer>
+
+    <script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/outros-jogos.js"></script>
+</body>
+</html>
