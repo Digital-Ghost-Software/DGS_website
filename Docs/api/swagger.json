@@ -575,27 +575,48 @@
       },
       "post": {
         "tags": ["Outros jogos"],
-        "summary": "Criar card de jogo (CREATE)",
+        "summary": "Criar card de jogo ou enviar imagem",
         "operationId": "criarOutroJogo",
         "security": [{"BearerAuth": []}],
+        "description": "Para criar um card, omita action e envie name, url e image_path. Para upload, use ?action=upload-image e envie content_type e image_data em base64.",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "string", "enum": ["upload-image"]}
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["name", "url", "image_path"],
-                "properties": {
-                  "name": {"type": "string", "minLength": 1, "maxLength": 120},
-                  "url": {"type": "string", "format": "uri", "maxLength": 2048},
-                  "image_path": {"type": "string"}
-                }
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": ["name", "url", "image_path"],
+                    "properties": {
+                      "name": {"type": "string", "minLength": 1, "maxLength": 120},
+                      "url": {"type": "string", "format": "uri", "maxLength": 2048},
+                      "image_path": {"type": "string"}
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["content_type", "image_data"],
+                    "properties": {
+                      "content_type": {"type": "string", "enum": ["image/png", "image/jpeg", "image/webp"]},
+                      "image_data": {"type": "string", "format": "byte"}
+                    }
+                  }
+                ]
               }
             }
           }
         },
         "responses": {
-          "201": {"description": "Card criado com a URL pública da imagem"},
+          "201": {"description": "Card criado ou imagem armazenada (ao usar action=upload-image)"},
           "400": {"$ref": "#/components/responses/BadRequest"},
           "401": {"$ref": "#/components/responses/Unauthorized"},
           "403": {"$ref": "#/components/responses/Forbidden"},
@@ -654,41 +675,6 @@
           "401": {"$ref": "#/components/responses/Unauthorized"},
           "403": {"$ref": "#/components/responses/Forbidden"},
           "404": {"$ref": "#/components/responses/NotFound"},
-          "503": {"$ref": "#/components/responses/ServiceUnavailable"}
-        }
-      }
-    },
-    "/api/games/image": {
-      "post": {
-        "tags": ["Outros jogos"],
-        "summary": "Enviar imagem de jogo",
-        "operationId": "enviarImagemOutroJogo",
-        "security": [{"BearerAuth": []}],
-        "description": "Somente administradores. PNG, JPEG ou WebP, até 3 MiB. Envie o conteúdo em base64 e use o image_path retornado ao criar ou editar o card.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["content_type", "image_data"],
-                "properties": {
-                  "content_type": {"type": "string", "enum": ["image/png", "image/jpeg", "image/webp"]},
-                  "image_data": {"type": "string", "format": "byte"}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Imagem armazenada",
-            "content": {"application/json": {"example": {"image_path": "uuid/uuid.png"}}}
-          },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "413": {"$ref": "#/components/responses/PayloadTooLarge"},
           "503": {"$ref": "#/components/responses/ServiceUnavailable"}
         }
       }

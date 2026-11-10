@@ -104,7 +104,8 @@ export function createGamesHandler({ authenticate, publicClient, readJson, sendJ
         const basePath = "/api/games";
         const method = request.method;
 
-        if (path === `${basePath}/image` && method === "POST") {
+        if (path === basePath && method === "POST"
+            && requestUrl.searchParams.get("action") === "upload-image") {
             const auth = await authenticate(request);
             if (auth.error) {
                 sendJson(response, auth.status, { error: auth.error, code: auth.code }, origin);

@@ -203,7 +203,7 @@ async function initializeGames() {
             let imagePath = editingImagePath;
             if (imageFile) {
                 const imageData = await getImageData(imageFile);
-                const uploaded = await requestGames("/api/games/image", {
+                const uploaded = await requestGames("/api/games?action=upload-image", {
                     method: "POST",
                     token,
                     payload: { content_type: imageFile.type, image_data: imageData }

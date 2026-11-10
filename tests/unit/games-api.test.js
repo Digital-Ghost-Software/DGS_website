@@ -166,7 +166,7 @@ test("image upload validates the file signature and stores it in the public buck
     const { handler, capture } = setup();
     const response = {};
 
-    await handler(request("POST", "/api/games/image", {
+    await handler(request("POST", "/api/games?action=upload-image", {
         content_type: "image/png",
         image_data: png.toString("base64")
     }), response);
@@ -181,7 +181,7 @@ test("image upload rejects content that does not match its declared type", async
     const { handler, capture } = setup();
     const response = {};
 
-    await handler(request("POST", "/api/games/image", {
+    await handler(request("POST", "/api/games?action=upload-image", {
         content_type: "image/png",
         image_data: Buffer.from("not an image").toString("base64")
     }), response);

@@ -72,7 +72,7 @@ DGS_website/
 
 ### 2.1 Descrição
 
-O servidor Node.js (`server/index.js`) registra um conjunto de rotas sob `/api`. Os recursos com CRUD neste requisito são **notas de atualização** (`/api/updates`) e **outros jogos da equipe** (`/api/games`): qualquer visitante lê; somente administradores criam, editam e excluem. O upload das imagens é feito por `POST /api/games/image`, com validação do arquivo e políticas administrativas no Supabase Storage. As demais rotas dão suporte a perfil, pedidos de teste, downloads, conta, integração com o Catarse e configuração pública.
+O servidor Node.js (`server/index.js`) registra um conjunto de rotas sob `/api`. Os recursos com CRUD neste requisito são **notas de atualização** (`/api/updates`) e **outros jogos da equipe** (`/api/games`): qualquer visitante lê; somente administradores criam, editam e excluem. O upload das imagens é feito por `POST /api/games?action=upload-image`, com validação do arquivo e políticas administrativas no Supabase Storage.
 
 O arquivo `Docs/api/swagger.json` descreve **todas** as rotas registradas, com método, parâmetros, corpo, códigos de resposta, segurança `BearerAuth` e exemplos.
 
@@ -166,7 +166,7 @@ Observações de contrato:
 | Método | Rota | Acesso | Função | Sucesso |
 | --- | --- | --- | --- | --- |
 | GET | `/api/games` | Público; token opcional para consultar `is_admin` | Listar cards e URLs públicas das imagens | 200 |
-| POST | `/api/games/image` | Administrador | Receber `{ "content_type": "image/png", "image_data": "<base64>" }`; aceita PNG, JPEG ou WebP até 3 MiB | 201 |
+| POST | `/api/games?action=upload-image` | Administrador | Receber `{ "content_type": "image/png", "image_data": "<base64>" }`; aceita PNG, JPEG ou WebP até 3 MiB | 201 |
 | POST | `/api/games` | Administrador | Criar card com `name`, `url` e `image_path` retornado pelo upload | 201 |
 | PUT | `/api/games?id=<uuid>` | Administrador | Editar card; uma nova imagem é opcional | 200 |
 | DELETE | `/api/games?id=<uuid>` | Administrador | Excluir card e imagem | 200 |
@@ -263,7 +263,7 @@ Navegador ──HTTPS──► Vercel (site estático + api/[...path].js)
 
 ## 9. Documentação da API (OpenAPI)
 
-- **Arquivo:** `Docs/api/swagger.json` — OpenAPI **3.0.3**, 19 operações, 8 tags, esquema de segurança `BearerAuth` (HTTP bearer, JWT).
+- **Arquivo:** `Docs/api/swagger.json` — OpenAPI **3.0.3**, 18 operações, 8 tags, esquema de segurança `BearerAuth` (HTTP bearer, JWT). O POST de `/api/games` também recebe o upload via `?action=upload-image`.
 - **Servidores:** aplicação publicada na Vercel e mesma origem (`/`).
 - **Cada operação** traz `summary`, `operationId` único, `requestBody` quando há corpo, `responses` com exemplos e `security` (`[]` nas rotas públicas; `BearerAuth` nas protegidas; `GET /api/updates` aceita anônimo ou Bearer).
 - **Componentes reutilizáveis:** 19 esquemas e 8 respostas de erro (`BadRequest`, `Unauthorized`, `Forbidden`, `NotFound`, `PayloadTooLarge`, `BadGateway`, `InternalError`, `ServiceUnavailable`).
