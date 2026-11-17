@@ -11,8 +11,8 @@
 | Tipo | Requisito funcional |
 | Prioridade | Alta — a documentação OpenAPI é obrigatória na entrega do Tópico 4 |
 | Complexidade | Média (5 story points) |
-| Status | Rotas implementadas e documentadas; validação final no deploy publicado pendente (ver seção 10) |
-| Atualização | 20/10/2026 |
+| Status | Implementado e validado por testes unitários; validação visual final no deploy publicado pendente (ver seção 10) |
+| Atualização | 17/11/2026 |
 | Projeto | Digital Ghost Software — Yokai Tales |
 | Contrato OpenAPI | [Docs/api/swagger.json](api/swagger.json) (principal) e [Docs/api/openapi.yaml](api/openapi.yaml) (contrato anterior do RF-004) |
 
@@ -76,6 +76,10 @@ O servidor Node.js (`server/index.js`) registra um conjunto de rotas sob `/api`.
 
 O arquivo `Docs/api/swagger.json` descreve **todas** as rotas registradas, com método, parâmetros, corpo, códigos de resposta, segurança `BearerAuth` e exemplos.
 
+Os principais benefícios são centralizar a manutenção das atualizações e dos demais jogos em uma interface administrativa, disponibilizar dados padronizados ao frontend e permitir a evolução das integrações com um contrato OpenAPI versionado. A API reduz dependência direta de serviços externos no navegador e aplica autenticação e validação antes da persistência.
+
+Os testes unitários cobrem leitura pública, identificação administrativa, criação, atualização, exclusão e rejeição de dados inválidos. A implementação combina validação no servidor, RLS no Supabase e respostas em português.
+
 ### 2.2 Atores e permissões no CRUD de `/api/updates`
 
 | Ator | Papel | CREATE | READ | UPDATE | DELETE |
@@ -93,11 +97,14 @@ O arquivo `Docs/api/swagger.json` descreve **todas** as rotas registradas, com m
 
 **Fluxo principal**
 
-1. A página carrega e chama `GET /api/updates`; a lista é exibida ordenada da mais recente para a mais antiga.
-2. O administrador autenticado (`is_admin: true`) vê os controles de edição.
-3. **Criar:** envia `POST /api/updates` com título, versão, data, categoria e descrição → `201` e a nota aparece na lista.
-4. **Editar:** envia `PUT /api/updates?id=<uuid>` com os campos alterados → `200` com a nota atualizada.
-5. **Excluir:** confirma na interface e envia `DELETE /api/updates?id=<uuid>` → `200 {"deleted": true}`.
+1. A página carrega e chama `GET /api/updates`; a lista é exibida por data de lançamento e criação decrescentes.
+2. O sistema mostra o estado de carregamento com `aria-busy=true`.
+3. O administrador autenticado (`is_admin: true`) vê os controles de edição.
+4. **Criar:** abre o formulário, valida os campos visualmente e envia `POST /api/updates` → `201`.
+5. A API valida tamanho, data e categoria antes de persistir a nota.
+6. **Editar:** envia `PUT /api/updates?id=<uuid>` com os campos alterados → `200`.
+7. **Excluir:** confirma na interface e envia `DELETE /api/updates?id=<uuid>` → `200 {"deleted": true}`.
+8. A interface atualiza a lista e apresenta mensagem de sucesso ou erro em português.
 
 **Fluxos alternativos e de exceção**
 
@@ -112,6 +119,8 @@ O arquivo `Docs/api/swagger.json` descreve **todas** as rotas registradas, com m
 | Tabela ausente ou falha do Supabase | `503` |
 
 **Pós-condição (sucesso):** o registro é criado, alterado ou removido em `public.game_updates` e a alteração persiste após recarregar a página.
+
+**Pós-condição (falha):** nenhum registro é criado, alterado ou removido por dados inválidos ou falta de autorização. O formulário permanece disponível, os campos problemáticos recebem estado inválido e a interface mostra a causa em português.
 
 ### Regras de negócio (validadas em `server/routes/updates.js` e reforçadas por `CHECK` no banco)
 
@@ -133,6 +142,9 @@ O arquivo `Docs/api/swagger.json` descreve **todas** as rotas registradas, com m
 - Limites de corpo: 4 KiB (rotas comuns), 48 KiB (`/api/updates`), 1 MiB (webhook Stripe).
 - Mensagens de erro ao usuário em português; erros internos não expõem detalhes (`500` genérico).
 - Segredos (`SUPABASE_SECRET_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) existem apenas no ambiente do servidor.
+- Interface responsiva com uma coluna em larguras pequenas.
+- Estados de carregamento, vazio, preenchido, erro e sucesso presentes na página.
+- Campos possuem bordas verde/vermelha, `aria-invalid`, mensagens `✓/✗` e texto em português.
 
 ## 4. Inventário das APIs cadastradas
 
@@ -251,15 +263,32 @@ Navegador ──HTTPS──► Vercel (site estático + api/[...path].js)
 - **Padrão:** handler HTTP único compartilhado entre Vercel e execução local; autorização delegada ao banco (RLS) com o JWT do próprio usuário.
 - **Tecnologias:** HTML/CSS/JavaScript (front-end), Node.js 22 (back-end), Supabase PostgreSQL (banco online), Stripe Checkout em modo de teste, Vercel (hospedagem).
 
+### ADR-001 — Handler único entre Vercel e desenvolvimento local
+
+O mesmo roteador Node.js atende a função serverless e a execução local. Isso evita dois conjuntos de regras e mantém os testes próximos do código publicado.
+
+### ADR-002 — Supabase Auth e RLS
+
+O JWT identifica o usuário e o banco aplica a verificação administrativa por RLS. A decisão impede confiar em um papel enviado pelo navegador.
+
+### ADR-003 — OpenAPI 3.0.3 centralizado
+
+O contrato `swagger.json` documenta métodos, parâmetros, segurança e respostas em um único arquivo. Isso permite validar a API independentemente da implementação.
+
+### ADR-004 — Upload separado da criação de card
+
+`POST /api/games?action=upload-image` recebe a imagem antes do registro. O servidor valida assinatura e tamanho; o segundo POST grava o card com o `image_path` retornado.
+
 ## 8. Segurança (OWASP)
 
 | Risco | Controle implementado |
 | --- | --- |
-| A01 Broken Access Control | Escrita em `game_updates` só passa pela política RLS que consulta `is_feedback_admin()`; a API não confia em papel enviado pelo cliente. Pedidos e downloads são isolados por usuário. |
-| A03 Injection | Acesso ao banco pelo cliente Supabase (consultas parametrizadas); validação de tipo, tamanho, data e enum antes de gravar; `id` validado por regex UUID. |
-| A05 Security Misconfiguration | CORS por lista de origens; `.gitignore` bloqueia `.env`; chaves secretas somente no servidor. |
+| A01 Broken Access Control | Usuário comum poderia alterar dados. Escrita em `game_updates` exige RLS com `is_feedback_admin()`. Teste: conta comum recebe 403 e nenhuma operação é gravada. |
+| A03 Injection | Dados maliciosos poderiam alterar consultas. Supabase usa consultas parametrizadas, o servidor valida campos e a interface usa `textContent`. Teste: SQL/HTML são texto e entradas inválidas recebem 400. |
+| A05 Security Misconfiguration | Origem ou chave não autorizada poderia acessar recursos. CORS usa lista de origens, `.env` fica fora do Git e segredos ficam no servidor. Teste: Origin não permitida recebe 403 e nenhum `.env` é versionado. |
 | A07 Identification and Authentication Failures | Token Bearer verificado a cada requisição; diagnóstico de falha (`code`) sem expor o token. |
-| A08 Software and Data Integrity | Webhook Stripe valida a assinatura sobre o corpo bruto antes de alterar pedidos. |
+| A07 Identification and Authentication Failures | Operação poderia ser aceita sem sessão válida. Bearer token é validado em cada operação escrita. Teste unitário: POST, PUT e DELETE sem token não executam operação. |
+| A08 Software and Data Integrity | Evento falsificado poderia alterar pedidos. O webhook valida a assinatura Stripe sobre o corpo bruto. Teste de integração: assinatura inválida é rejeitada. |
 
 ## 9. Documentação da API (OpenAPI)
 

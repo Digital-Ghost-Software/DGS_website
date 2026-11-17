@@ -51,9 +51,9 @@
             <h2 id="updateFormTitle">Nova atualização</h2>
             <form id="updateForm">
                 <div class="updates-form-grid">
-                    <label>Título<input name="title" type="text" maxlength="160" required></label>
-                    <label>Versão<input name="version" type="text" maxlength="40" placeholder="1.2.0" required></label>
-                    <label>Data da atualização<input name="release_date" type="date" required></label>
+                    <label>Título<input name="title" type="text" minlength="1" maxlength="160" required aria-describedby="updateValidation"></label>
+                    <label>Versão<input name="version" type="text" minlength="1" maxlength="40" placeholder="1.2.0" required aria-describedby="updateValidation"></label>
+                    <label>Data da atualização<input name="release_date" type="date" required aria-describedby="updateValidation"></label>
                     <label>Categoria <span>(opcional)</span>
                         <select name="category">
                             <option value="">Sem categoria</option>
@@ -66,9 +66,10 @@
                         </select>
                     </label>
                     <label class="updates-description-field">Descrição
-                        <textarea name="description" rows="7" maxlength="10000" required></textarea>
+                        <textarea name="description" rows="7" minlength="1" maxlength="10000" required aria-describedby="updateValidation"></textarea>
                     </label>
                 </div>
+                <p id="updateValidation" class="updates-validation" aria-live="polite"></p>
                 <p id="updateFormMessage" class="updates-message" aria-live="polite" role="status"></p>
                 <div class="updates-form-actions">
                     <button class="btn-primary" type="submit">Salvar atualização</button>

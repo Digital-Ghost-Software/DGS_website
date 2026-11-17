@@ -11,6 +11,7 @@ const updateFormMessage = document.querySelector("#updateFormMessage");
 const updatesList = document.querySelector("#updatesList");
 const updatesListMessage = document.querySelector("#updatesListMessage");
 const cancelUpdateButton = document.querySelector("#cancelUpdateButton");
+const updateValidation = document.querySelector("#updateValidation");
 let editingUpdateId = null;
 
 // Valores aceitos também são impostos por uma restrição na tabela SQL.
@@ -26,6 +27,51 @@ const categories = new Set([
 function showMessage(element, message, state = "info") {
     element.textContent = message;
     element.dataset.state = state;
+}
+
+function getFormValidationMessage(form) {
+    const title = String(form.elements.title.value || "").trim();
+    const version = String(form.elements.version.value || "").trim();
+    const releaseDate = String(form.elements.release_date.value || "");
+    const description = String(form.elements.description.value || "").trim();
+    const category = String(form.elements.category.value || "");
+
+    if (!title || title.length > 160) return "Informe um título com até 160 caracteres.";
+    if (!version || version.length > 40) return "Informe uma versão com até 40 caracteres.";
+    if (!isValidCalendarDate(releaseDate)) return "Informe uma data de atualização válida.";
+    if (category && !categories.has(category)) return "Selecione uma categoria válida.";
+    if (!description || description.length > 10000) return "Informe uma descrição com até 10.000 caracteres.";
+    return "";
+}
+
+function setFormValidation(form) {
+    const fields = [
+        form.elements.title,
+        form.elements.version,
+        form.elements.release_date,
+        form.elements.category,
+        form.elements.description
+    ];
+    const message = getFormValidationMessage(form);
+
+    for (const field of fields) {
+        const empty = field.type === "select-one"
+            ? false
+            : !String(field.value || "").trim();
+        const invalid = Boolean(message) && empty;
+        field.classList.toggle("is-invalid", invalid);
+        field.classList.toggle("is-valid", !invalid && String(field.value || "").trim().length > 0);
+        field.setAttribute("aria-invalid", invalid ? "true" : "false");
+    }
+
+    if (message) {
+        updateValidation.textContent = `✗ ${message}`;
+        updateValidation.dataset.state = "invalid";
+    } else {
+        updateValidation.textContent = "✓ Atualização válida";
+        updateValidation.dataset.state = "valid";
+    }
+    return !message;
 }
 
 async function requestUpdates(path, { method = "GET", token, payload } = {}) {
@@ -211,6 +257,9 @@ async function initializeUpdates() {
         updatePanel.hidden = true;
     });
 
+    updateForm.addEventListener("input", () => setFormValidation(updateForm));
+    updateForm.addEventListener("change", () => setFormValidation(updateForm));
+
     updateForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const formData = new FormData(updateForm);
@@ -220,12 +269,8 @@ async function initializeUpdates() {
         const category = String(formData.get("category") || "");
         const description = String(formData.get("description") || "").trim();
 
-        if (!title || !version || !description || !isValidCalendarDate(releaseDate)) {
-            showMessage(updateFormMessage, "Informe título, versão, descrição e uma data válida.", "error");
-            return;
-        }
-        if (category && !categories.has(category)) {
-            showMessage(updateFormMessage, "Selecione uma categoria válida.", "error");
+        if (!setFormValidation(updateForm)) {
+            showMessage(updateFormMessage, getFormValidationMessage(updateForm), "error");
             return;
         }
 
