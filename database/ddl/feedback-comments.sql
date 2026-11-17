@@ -5,7 +5,7 @@ create table if not exists public.feedback_comments (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users (id) on delete cascade,
     author_name text not null check (char_length(btrim(author_name)) between 1 and 80),
-    content text not null check (char_length(btrim(content)) between 1 and 2000),
+    content text not null check (char_length(btrim(content)) between 15 and 1000),
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );

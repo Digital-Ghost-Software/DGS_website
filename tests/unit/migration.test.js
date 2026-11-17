@@ -117,7 +117,7 @@ test("RF-004 migration preserves legacy rows while blocking browser-role access"
 
 test("feedback migration restricts comment creation and moderation with RLS", () => {
     assert.match(feedbackMigration, /create table if not exists public\.feedback_comments/);
-    assert.match(feedbackMigration, /content text not null check \(char_length\(btrim\(content\)\) between 1 and 2000\)/);
+    assert.match(feedbackMigration, /content text not null check \(char_length\(btrim\(content\)\) between 15 and 1000\)/);
     assert.match(feedbackMigration, /new\.user_id := \(select auth\.uid\(\)\)/);
     assert.match(feedbackMigration, /raw_user_meta_data[\s\S]*from auth\.users[\s\S]*'usuário'/);
     assert.match(feedbackMigration, /alter table public\.feedback_comments enable row level security/);

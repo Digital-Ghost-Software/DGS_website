@@ -131,13 +131,15 @@
                         id="feedbackContent"
                         name="content"
                         rows="5"
-                        minlength="1"
-                        maxlength="2000"
+                        minlength="15"
+                        maxlength="1000"
                         placeholder="Escreva aqui o que você achou..."
                         required
+                        aria-describedby="feedbackLengthFeedback"
                     ></textarea>
+                    <span id="feedbackValidation" class="feedback-validation" aria-live="polite"></span>
                     <div class="feedback-form-footer">
-                        <span>Máximo de 2.000 caracteres</span>
+                        <span id="feedbackLengthFeedback">15 a 1.000 caracteres</span>
                         <button type="submit" class="btn-primary">PUBLICAR COMENTÁRIO</button>
                     </div>
                 </form>

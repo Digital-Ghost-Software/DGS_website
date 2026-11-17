@@ -7,11 +7,36 @@ const feedbackContent = $("#feedbackContent");
 const feedbackAuthMessage = $("#feedbackAuthMessage");
 const feedbackListMessage = $("#feedbackListMessage");
 const feedbackList = $("#feedbackList");
-const MAX_COMMENT_LENGTH = 2000;
+const MIN_COMMENT_LENGTH = 15;
+const MAX_COMMENT_LENGTH = 1000;
+const feedbackValidation = $("#feedbackValidation");
 
 function showMessage(element, message, state = "info") {
     element.textContent = message;
     element.dataset.state = state;
+}
+
+function getCommentValidationMessage(content) {
+    if (!content) return "Escreva um comentário.";
+    if (content.length < MIN_COMMENT_LENGTH) {
+        return `O comentário deve ter pelo menos ${MIN_COMMENT_LENGTH} caracteres.`;
+    }
+    if (content.length > MAX_COMMENT_LENGTH) {
+        return `O comentário deve ter no máximo ${MAX_COMMENT_LENGTH} caracteres.`;
+    }
+    return "";
+}
+
+function setCommentValidation(textarea, feedbackElement) {
+    const message = getCommentValidationMessage(textarea.value.trim());
+    textarea.classList.toggle("is-invalid", Boolean(message));
+    textarea.classList.toggle("is-valid", !message);
+    textarea.setAttribute("aria-invalid", message ? "true" : "false");
+    if (feedbackElement) {
+        feedbackElement.textContent = message ? `✗ ${message}` : "✓ Comentário válido";
+        feedbackElement.dataset.state = message ? "invalid" : "valid";
+    }
+    return !message;
 }
 
 function getPublishErrorMessage(error) {
@@ -100,9 +125,15 @@ function createEditForm(comment) {
     textarea.name = "content";
     textarea.rows = 4;
     textarea.maxLength = MAX_COMMENT_LENGTH;
+    textarea.minLength = MIN_COMMENT_LENGTH;
     textarea.required = true;
     textarea.value = comment.content;
-    label.append(textarea);
+    const validation = document.createElement("span");
+    validation.className = "feedback-validation";
+    label.append(textarea, validation);
+    setCommentValidation(textarea, validation);
+    textarea.addEventListener("input", () => setCommentValidation(textarea, validation));
+    textarea.addEventListener("blur", () => setCommentValidation(textarea, validation));
 
     const actions = document.createElement("div");
     actions.className = "feedback-edit-actions";
@@ -150,11 +181,18 @@ async function initializeFeedback() {
 
     await loadComments(supabase, isAdmin);
 
+    feedbackContent.addEventListener("input", () => {
+        setCommentValidation(feedbackContent, feedbackValidation);
+    });
+    feedbackContent.addEventListener("blur", () => {
+        setCommentValidation(feedbackContent, feedbackValidation);
+    });
+
     feedbackForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const content = feedbackContent.value.trim();
-        if (!content || content.length > MAX_COMMENT_LENGTH) {
-            showMessage(feedbackAuthMessage, "O comentário deve ter entre 1 e 2.000 caracteres.", "error");
+        if (!setCommentValidation(feedbackContent, feedbackValidation)) {
+            showMessage(feedbackAuthMessage, getCommentValidationMessage(content), "error");
             return;
         }
 
@@ -226,9 +264,11 @@ async function initializeFeedback() {
         if (!event.target.matches(".feedback-edit-form")) return;
         event.preventDefault();
         const form = event.target;
-        const content = form.elements.content.value.trim();
-        if (!content || content.length > MAX_COMMENT_LENGTH) {
-            showMessage(feedbackListMessage, "O comentário deve ter entre 1 e 2.000 caracteres.", "error");
+        const textarea = form.elements.content;
+        const content = textarea.value.trim();
+        const validation = form.querySelector(".feedback-validation");
+        if (!setCommentValidation(textarea, validation)) {
+            showMessage(feedbackListMessage, getCommentValidationMessage(content), "error");
             return;
         }
 
