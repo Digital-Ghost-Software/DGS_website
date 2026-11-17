@@ -27,6 +27,10 @@ alter table public.page_visits enable row level security;
 revoke all on table public.page_visits from public, anon, authenticated, service_role;
 grant select on table public.page_visits to service_role;
 
+-- A API administrativa lê somente os campos de perfil exibidos no dashboard.
+grant select (user_id, user_name, user_level) on table public.profiles to service_role;
+grant select on table public.game_downloads to service_role;
+
 create or replace function public.record_page_visit(p_page_path text)
 returns bigint
 language plpgsql

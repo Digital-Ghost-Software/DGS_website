@@ -22,6 +22,12 @@ const trackedPagePaths = [
     "/paginas/recuperar-senha.html",
     "/paginas/dashboard.html"
 ];
+const trackedPageFiles = [
+    "index.html",
+    ...trackedPagePaths
+        .filter((pagePath) => pagePath.startsWith("/paginas/"))
+        .map((pagePath) => pagePath.slice(1))
+];
 
 function createSetup({ admin = true, authenticated = true } = {}) {
     const calls = [];
@@ -114,6 +120,19 @@ test("SQL migration stores the tracked paths and restricts writes to the server 
     }
     assert.match(analyticsMigration, /enable row level security/i);
     assert.match(analyticsMigration, /grant execute on function public\.record_page_visit\(text\) to service_role/i);
+    assert.match(analyticsMigration, /grant select \(user_id,\s*user_name,\s*user_level\) on table public\.profiles to service_role/i);
+    assert.match(analyticsMigration, /grant select on table public\.game_downloads to service_role/i);
+});
+
+test("every tracked page loads visit tracking independently of Supabase initialization", async () => {
+    const analyticsClient = await readFile(new URL("../../js/analytics.js", import.meta.url), "utf8");
+    assert.match(analyticsClient, /fetch\(["']\/api\/analytics\/visit["']/);
+    assert.doesNotMatch(analyticsClient, /supabase|loadSupabaseConfig/i);
+
+    for (const pageFile of trackedPageFiles) {
+        const html = await readFile(new URL(`../../${pageFile}`, import.meta.url), "utf8");
+        assert.match(html, /<script type="module" src="(?:\.\.\/)?js\/analytics\.js"><\/script>/, pageFile);
+    }
 });
 
 test("rejects unknown pages without recording a visit", async () => {
