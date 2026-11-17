@@ -11,9 +11,12 @@ let apiBaseUrl;
 let stripeApiServer;
 let stripeApiBaseUrl;
 let stripeWebhookApi;
+let analyticsApiServer;
+let analyticsApiBaseUrl;
 let stripeVerifier;
 let catarseApiStatus = 200;
 const catarseApiCalls = [];
+const analyticsCalls = [];
 const stripeWebhookSecret = "whsec_integration_test_secret";
 const stripeCheckoutSessions = [];
 const stripeOrderRows = new Map();
@@ -254,10 +257,21 @@ before(async () => {
     stripeApiServer = createServer(createLocalHandler(process.cwd(), stripeWebhookApi));
     const stripePort = await listen(stripeApiServer);
     stripeApiBaseUrl = `http://127.0.0.1:${stripePort}`;
+
+    const analyticsAdminClient = {
+        async rpc(name, args) {
+            analyticsCalls.push({ name, args });
+            return { data: 1, error: null };
+        }
+    };
+    const analyticsHandler = createHandler({ adminClient: analyticsAdminClient });
+    analyticsApiServer = createServer(createLocalHandler(process.cwd(), analyticsHandler));
+    const analyticsPort = await listen(analyticsApiServer);
+    analyticsApiBaseUrl = `http://127.0.0.1:${analyticsPort}`;
 });
 
 after(async () => {
-    await Promise.all([apiServer, stripeApiServer, supabaseServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
+    await Promise.all([apiServer, stripeApiServer, analyticsApiServer, supabaseServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
     for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY", "ALLOWED_ORIGINS", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "PUBLIC_APP_URL"]) {
         delete process.env[key];
     }
@@ -276,6 +290,22 @@ test("public config returns only the Supabase URL and publishable key", async ()
         supabaseUrl: process.env.SUPABASE_URL,
         supabasePublishableKey: "test-publishable-key"
     });
+});
+
+test("page visit endpoint invokes the SQL counter with the requested page path", async () => {
+    const previousCalls = analyticsCalls.length;
+    const response = await fetch(`${analyticsApiBaseUrl}/api/analytics/visit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page_path: "/paginas/download.html" })
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { recorded: true });
+    assert.deepEqual(analyticsCalls.slice(previousCalls), [{
+        name: "record_page_visit",
+        args: { p_page_path: "/paginas/download.html" }
+    }]);
 });
 
 test("Catarse widget endpoint returns safe campaign data and reports upstream failures", async () => {
