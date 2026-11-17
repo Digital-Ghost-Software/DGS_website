@@ -535,36 +535,16 @@
     "/api/games": {
       "get": {
         "tags": ["Outros jogos"],
-        "summary": "Listar cards de jogos",
+        "summary": "Listar jogos (READ)",
         "operationId": "listarOutrosJogos",
         "security": [{}, {"BearerAuth": []}],
+        "description": "Retorna os cards publicados em ordem de criação decrescente. Com um token válido, também informa se a sessão pertence a um administrador.",
         "responses": {
           "200": {
             "description": "Lista pública de jogos",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": ["games", "is_admin"],
-                  "properties": {
-                    "games": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": ["id", "name", "url", "image_path", "image_url", "created_at"],
-                        "properties": {
-                          "id": {"type": "string", "format": "uuid"},
-                          "name": {"type": "string", "maxLength": 120},
-                          "url": {"type": "string", "format": "uri"},
-                          "image_path": {"type": "string"},
-                          "image_url": {"type": "string", "format": "uri"},
-                          "created_at": {"type": "string", "format": "date-time"}
-                        }
-                      }
-                    },
-                    "is_admin": {"type": "boolean"}
-                  }
-                }
+                "schema": {"$ref": "#/components/schemas/OtherGameList"}
               }
             }
           },
@@ -575,7 +555,7 @@
       },
       "post": {
         "tags": ["Outros jogos"],
-        "summary": "Criar card de jogo ou enviar imagem",
+        "summary": "Criar card de jogo ou enviar imagem (CREATE)",
         "operationId": "criarOutroJogo",
         "security": [{"BearerAuth": []}],
         "description": "Para criar um card, omita action e envie name, url e image_path. Para upload, use ?action=upload-image e envie content_type e image_data em base64.",
@@ -594,21 +574,10 @@
               "schema": {
                 "oneOf": [
                   {
-                    "type": "object",
-                    "required": ["name", "url", "image_path"],
-                    "properties": {
-                      "name": {"type": "string", "minLength": 1, "maxLength": 120},
-                      "url": {"type": "string", "format": "uri", "maxLength": 2048},
-                      "image_path": {"type": "string"}
-                    }
+                    "$ref": "#/components/schemas/OtherGameInput"
                   },
                   {
-                    "type": "object",
-                    "required": ["content_type", "image_data"],
-                    "properties": {
-                      "content_type": {"type": "string", "enum": ["image/png", "image/jpeg", "image/webp"]},
-                      "image_data": {"type": "string", "format": "byte"}
-                    }
+                    "$ref": "#/components/schemas/OtherGameImageUpload"
                   }
                 ]
               }
@@ -616,7 +585,19 @@
           }
         },
         "responses": {
-          "201": {"description": "Card criado ou imagem armazenada (ao usar action=upload-image)"},
+          "201": {
+            "description": "Card criado ou imagem armazenada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {"$ref": "#/components/schemas/OtherGame"},
+                    {"$ref": "#/components/schemas/OtherGameImage"}
+                  ]
+                }
+              }
+            }
+          },
           "400": {"$ref": "#/components/responses/BadRequest"},
           "401": {"$ref": "#/components/responses/Unauthorized"},
           "403": {"$ref": "#/components/responses/Forbidden"},
@@ -637,13 +618,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["name", "url", "image_path"],
-                "properties": {
-                  "name": {"type": "string", "minLength": 1, "maxLength": 120},
-                  "url": {"type": "string", "format": "uri", "maxLength": 2048},
-                  "image_path": {"type": "string"}
-                }
+                "$ref": "#/components/schemas/OtherGameInput"
               }
             }
           }
@@ -1026,6 +1001,115 @@
           "received": {
             "type": "boolean",
             "example": true
+          }
+        }
+      },
+      "OtherGameInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "url",
+          "image_path"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Nome exibido no card"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^https?://",
+            "description": "Link HTTP ou HTTPS do jogo"
+          },
+          "image_path": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.(png|jpg|webp)$",
+            "description": "Caminho retornado pelo endpoint de upload"
+          }
+        }
+      },
+      "OtherGameImageUpload": {
+        "type": "object",
+        "required": [
+          "content_type",
+          "image_data"
+        ],
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/webp"
+            ]
+          },
+          "image_data": {
+            "type": "string",
+            "format": "byte",
+            "description": "Conteúdo da imagem codificado em base64; máximo de 3 MiB"
+          }
+        }
+      },
+      "OtherGameImage": {
+        "type": "object",
+        "required": [
+          "image_path"
+        ],
+        "properties": {
+          "image_path": {
+            "type": "string",
+            "description": "Caminho da imagem no bucket other-games"
+          }
+        }
+      },
+      "OtherGame": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OtherGameInput"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "image_url",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "image_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "OtherGameList": {
+        "type": "object",
+        "required": [
+          "games",
+          "is_admin"
+        ],
+        "properties": {
+          "games": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OtherGame"
+            }
+          },
+          "is_admin": {
+            "type": "boolean"
           }
         }
       },
