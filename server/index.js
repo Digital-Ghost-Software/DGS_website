@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { paymentMethods, purchasePlans } from "../js/purchase-rules.js";
+import { createDashboardHandler } from "./routes/dashboard.js";
 import { createUpdatesHandler } from "./routes/updates.js";
 import { createGamesHandler } from "./routes/games.js";
 
@@ -142,6 +143,7 @@ export function createHandler(overrides = {}) {
     const catarseFetch = overrides.catarseFetch ?? fetch;
     const webhookSecret = overrides.webhookSecret ?? stripeWebhookSecret;
     const checkoutBaseUrl = getCheckoutBaseUrl(overrides.publicAppUrl ?? publicAppUrl);
+    const dashboardHandler = createDashboardHandler({ authenticate, adminClient: admin, readJson, sendJson });
     const updatesHandler = createUpdatesHandler({ authenticate, publicClient: authClient, readJson, sendJson });
     const gamesHandler = createGamesHandler({ authenticate, publicClient: authClient, readJson, sendJson });
 
@@ -172,6 +174,18 @@ export function createHandler(overrides = {}) {
 
     const requestUrl = new URL(request.url || "/", "http://localhost");
     const path = requestUrl.pathname;
+    if (path === "/api/dashboard" || path === "/api/analytics/visit") {
+        try {
+            await dashboardHandler(request, response, origin);
+        } catch (error) {
+            const status = Number.isInteger(error.status) ? error.status : 500;
+            if (status === 500) console.error("Dashboard API request failed", error);
+            sendJson(response, status, {
+                error: status === 500 ? "Não foi possível processar a solicitação." : error.message
+            }, origin);
+        }
+        return;
+    }
     if (path === "/api/updates" || path.startsWith("/api/updates/")) {
         try {
             await updatesHandler(request, response, origin);

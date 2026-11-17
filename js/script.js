@@ -22,6 +22,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const GAME_DOWNLOAD_URL = ""; // Configure when a release file is available.
 const $ = (selector) => document.querySelector(selector);
 
+async function recordPageVisit() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/analytics/visit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ page_path: window.location.pathname })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+        console.error("Não foi possível registrar a visita da página.", error);
+    }
+}
+
+void recordPageVisit();
+
 async function apiRequest(path, { method = "GET", body } = {}) {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw sessionError;

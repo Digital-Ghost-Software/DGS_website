@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Painel administrativo com métricas e usuários da Digital Ghost.">
+    <link rel="shortcut icon" type="image/x-icon" href="../imagens/favicon.ico">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <title>Dashboard administrativo | Digital Ghost</title>
+</head>
+<body>
+    <header class="navbar">
+        <a href="../index.html" class="logo">DIGITAL <span>GHOST</span></a>
+        <nav aria-label="Navegação principal">
+            <a href="../index.html">Início</a>
+            <a href="tales.html">Yokai Tales</a>
+            <a href="outros_jogos.html">Outros Jogos</a>
+            <a href="download.html">Comprar</a>
+            <a href="atualizacoes.html">Atualizações</a>
+            <a href="feedback.html">Feedback</a>
+            <a href="doacoes.html">Doações</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="cadastro.html">Cadastro</a>
+            <a href="login.html" class="btn-login">Entrar</a>
+            <button type="button" id="logoutButton" class="btn-logout" hidden>Sair</button>
+        </nav>
+    </header>
+
+    <main class="dashboard-page">
+        <section class="dashboard-heading" aria-labelledby="dashboardTitle">
+            <p class="orange-text">DIGITAL GHOST</p>
+            <h1 id="dashboardTitle">DASHBOARD <span>ADMINISTRATIVO</span></h1>
+            <p>Métricas de acesso, downloads e contas cadastradas.</p>
+        </section>
+
+        <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite">Carregando dados do painel…</p>
+        <section id="dashboardContent" hidden>
+            <section class="dashboard-downloads" aria-labelledby="downloadMetricTitle">
+                <h2 id="downloadMetricTitle">Downloads do jogo</h2>
+                <p id="downloadCount" class="dashboard-count">0</p>
+            </section>
+
+            <section class="dashboard-section" aria-labelledby="visitsTitle">
+                <h2 id="visitsTitle">Visitas por página</h2>
+                <div class="dashboard-table-wrap">
+                    <table>
+                        <caption>Quantidade total de visitas registradas em cada página</caption>
+                        <thead>
+                            <tr><th scope="col">Página</th><th scope="col">Visitas</th></tr>
+                        </thead>
+                        <tbody id="visitsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="dashboard-section" aria-labelledby="usersTitle">
+                <h2 id="usersTitle">Usuários cadastrados</h2>
+                <div class="dashboard-table-wrap">
+                    <table>
+                        <caption>Dados de conta e atividade. Senhas não são exibidas nem retornadas pela API.</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Nome</th>
+                                <th scope="col">E-mail</th>
+                                <th scope="col">Nível</th>
+                                <th scope="col">Cadastro</th>
+                                <th scope="col">Último acesso</th>
+                                <th scope="col">E-mail confirmado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <footer>
+        <h3>DIGITAL <span>GHOST</span></h3>
+        <p>Projeto acadêmico desenvolvido para fins educacionais.</p>
+        <p class="copyright">© 2026 Digital Ghost Software</p>
+    </footer>
+
+    <script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/dashboard.js"></script>
+</body>
+</html>
