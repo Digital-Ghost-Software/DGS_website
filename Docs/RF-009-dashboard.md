@@ -22,10 +22,10 @@
 ### b) Banco de dados online
 
 - **BD:** Supabase PostgreSQL
-- **Link:** https://supabase.com/dashboard/project/thmtriwgvsgxdinsuxph
+- **Link:** https://supabase.com/dashboard/project/penkfiaczkgvkxaztfms
 - **Projeto:** `DGS_Web_Site`
-- **Acesso:** leitura para o professor, conforme configuracao da entrega
-- **Tabelas principais:** `public.page_visits`, `public.game_downloads`, `public.profiles`, `auth.users`
+- **Acesso:** leitura para o professor, conforme configuracao da entrega (convite enviado!)
+- **Tabelas principais:** `public.page_visits`, `public.game_downloads`, `public.profiles`, `public.admin`, `auth.users`
 
 ### c) Link do GitHub
 
@@ -49,7 +49,7 @@
 
 ### Descricao
 
-O RF-009 apresenta um dashboard administrativo para acompanhar a utilizacao do site Yokai Tales. O painel exibe o numero total de downloads registrados, o numero de visitas por pagina monitorada e uma lista de usuarios cadastrados com nome, nivel, data de cadastro, ultimo acesso e confirmacao de e-mail.
+O RF-009 apresenta um dashboard administrativo para acompanhar a utilizacao do site Yokai Tales. O painel exibe o numero total de downloads registrados, o numero de visitas por pagina monitorada e uma lista de usuarios cadastrados com identificador, nome, e-mail, nivel, data de cadastro, ultimo acesso e confirmacao de e-mail.
 
 A pagina envia o bearer token da sessao para `GET /api/dashboard`. O servidor valida o token, chama `public.is_feedback_admin()` e consulta somente as informacoes previstas pela interface. O usuario comum recebe `403`, enquanto o administrador recebe as metricas em JSON.
 
@@ -201,6 +201,12 @@ O dashboard nao implementa um CRUD de usuarios ou metricas. As acoes disponiveis
 - A API responde `503`.
 - A interface mostra uma mensagem em portugues e permite nova tentativa.
 
+#### A6: Origem nao autorizada no registro de visitas
+
+- `POST /api/analytics/visit` recebe uma requisicao com cabeçalho `Origin` fora da lista permitida.
+- A API responde `403`.
+- Nenhuma contagem e registrada, pois a origem foi bloqueada antes da chamada da API.
+
 ### Regras de negocio
 
 - **RN-01:** Somente caminhos cadastrados podem ser contabilizados.
@@ -240,7 +246,7 @@ Erros esperados:
 
 | Operacao | Erros documentados |
 |---|---|
-| POST `/api/analytics/visit` | 400, 403, 405, 503 |
+| POST `/api/analytics/visit` | 400 (pagina invalida), 403 (origem nao autorizada), 405 (metodo incorreto), 503 (servico indisponivel) |
 | GET `/api/dashboard` | 401, 403, 405, 503 |
 
 ### Estados da interface
@@ -321,6 +327,7 @@ server/routes/dashboard.js
   +--> public.page_visits
   +--> public.game_downloads
   +--> public.profiles
+  +--> public.admin
   +--> auth.users
 
 Navegador administrativo
@@ -340,6 +347,8 @@ Navegador -> `analytics.js` -> endpoint de visita -> validacao da lista -> funca
 Administrador -> sessao Supabase -> bearer token -> verificacao administrativa -> consultas com chave de servidor -> projecao de usuarios -> resposta JSON -> renderizacao segura.
 
 ### ADR
+
+O sistema segue o modelo organizacional em camadas: interface HTML/CSS/JavaScript, API Node.js, autenticacao e dados no Supabase. Essa organizacao foi adotada porque separa apresentacao, controle HTTP e persistencia, reutiliza o mesmo backend em Vercel e desenvolvimento local e permite aplicar RLS sem duplicar a autorizacao no frontend.
 
 #### ADR-001: Registro de visitas independente da inicializacao Supabase
 
