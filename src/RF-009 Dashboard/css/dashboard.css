@@ -1,0 +1,101 @@
+.dashboard-page {
+    width: min(100% - 40px, 1100px);
+    margin: 0 auto;
+    padding: 72px 0 96px;
+}
+
+.dashboard-heading {
+    margin-bottom: 36px;
+    text-align: center;
+}
+
+.dashboard-heading .orange-text,
+.dashboard-heading h1 span {
+    color: #ff6600;
+}
+
+.dashboard-heading .orange-text {
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.dashboard-heading h1 {
+    margin: 8px 0 12px;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.15;
+}
+
+.dashboard-heading > p:last-child,
+.dashboard-message {
+    color: #b8b8b8;
+}
+
+.dashboard-message[data-state="error"] {
+    color: #ff9a9a;
+    text-align: center;
+}
+
+.dashboard-downloads,
+.dashboard-section {
+    margin-top: 24px;
+    padding: 24px;
+    border: 1px solid #333;
+    border-radius: 10px;
+    background: #111;
+}
+
+.dashboard-downloads h2,
+.dashboard-section h2 {
+    margin-bottom: 16px;
+    font-size: 1.4rem;
+}
+
+.dashboard-count {
+    color: #ff6600;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.dashboard-table-wrap {
+    overflow-x: auto;
+}
+
+.dashboard-table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.dashboard-table-wrap caption {
+    padding: 0 0 12px;
+    color: #aaa;
+    text-align: left;
+}
+
+.dashboard-table-wrap th,
+.dashboard-table-wrap td {
+    padding: 12px;
+    border-bottom: 1px solid #333;
+    vertical-align: top;
+}
+
+.dashboard-table-wrap th {
+    color: #ff9b55;
+    white-space: nowrap;
+}
+
+.dashboard-table-wrap td {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+    .dashboard-downloads,
+    .dashboard-section {
+        padding: 16px;
+    }
+
+    .dashboard-table-wrap th,
+    .dashboard-table-wrap td {
+        padding: 9px;
+    }
+}
