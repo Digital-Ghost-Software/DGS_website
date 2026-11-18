@@ -51,6 +51,10 @@
     {
       "name": "Sistema",
       "description": "Saúde e configuração pública"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Métricas administrativas e registro de visitas"
     }
   ],
   "paths": {
@@ -532,6 +536,112 @@
         }
       }
     },
+    "/api/analytics/visit": {
+      "post": {
+        "tags": ["Dashboard"],
+        "summary": "Registrar visita de uma página",
+        "operationId": "registrarVisitaPagina",
+        "security": [],
+        "description": "Aceita somente os caminhos de páginas monitorados pelo dashboard. O caminho /index.html é normalizado para / antes de ser registrado no banco.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageVisitInput"
+              },
+              "example": {
+                "page_path": "/paginas/download.html"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Visita registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recorded"
+                },
+                "example": {
+                  "recorded": true
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Obter métricas administrativas",
+        "operationId": "obterDashboard",
+        "security": [{"BearerAuth": []}],
+        "description": "Somente administradores autenticados podem consultar visitas por página, quantidade de downloads e usuários cadastrados.",
+        "responses": {
+          "200": {
+            "description": "Métricas e usuários cadastrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                },
+                "example": {
+                  "visits": [
+                    {
+                      "page_path": "/",
+                      "visit_count": 42
+                    },
+                    {
+                      "page_path": "/paginas/download.html",
+                      "visit_count": 18
+                    }
+                  ],
+                  "downloads": 7,
+                  "users": [
+                    {
+                      "id": "6f4c1a2b-2c3d-4e5f-8a9b-0c1d2e3f4a5b",
+                      "email": "usuario@exemplo.com",
+                      "user_name": "Usuário",
+                      "user_level": "standard",
+                      "created_at": "2026-10-20T12:00:00Z",
+                      "last_sign_in_at": "2026-10-21T12:00:00Z",
+                      "email_confirmed_at": "2026-10-20T12:05:00Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
     "/api/games": {
       "get": {
         "tags": ["Outros jogos"],
@@ -1001,6 +1111,114 @@
           "received": {
             "type": "boolean",
             "example": true
+          }
+        }
+      },
+      "Recorded": {
+        "type": "object",
+        "required": ["recorded"],
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "PageVisitInput": {
+        "type": "object",
+        "required": ["page_path"],
+        "properties": {
+          "page_path": {
+            "type": "string",
+            "enum": [
+              "/",
+              "/index.html",
+              "/paginas/tales.html",
+              "/paginas/outros_jogos.html",
+              "/paginas/download.html",
+              "/paginas/atualizacoes.html",
+              "/paginas/feedback.html",
+              "/paginas/doacoes.html",
+              "/paginas/perfil.html",
+              "/paginas/cadastro.html",
+              "/paginas/login.html",
+              "/paginas/recuperar-senha.html",
+              "/paginas/dashboard.html"
+            ],
+            "description": "Caminho monitorado pelo dashboard"
+          }
+        }
+      },
+      "DashboardVisit": {
+        "type": "object",
+        "required": ["page_path", "visit_count"],
+        "properties": {
+          "page_path": {
+            "type": "string"
+          },
+          "visit_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "DashboardUser": {
+        "type": "object",
+        "required": ["id", "email", "user_name", "user_level", "created_at", "last_sign_in_at", "email_confirmed_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "user_level": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["standard", "plus", null]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "last_sign_in_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "email_confirmed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "required": ["visits", "downloads", "users"],
+        "properties": {
+          "visits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardVisit"
+            }
+          },
+          "downloads": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardUser"
+            }
           }
         }
       },
@@ -1496,6 +1714,19 @@
             },
             "example": {
               "error": "Atualização não encontrada."
+            }
+          }
+        }
+      },
+      "MethodNotAllowed": {
+        "description": "Método HTTP não suportado pela rota",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Método não permitido."
             }
           }
         }
